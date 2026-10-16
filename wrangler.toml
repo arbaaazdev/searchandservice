@@ -8,7 +8,7 @@ compatibility_date = "2025-02-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "searchandservice-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "8aa3e487-e999-478d-9292-7f9da46728b0"
 
 [vars]
 ENVIRONMENT = "production"

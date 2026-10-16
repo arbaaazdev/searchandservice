@@ -63,7 +63,7 @@ export async function onRequestPost(context) {
 
     // 3. Optional Cloudflare Turnstile verification if TURNSTILE_SECRET_KEY is set
     const turnstileOk = await verifyTurnstileToken(
-      payload.turnstileToken,
+      payload.turnstileToken || payload['cf-turnstile-response'],
       clientIp,
       env?.TURNSTILE_SECRET_KEY
     );

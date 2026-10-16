@@ -4,6 +4,7 @@ import {
   sanitizeString,
   isValidEmail,
   hashIp,
+  verifyTurnstileToken,
   sendResendEmail
 } from '../_utils.js';
 
@@ -28,6 +29,22 @@ export async function onRequestPost(context) {
       return jsonResponse(
         { ok: false, error: 'Please provide a valid email address.' },
         400,
+        origin
+      );
+    }
+
+    const clientIp = request.headers.get('CF-Connecting-IP') || '';
+
+    // Optional Cloudflare Turnstile verification if TURNSTILE_SECRET_KEY is set
+    const turnstileOk = await verifyTurnstileToken(
+      payload.turnstileToken || payload['cf-turnstile-response'],
+      clientIp,
+      env?.TURNSTILE_SECRET_KEY
+    );
+    if (!turnstileOk) {
+      return jsonResponse(
+        { ok: false, error: 'Security verification failed. Please refresh and try again.' },
+        403,
         origin
       );
     }

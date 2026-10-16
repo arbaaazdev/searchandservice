@@ -1324,6 +1324,7 @@ const INDUSTRY_PRESETS = [
 ];
 
 export default function App() {
+  const [turnstileToken, setTurnstileToken] = useState(null);
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -1370,6 +1371,15 @@ export default function App() {
   const [activeBundleFile, setActiveBundleFile] = useState('README.md');
   const [copiedFile, setCopiedFile] = useState(false);
   const [copiedAppJsx, setCopiedAppJsx] = useState(false);
+
+  useEffect(() => {
+    window.onTurnstileSuccess = (token) => {
+      setTurnstileToken(token);
+    };
+    return () => {
+      delete window.onTurnstileSuccess;
+    };
+  }, []);
 
   useEffect(() => {
     if (menuOpen || videoModalOpen || selectedService || deployKitOpen) {
@@ -1442,6 +1452,11 @@ export default function App() {
     e.preventDefault();
     setAuditError('');
 
+    if (!turnstileToken) {
+      alert('Please complete the security check.');
+      return;
+    }
+
     if (!auditForm.businessName.trim() || !auditForm.website.trim() || !auditForm.city.trim() || !auditForm.name.trim() || !auditForm.phone.trim() || !auditForm.workEmail.trim()) {
       setAuditError('Please fill in all required fields.');
       return;
@@ -1465,7 +1480,9 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...auditForm,
-          website: normalizedWebsite
+          website: normalizedWebsite,
+          turnstileToken,
+          'cf-turnstile-response': turnstileToken
         })
       });
 
@@ -1491,12 +1508,22 @@ export default function App() {
       );
     } finally {
       setAuditSubmitting(false);
+      setTurnstileToken(null);
+      if (window.turnstile) {
+        window.turnstile.reset();
+      }
     }
   };
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     setNewsletterError('');
+
+    if (!turnstileToken) {
+      alert('Please complete the security check.');
+      return;
+    }
+
     const cleanEmail = newsletterEmail.trim();
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setNewsletterError('Please enter a valid email address.');
@@ -1508,7 +1535,11 @@ export default function App() {
       const response = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail })
+        body: JSON.stringify({
+          email: cleanEmail,
+          turnstileToken,
+          'cf-turnstile-response': turnstileToken
+        })
       });
 
       const contentType = response.headers.get('content-type') || '';
@@ -1533,6 +1564,10 @@ export default function App() {
       );
     } finally {
       setNewsletterSubmitting(false);
+      setTurnstileToken(null);
+      if (window.turnstile) {
+        window.turnstile.reset();
+      }
     }
   };
 
@@ -3458,6 +3493,12 @@ export default function App() {
                       </select>
                     </div>
 
+                    <div
+                      className="cf-turnstile"
+                      data-sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
+                      data-callback="onTurnstileSuccess"
+                    ></div>
+
                     <button
                       type="submit"
                       disabled={auditSubmitting}
@@ -3568,6 +3609,11 @@ export default function App() {
                   onSubmit={handleNewsletterSubmit}
                   className="space-y-2"
                 >
+                  <div
+                    className="cf-turnstile"
+                    data-sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
+                    data-callback="onTurnstileSuccess"
+                  ></div>
                   <div className="relative flex items-center">
                     <input
                       type="email"

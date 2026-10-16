@@ -1,0 +1,16 @@
+name = "searchandservice"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-02-01"
+
+# Cloudflare D1 Free-Tier SQLite Database Binding
+# Run: npx wrangler d1 create searchandservice-db
+# Then replace database_id below with your generated UUID
+[[d1_databases]]
+binding = "DB"
+database_name = "searchandservice-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGIN = "https://searchandservice.pages.dev"
+NOTIFICATION_TO_EMAIL = "searchandservice@gmail.com"

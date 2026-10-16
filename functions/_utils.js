@@ -16,8 +16,7 @@ export function resolveCorsOrigin(request, env) {
   if (
     reqOrigin === configured ||
     reqOrigin.endsWith('.searchandservice.pages.dev') ||
-    reqOrigin.startsWith('http://localhost:') ||
-    reqOrigin.startsWith('http://127.0.0.1:')
+    (env?.ENVIRONMENT !== 'production' && (reqOrigin.startsWith('http://localhost:') || reqOrigin.startsWith('http://127.0.0.1:')))
   ) {
     return reqOrigin;
   }
@@ -40,6 +39,11 @@ export function jsonResponse(body, status = 200, origin = 'https://searchandserv
 export function sanitizeString(value, maxLen = 250) {
   if (typeof value !== 'string') return '';
   return value.trim().replace(/[<>]/g, '').slice(0, maxLen);
+}
+
+export function csvSafe(value) {
+  const s = String(value ?? '');
+  return /^[\s\u0000-\u001F]*[=+\-@\uFF1D\uFF0B\uFF0D\uFF20]/.test(s) ? "'" + s : s;
 }
 
 export function isValidEmail(email) {
@@ -87,7 +91,7 @@ export async function verifyTurnstileToken(token, ip, secretKey) {
 
 export async function sendResendEmail(env, { subject, html, replyTo }) {
   if (!env?.RESEND_API_KEY) return false;
-  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservice@gmail.com';
+  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservicegrowth@gmail.com';
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {

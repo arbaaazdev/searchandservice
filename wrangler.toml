@@ -13,4 +13,4 @@ database_id = "8aa3e487-e999-478d-9292-7f9da46728b0"
 [vars]
 ENVIRONMENT = "production"
 ALLOWED_ORIGIN = "https://searchandservice.pages.dev"
-NOTIFICATION_TO_EMAIL = "searchandservice@gmail.com"
+NOTIFICATION_TO_EMAIL = "searchandservicegrowth@gmail.com"

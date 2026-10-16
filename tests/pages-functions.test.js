@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { onRequestGet as healthGet } from '../functions/api/health.js';
 import { onRequestPost as auditPost } from '../functions/api/audit.js';
 import { onRequestPost as newsletterPost } from '../functions/api/newsletter.js';
+import { sanitizeString, csvSafe, resolveCorsOrigin } from '../functions/_utils.js';
 
 function createMockDb() {
   return {
@@ -92,5 +93,25 @@ describe('Cloudflare Pages Functions API (https://searchandservice.pages.dev)', 
     });
     const goodRes = await newsletterPost({ request: goodReq, env: { DB: createMockDb() } });
     expect(goodRes.status).toBe(201);
+  });
+
+  it('handles CSV safety and formula characters as expected', () => {
+    expect(sanitizeString('+92 300 1234567')).toBe('+92 300 1234567');
+    expect(sanitizeString('=HYPERLINK("x")')).toBe('=HYPERLINK("x")');
+    expect(csvSafe('=HYPERLINK("x")')).toBe("'=HYPERLINK(\"x\")");
+    expect(csvSafe('+92 300 1234567')).toBe("'+92 300 1234567");
+    expect(csvSafe('Normal Business')).toBe('Normal Business');
+  });
+
+  it('correctly locks down localhost CORS in production and allows it in development', () => {
+    const prodReq = new Request('https://searchandservice.pages.dev/api/audit', {
+      headers: { Origin: 'http://localhost:3000' }
+    });
+    expect(resolveCorsOrigin(prodReq, { ENVIRONMENT: 'production' })).toBe('https://searchandservice.pages.dev');
+
+    const devReq = new Request('https://searchandservice.pages.dev/api/audit', {
+      headers: { Origin: 'http://localhost:3000' }
+    });
+    expect(resolveCorsOrigin(devReq, { ENVIRONMENT: 'development' })).toBe('http://localhost:3000');
   });
 });

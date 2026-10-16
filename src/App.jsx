@@ -73,7 +73,7 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 [vars]
 ENVIRONMENT = "production"
 ALLOWED_ORIGIN = "https://searchandservice.pages.dev"
-NOTIFICATION_TO_EMAIL = "searchandservice@gmail.com"
+NOTIFICATION_TO_EMAIL = "searchandservicegrowth@gmail.com"
 `,
   '.env.example': [
     '# Local Development Secrets for Cloudflare Pages Functions',
@@ -84,7 +84,7 @@ NOTIFICATION_TO_EMAIL = "searchandservice@gmail.com"
     '',
     'ENVIRONMENT=development',
     'ALLOWED_ORIGIN=http://localhost:8788',
-    'NOTIFICATION_TO_EMAIL=searchandservice@gmail.com',
+    'NOTIFICATION_TO_EMAIL=searchandservicegrowth@gmail.com',
     '',
     '# Optional: Resend API Key (https://resend.com - free tier 3,000 emails/mo) for instant email alerts & newsletter welcome emails',
     'RESEND_API_KEY=',
@@ -244,7 +244,7 @@ CREATE INDEX IF NOT EXISTS idx_newsletter_ip_subscribed ON newsletter_subscriber
     '',
     'export async function sendResendEmail(env, { subject, html, replyTo }) {',
     '  if (!env?.RESEND_API_KEY) return false;',
-    "  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservice@gmail.com';",
+    "  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservicegrowth@gmail.com';",
     "  const res = await fetch('https://api.resend.com/emails', {",
     "    method: 'POST',",
     '    headers: {',
@@ -620,7 +620,7 @@ export async function onRequestGet(context) {
         "@type": "ProfessionalService",
         "name": "SearchandService Agency",
         "url": "https://searchandservice.pages.dev",
-        "email": "searchandservice@gmail.com",
+        "email": "searchandservicegrowth@gmail.com",
         "telephone": "+1-555-234-5678",
         "description": "Local business growth systems partner specializing in Google Maps SEO, high-converting websites, and 24/7 lead automation."
       }
@@ -890,7 +890,7 @@ describe('Cloudflare Pages Functions API (https://searchandservice.pages.dev)', 
     '   - Save for both **Production** and **Preview**.',
     '2. *(Optional)* Under **Settings** -> **Environment variables**, add any of the following encrypted secrets if you want instant email or Slack/Discord/Zapier notifications:',
     '   - `RESEND_API_KEY`: Your free Resend.com API key (3,000 free emails/month).',
-    '   - `NOTIFICATION_TO_EMAIL`: `searchandservice@gmail.com`',
+    '   - `NOTIFICATION_TO_EMAIL`: `searchandservicegrowth@gmail.com`',
     '   - `NOTIFICATION_WEBHOOK_URL`: Slack, Discord, or Zapier incoming webhook URL.',
     '   - `TURNSTILE_SECRET_KEY`: Optional Cloudflare Turnstile secret key.',
     '3. Push any commit to `main` (or click **Retry deployment** in Cloudflare Pages) so the bindings take effect immediately on `https://searchandservice.pages.dev`.'
@@ -1992,9 +1992,9 @@ export default function App() {
           {/* Left contact icons */}
           <div className="flex items-center gap-1.5 sm:space-x-3 flex-shrink-0">
             <a
-              href="mailto:searchandservice@gmail.com"
-              aria-label="Email searchandservice@gmail.com"
-              title="searchandservice@gmail.com"
+              href="mailto:searchandservicegrowth@gmail.com"
+              aria-label="Email searchandservicegrowth@gmail.com"
+              title="searchandservicegrowth@gmail.com"
               className={`group flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
                   ? 'bg-white/[0.06] border-white/15 text-white hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
                   : 'bg-black/[0.05] border-black/15 text-[#0A0A0A] hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
@@ -2207,10 +2207,10 @@ export default function App() {
                 <div>
                   <div className="text-[10px] sm:text-[11px] uppercase tracking-widest opacity-60">Direct Growth Line</div>
                   <a
-                    href="mailto:searchandservice@gmail.com"
+                    href="mailto:searchandservicegrowth@gmail.com"
                     className="block text-xs sm:text-sm font-semibold mt-0.5 hover:text-[#FF6B1A] transition-colors"
                   >
-                    searchandservice@gmail.com
+                    searchandservicegrowth@gmail.com
                   </a>
                 </div>
                 <button
@@ -3401,7 +3401,7 @@ export default function App() {
 
               <div className="pt-2 flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
                 <a
-                  href="mailto:searchandservice@gmail.com"
+                  href="mailto:searchandservicegrowth@gmail.com"
                   className="group relative flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3 border border-[#FF6B1A] bg-[#FF6B1A] hover:bg-[#ff5500] text-white font-bold text-xs uppercase tracking-[0.18em] transition-all duration-300 shadow-md shadow-[#FF6B1A]/20"
                 >
                   <Mail className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
@@ -3689,10 +3689,10 @@ export default function App() {
                 <div className="flex items-center gap-2.5">
                   <Mail className="w-4 h-4 text-[#FF6B1A] flex-shrink-0" />
                   <a
-                    href="mailto:searchandservice@gmail.com"
+                    href="mailto:searchandservicegrowth@gmail.com"
                     className="hover:text-[#FF6B1A] transition-colors font-medium"
                   >
-                    searchandservice@gmail.com
+                    searchandservicegrowth@gmail.com
                   </a>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -3903,14 +3903,6 @@ export default function App() {
               >
                 Case Studies
               </a>
-              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
-              <button
-                onClick={() => setDeployKitOpen(true)}
-                className="inline-flex items-center gap-1.5 text-[#FF6B1A] font-semibold hover:underline"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Cloudflare Pages ZIP</span>
-              </button>
             </div>
 
             <button

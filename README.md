@@ -80,7 +80,7 @@ After your initial Pages project is created:
    - Save for both **Production** and **Preview**.
 2. *(Optional)* Under **Settings** -> **Environment variables**, add any of the following encrypted secrets if you want instant email or Slack/Discord/Zapier notifications:
    - `RESEND_API_KEY`: Your free Resend.com API key (3,000 free emails/month).
-   - `NOTIFICATION_TO_EMAIL`: `searchandservice@gmail.com`
+   - `NOTIFICATION_TO_EMAIL`: `searchandservicegrowth@gmail.com`
    - `NOTIFICATION_WEBHOOK_URL`: Slack, Discord, or Zapier incoming webhook URL.
    - `TURNSTILE_SECRET_KEY`: Optional Cloudflare Turnstile secret key.
 3. Push any commit to `main` (or click **Retry deployment** in Cloudflare Pages) so the bindings take effect immediately on `https://searchandservice.pages.dev`.

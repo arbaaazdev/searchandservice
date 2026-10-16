@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sun,
   Moon,
@@ -1323,8 +1323,112 @@ const INDUSTRY_PRESETS = [
   }
 ];
 
+function TurnstileWidget({ sitekey, onVerify, isDark, widgetRef }) {
+  const containerRef = useRef(null);
+  const widgetIdRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    let timeout = null;
+    let isCancelled = false;
+
+    function renderTurnstile() {
+      if (isCancelled || !containerRef.current) return false;
+      if (!window.turnstile || typeof window.turnstile.render !== 'function') return false;
+      if (widgetIdRef.current) return true;
+
+      try {
+        containerRef.current.innerHTML = '';
+        const id = window.turnstile.render(containerRef.current, {
+          sitekey,
+          theme: isDark ? 'dark' : 'light',
+          callback: (token) => {
+            if (!isCancelled) {
+              onVerify(token);
+            }
+          },
+          'expired-callback': () => {
+            if (!isCancelled) {
+              onVerify(null);
+            }
+          },
+          'error-callback': () => {
+            if (!isCancelled) {
+              onVerify(null);
+            }
+          }
+        });
+        widgetIdRef.current = id;
+        if (widgetRef) {
+          widgetRef.current = id;
+        }
+        setLoaded(true);
+        return true;
+      } catch (err) {
+        console.warn('Turnstile render warning:', err);
+        return false;
+      }
+    }
+
+    if (!renderTurnstile()) {
+      interval = setInterval(() => {
+        if (renderTurnstile()) {
+          clearInterval(interval);
+        }
+      }, 150);
+
+      timeout = setTimeout(() => {
+        if (!widgetIdRef.current && !isCancelled) {
+          setLoadFailed(true);
+        }
+      }, 6000);
+    }
+
+    return () => {
+      isCancelled = true;
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+      if (widgetIdRef.current && window.turnstile && typeof window.turnstile.remove === 'function') {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch (_) {}
+        widgetIdRef.current = null;
+        if (widgetRef) {
+          widgetRef.current = null;
+        }
+      }
+    };
+  }, [sitekey, isDark]);
+
+  return (
+    <div className="my-2">
+      <div
+        ref={containerRef}
+        className="min-h-[65px] flex items-center justify-start overflow-hidden"
+      />
+      {!loaded && !loadFailed && (
+        <div className="flex items-center gap-2 text-[11px] opacity-60 py-1.5 font-mono">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF6B1A]" />
+          <span>Loading security check...</span>
+        </div>
+      )}
+      {loadFailed && (
+        <div className="text-[11px] text-amber-500 py-1 leading-snug">
+          Security check failed to load. If using Brave Shields or an ad-blocker, please allow challenges.cloudflare.com.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [turnstileToken, setTurnstileToken] = useState(null);
+  const [auditTurnstileToken, setAuditTurnstileToken] = useState(null);
+  const [newsletterTurnstileToken, setNewsletterTurnstileToken] = useState(null);
+  const auditWidgetRef = useRef(null);
+  const newsletterWidgetRef = useRef(null);
   const [isDark, setIsDark] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -1452,7 +1556,9 @@ export default function App() {
     e.preventDefault();
     setAuditError('');
 
-    if (!turnstileToken) {
+    const tokenToUse = auditTurnstileToken || turnstileToken;
+    if (!tokenToUse) {
+      setAuditError('Please complete the security check.');
       alert('Please complete the security check.');
       return;
     }
@@ -1481,8 +1587,8 @@ export default function App() {
         body: JSON.stringify({
           ...auditForm,
           website: normalizedWebsite,
-          turnstileToken,
-          'cf-turnstile-response': turnstileToken
+          turnstileToken: tokenToUse,
+          'cf-turnstile-response': tokenToUse
         })
       });
 
@@ -1508,9 +1614,16 @@ export default function App() {
       );
     } finally {
       setAuditSubmitting(false);
+      setAuditTurnstileToken(null);
       setTurnstileToken(null);
-      if (window.turnstile) {
-        window.turnstile.reset();
+      if (auditWidgetRef.current && window.turnstile && typeof window.turnstile.reset === 'function') {
+        try {
+          window.turnstile.reset(auditWidgetRef.current);
+        } catch (_) {}
+      } else if (window.turnstile && typeof window.turnstile.reset === 'function') {
+        try {
+          window.turnstile.reset();
+        } catch (_) {}
       }
     }
   };
@@ -1519,7 +1632,9 @@ export default function App() {
     e.preventDefault();
     setNewsletterError('');
 
-    if (!turnstileToken) {
+    const tokenToUse = newsletterTurnstileToken || turnstileToken;
+    if (!tokenToUse) {
+      setNewsletterError('Please complete the security check.');
       alert('Please complete the security check.');
       return;
     }
@@ -1537,8 +1652,8 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: cleanEmail,
-          turnstileToken,
-          'cf-turnstile-response': turnstileToken
+          turnstileToken: tokenToUse,
+          'cf-turnstile-response': tokenToUse
         })
       });
 
@@ -1564,9 +1679,16 @@ export default function App() {
       );
     } finally {
       setNewsletterSubmitting(false);
+      setNewsletterTurnstileToken(null);
       setTurnstileToken(null);
-      if (window.turnstile) {
-        window.turnstile.reset();
+      if (newsletterWidgetRef.current && window.turnstile && typeof window.turnstile.reset === 'function') {
+        try {
+          window.turnstile.reset(newsletterWidgetRef.current);
+        } catch (_) {}
+      } else if (window.turnstile && typeof window.turnstile.reset === 'function') {
+        try {
+          window.turnstile.reset();
+        } catch (_) {}
       }
     }
   };
@@ -3493,11 +3615,18 @@ export default function App() {
                       </select>
                     </div>
 
-                    <div
-                      className="cf-turnstile"
-                      data-sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
-                      data-callback="onTurnstileSuccess"
-                    ></div>
+                    <TurnstileWidget
+                      sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
+                      onVerify={(token) => {
+                        setAuditTurnstileToken(token);
+                        setTurnstileToken(token);
+                        if (typeof window.onTurnstileSuccess === 'function') {
+                          window.onTurnstileSuccess(token);
+                        }
+                      }}
+                      isDark={isDark}
+                      widgetRef={auditWidgetRef}
+                    />
 
                     <button
                       type="submit"
@@ -3609,11 +3738,18 @@ export default function App() {
                   onSubmit={handleNewsletterSubmit}
                   className="space-y-2"
                 >
-                  <div
-                    className="cf-turnstile"
-                    data-sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
-                    data-callback="onTurnstileSuccess"
-                  ></div>
+                  <TurnstileWidget
+                    sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
+                    onVerify={(token) => {
+                      setNewsletterTurnstileToken(token);
+                      setTurnstileToken(token);
+                      if (typeof window.onTurnstileSuccess === 'function') {
+                        window.onTurnstileSuccess(token);
+                      }
+                    }}
+                    isDark={isDark}
+                    widgetRef={newsletterWidgetRef}
+                  />
                   <div className="relative flex items-center">
                     <input
                       type="email"

@@ -1,989 +1,3921 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  MapPin,
-  Phone,
-  ArrowRight,
-  CheckCircle2,
-  TrendingUp,
-  Star,
-  ShieldCheck,
-  Calculator,
-  Zap,
-  Clock,
-  Users,
-  BarChart3,
-  Sparkles,
-  Menu,
-  X,
   Sun,
   Moon,
-  Mail,
-  ExternalLink,
+  ArrowUpRight,
+  Star,
+  Play,
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+  Bot,
+  BarChart3,
   Globe,
-  Building2,
-  ChevronDown,
-  Check,
+  MessageSquarePlus,
+  Workflow,
+  ShieldCheck,
+  TrendingUp,
+  PhoneCall,
+  Mail,
+  Phone,
+  X,
+  Download,
+  Loader2,
   AlertCircle,
-  MessageSquare,
-  Award,
-  Layers
+  Terminal,
+  Copy,
+  Check
 } from 'lucide-react';
 
+const PROJECT_BUNDLE_FILES = {
+  'package.json': `{
+  "name": "searchandservice-pages",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "pages:dev": "npm run build && wrangler pages dev ./dist --d1=DB",
+    "db:migrate:local": "wrangler d1 execute searchandservice-db --local --file=./migrations/0001_init.sql",
+    "db:migrate:prod": "wrangler d1 execute searchandservice-db --remote --file=./migrations/0001_init.sql",
+    "pages:deploy": "npm run build && wrangler pages deploy ./dist --project-name=searchandservice",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "lucide-react": "^0.454.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "vitest": "^2.1.4",
+    "wrangler": "^3.86.0"
+  }
+}`,
+  'wrangler.toml': `name = "searchandservice"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-02-01"
+
+# Cloudflare D1 Free-Tier SQLite Database Binding
+# Run: npx wrangler d1 create searchandservice-db
+# Then replace database_id below with your generated UUID
+[[d1_databases]]
+binding = "DB"
+database_name = "searchandservice-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGIN = "https://searchandservice.pages.dev"
+NOTIFICATION_TO_EMAIL = "searchandservice@gmail.com"
+`,
+  '.env.example': [
+    '# Local Development Secrets for Cloudflare Pages Functions',
+    '# Copy this file to .dev.vars for local testing with npm run pages:dev',
+    '# NEVER commit .dev.vars or real secrets to GitHub!',
+    '# For production on https://searchandservice.pages.dev, add these in:',
+    '# Cloudflare Dashboard -> Workers & Pages -> searchandservice -> Settings -> Environment variables',
+    '',
+    'ENVIRONMENT=development',
+    'ALLOWED_ORIGIN=http://localhost:8788',
+    'NOTIFICATION_TO_EMAIL=searchandservice@gmail.com',
+    '',
+    '# Optional: Resend API Key (https://resend.com - free tier 3,000 emails/mo) for instant email alerts & newsletter welcome emails',
+    'RESEND_API_KEY=',
+    '',
+    '# Optional: Outbound Webhook URL (Slack, Discord, Zapier, Make, or n8n) for instant lead notifications',
+    'NOTIFICATION_WEBHOOK_URL=',
+    '',
+    '# Optional: Cloudflare Turnstile Secret Key (free bot protection)',
+    'TURNSTILE_SECRET_KEY='
+  ].join('\n'),
+  '.gitignore': `node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env
+.env.local
+.DS_Store
+*.log
+`,
+  'public/_headers': `/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+`,
+  'public/robots.txt': `User-agent: *
+Allow: /
+
+Sitemap: https://searchandservice.pages.dev/sitemap.xml
+`,
+  'public/sitemap.xml': `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://searchandservice.pages.dev/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`,
+  'migrations/0001_init.sql': `-- Cloudflare D1 Schema for SearchandService (https://searchandservice.pages.dev)
+CREATE TABLE IF NOT EXISTS audit_leads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_name TEXT NOT NULL,
+  website TEXT NOT NULL,
+  city TEXT NOT NULL,
+  bottleneck TEXT NOT NULL,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  work_email TEXT NOT NULL,
+  ip_hash TEXT,
+  user_agent TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_leads_email ON audit_leads(work_email);
+CREATE INDEX IF NOT EXISTS idx_audit_leads_created ON audit_leads(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_leads_ip_created ON audit_leads(ip_hash, created_at);
+
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  ip_hash TEXT,
+  subscribed_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
+CREATE INDEX IF NOT EXISTS idx_newsletter_ip_subscribed ON newsletter_subscribers(ip_hash, subscribed_at);
+`,
+  'functions/_utils.js': [
+    '/**',
+    ' * Shared validation, security headers, rate-limiting, and notification helpers',
+    ' * for Cloudflare Pages Functions (/functions/api/*)',
+    ' */',
+    '',
+    'export const SECURITY_HEADERS = {',
+    "  'X-Content-Type-Options': 'nosniff',",
+    "  'X-Frame-Options': 'DENY',",
+    "  'Referrer-Policy': 'strict-origin-when-cross-origin',",
+    "  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'",
+    '};',
+    '',
+    'export function resolveCorsOrigin(request, env) {',
+    "  const configured = env?.ALLOWED_ORIGIN || 'https://searchandservice.pages.dev';",
+    "  const reqOrigin = request.headers.get('Origin') || '';",
+    '  if (',
+    '    reqOrigin === configured ||',
+    "    reqOrigin.endsWith('.searchandservice.pages.dev') ||",
+    "    reqOrigin.startsWith('http://localhost:') ||",
+    "    reqOrigin.startsWith('http://127.0.0.1:')",
+    '  ) {',
+    '    return reqOrigin;',
+    '  }',
+    '  return configured;',
+    '}',
+    '',
+    "export function jsonResponse(body, status = 200, origin = 'https://searchandservice.pages.dev') {",
+    '  return new Response(JSON.stringify(body), {',
+    '    status,',
+    '    headers: {',
+    "      'Content-Type': 'application/json;charset=UTF-8',",
+    "      'Access-Control-Allow-Origin': origin,",
+    "      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',",
+    "      'Access-Control-Allow-Headers': 'Content-Type',",
+    '      ...SECURITY_HEADERS',
+    '    }',
+    '  });',
+    '}',
+    '',
+    'export function sanitizeString(value, maxLen = 250) {',
+    "  if (typeof value !== 'string') return '';",
+    "  return value.trim().replace(/[<>]/g, '').slice(0, maxLen);",
+    '}',
+    '',
+    'export function isValidEmail(email) {',
+    '  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && email.length <= 254;',
+    '}',
+    '',
+    'export function isValidUrl(url) {',
+    '  try {',
+    '    const parsed = new URL(url);',
+    "    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && Boolean(parsed.hostname);",
+    '  } catch {',
+    '    return false;',
+    '  }',
+    '}',
+    '',
+    'export async function hashIp(ip) {',
+    "  if (!ip) return 'unknown';",
+    "  const data = new TextEncoder().encode(ip + '-searchandservice-pages-salt');",
+    "  const digest = await crypto.subtle.digest('SHA-256', data);",
+    '  return Array.from(new Uint8Array(digest))',
+    '    .slice(0, 8)',
+    "    .map((b) => b.toString(16).padStart(2, '0'))",
+    "    .join('');",
+    '}',
+    '',
+    'export async function verifyTurnstileToken(token, ip, secretKey) {',
+    '  if (!secretKey) return true;',
+    '  if (!token) return false;',
+    '  try {',
+    "    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {",
+    "      method: 'POST',",
+    "      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },",
+    '      body: new URLSearchParams({',
+    '        secret: secretKey,',
+    '        response: token,',
+    "        remoteip: ip || ''",
+    '      })',
+    '    });',
+    '    const outcome = await res.json();',
+    '    return Boolean(outcome.success);',
+    '  } catch {',
+    '    return false;',
+    '  }',
+    '}',
+    '',
+    'export async function sendResendEmail(env, { subject, html, replyTo }) {',
+    '  if (!env?.RESEND_API_KEY) return false;',
+    "  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservice@gmail.com';",
+    "  const res = await fetch('https://api.resend.com/emails', {",
+    "    method: 'POST',",
+    '    headers: {',
+    "      Authorization: 'Bearer ' + env.RESEND_API_KEY,",
+    "      'Content-Type': 'application/json'",
+    '    },',
+    '    body: JSON.stringify({',
+    "      from: 'SearchandService Growth Engine <onboarding@resend.dev>',",
+    '      to: [toEmail],',
+    '      reply_to: replyTo || toEmail,',
+    '      subject,',
+    '      html',
+    '    })',
+    '  });',
+    '  return res.ok;',
+    '}'
+  ].join('\n'),
+  'functions/api/health.js': `import { jsonResponse, resolveCorsOrigin } from '../_utils.js';
+
+export async function onRequestOptions(context) {
+  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));
+}
+
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const origin = resolveCorsOrigin(request, env);
+  const hasD1 = Boolean(env?.DB);
+  const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);
+  const hasResend = Boolean(env?.RESEND_API_KEY);
+
+  return jsonResponse(
+    {
+      ok: true,
+      platform: 'cloudflare-pages-functions',
+      domain: 'https://searchandservice.pages.dev',
+      storageConfigured: hasD1 || hasWebhook || hasResend,
+      bindings: {
+        d1Database: hasD1,
+        webhook: hasWebhook,
+        resendEmail: hasResend
+      },
+      timestamp: new Date().toISOString()
+    },
+    200,
+    origin
+  );
+}
+`,
+  'functions/api/audit.js': [
+    'import {',
+    '  jsonResponse,',
+    '  resolveCorsOrigin,',
+    '  sanitizeString,',
+    '  isValidEmail,',
+    '  isValidUrl,',
+    '  hashIp,',
+    '  verifyTurnstileToken,',
+    '  sendResendEmail',
+    "} from '../_utils.js';",
+    '',
+    'export async function onRequestOptions(context) {',
+    '  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));',
+    '}',
+    '',
+    'export async function onRequestPost(context) {',
+    '  const { request, env, waitUntil } = context;',
+    '  const origin = resolveCorsOrigin(request, env);',
+    '',
+    '  try {',
+    '    const payload = await request.json();',
+    '',
+    '    // 1. Honeypot spam protection',
+    '    if (payload.company_fax_hp) {',
+    "      return jsonResponse({ ok: true, message: 'Audit request processed.' }, 200, origin);",
+    '    }',
+    '',
+    '    // 2. Sanitize & validate fields',
+    '    const businessName = sanitizeString(payload.businessName, 140);',
+    '    const website = sanitizeString(payload.website, 250);',
+    '    const city = sanitizeString(payload.city, 120);',
+    '    const bottleneck =',
+    "      sanitizeString(payload.bottleneck, 180) || 'Need More Calls & #1 Google Maps Ranking';",
+    '    const name = sanitizeString(payload.name, 120);',
+    '    const phone = sanitizeString(payload.phone, 40);',
+    '    const workEmail = sanitizeString(payload.workEmail, 254).toLowerCase();',
+    '',
+    '    if (!businessName || !website || !city || !name || !phone || !workEmail) {',
+    '      return jsonResponse(',
+    "        { ok: false, error: 'Please complete all required fields.' },",
+    '        400,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    '    if (!isValidEmail(workEmail)) {',
+    '      return jsonResponse(',
+    "        { ok: false, error: 'Please enter a valid work email address.' },",
+    '        400,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    '    if (!isValidUrl(website)) {',
+    '      return jsonResponse(',
+    "        { ok: false, error: 'Please enter a valid website URL starting with https:// or http://.' },",
+    '        400,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    "    const clientIp = request.headers.get('CF-Connecting-IP') || '';",
+    '',
+    '    // 3. Optional Cloudflare Turnstile verification if TURNSTILE_SECRET_KEY is set',
+    '    const turnstileOk = await verifyTurnstileToken(',
+    '      payload.turnstileToken,',
+    '      clientIp,',
+    '      env?.TURNSTILE_SECRET_KEY',
+    '    );',
+    '    if (!turnstileOk) {',
+    '      return jsonResponse(',
+    "        { ok: false, error: 'Security verification failed. Please refresh and try again.' },",
+    '        403,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    '    // 4. Verify at least one real backend persistence or notification binding is active',
+    '    const hasD1 = Boolean(env?.DB);',
+    '    const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);',
+    '    const hasResend = Boolean(env?.RESEND_API_KEY);',
+    '',
+    '    if (!hasD1 && !hasWebhook && !hasResend) {',
+    '      return jsonResponse(',
+    '        {',
+    '          ok: false,',
+    '          error:',
+    "            'Backend storage is not yet bound on this Pages deployment. Bind a D1 database (DB) or configure RESEND_API_KEY / NOTIFICATION_WEBHOOK_URL in Cloudflare Pages Settings.'",
+    '        },',
+    '        503,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    '    const ipHash = await hashIp(clientIp);',
+    "    const userAgent = sanitizeString(request.headers.get('User-Agent') || '', 250);",
+    '',
+    '    // 5. Rate-limit check & insert in Cloudflare D1 if bound',
+    '    if (hasD1) {',
+    '      const recentCount = await env.DB.prepare(',
+    "        \"SELECT COUNT(*) AS cnt FROM audit_leads WHERE ip_hash = ?1 AND created_at >= datetime('now', '-10 minutes')\"",
+    '      )',
+    '        .bind(ipHash)',
+    '        .first();',
+    '',
+    '      if (recentCount && Number(recentCount.cnt) >= 5) {',
+    '        return jsonResponse(',
+    "          { ok: false, error: 'Too many requests from your network. Please try again in a few minutes.' },",
+    '          429,',
+    '          origin',
+    '        );',
+    '      }',
+    '',
+    '      await env.DB.prepare(',
+    "        'INSERT INTO audit_leads (business_name, website, city, bottleneck, name, phone, work_email, ip_hash, user_agent) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)'",
+    '      )',
+    '        .bind(businessName, website, city, bottleneck, name, phone, workEmail, ipHash, userAgent)',
+    '        .run();',
+    '    }',
+    '',
+    '    // 6. Optional asynchronous webhook dispatch',
+    '    if (hasWebhook) {',
+    '      const webhookTask = fetch(env.NOTIFICATION_WEBHOOK_URL, {',
+    "        method: 'POST',",
+    "        headers: { 'Content-Type': 'application/json' },",
+    '        body: JSON.stringify({',
+    "          type: 'NEW_GROWTH_AUDIT_LEAD',",
+    "          source: 'https://searchandservice.pages.dev',",
+    '          businessName,',
+    '          website,',
+    '          city,',
+    '          bottleneck,',
+    '          name,',
+    '          phone,',
+    '          workEmail,',
+    '          submittedAt: new Date().toISOString()',
+    '        })',
+    '      }).catch(() => {});',
+    "      if (typeof waitUntil === 'function') waitUntil(webhookTask);",
+    '      else await webhookTask;',
+    '    }',
+    '',
+    '    // 7. Optional Resend transactional email alert',
+    '    if (hasResend) {',
+    '      const emailTask = sendResendEmail(env, {',
+    "        subject: '[New Growth Audit Lead] ' + businessName + ' (' + city + ')',",
+    '        replyTo: workEmail,',
+    '        html:',
+    "          '<h2>New Local Growth Audit Request</h2>' +",
+    "          '<p><strong>Business:</strong> ' + businessName + '</p>' +",
+    "          '<p><strong>Website:</strong> <a href=\"' + website + '\">' + website + '</a></p>' +",
+    "          '<p><strong>City / Territory:</strong> ' + city + '</p>' +",
+    "          '<p><strong>Primary Bottleneck:</strong> ' + bottleneck + '</p>' +",
+    "          '<hr />' +",
+    "          '<p><strong>Contact Name:</strong> ' + name + '</p>' +",
+    "          '<p><strong>Phone:</strong> ' + phone + '</p>' +",
+    "      html: '<p>New subscriber joined the SearchandService newsletter on <strong>searchandservice.pages.dev</strong>: <strong>' + email + '</strong></p>'",
+    '      }).catch(() => {});',
+    "      if (typeof waitUntil === 'function') waitUntil(emailTask);",
+    '      else await emailTask;',
+    '    }',
+    '',
+    '    return jsonResponse(',
+    '      {',
+    '        ok: true,',
+    "        message: 'Growth audit diagnostic request saved.',",
+    '        lead: { businessName, workEmail }',
+    '      },',
+    '      201,',
+    '      origin',
+    '    );',
+    '  } catch (err) {',
+    '    return jsonResponse(',
+    '      {',
+    '        ok: false,',
+    "        error: 'Unable to process your audit request right now. Please try again.'",
+    '      },',
+    '      500,',
+    '      origin',
+    '    );',
+    '  }',
+    '}'
+  ].join('\n'),
+  'functions/api/newsletter.js': [
+    'import {',
+    '  jsonResponse,',
+    '  resolveCorsOrigin,',
+    '  sanitizeString,',
+    '  isValidEmail,',
+    '  hashIp,',
+    '  sendResendEmail',
+    "} from '../_utils.js';",
+    '',
+    'export async function onRequestOptions(context) {',
+    '  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));',
+    '}',
+    '',
+    'export async function onRequestPost(context) {',
+    '  const { request, env, waitUntil } = context;',
+    '  const origin = resolveCorsOrigin(request, env);',
+    '',
+    '  try {',
+    '    const payload = await request.json();',
+    '',
+    '    // Honeypot check',
+    '    if (payload.company_fax_hp) {',
+    "      return jsonResponse({ ok: true, message: 'Subscribed.' }, 200, origin);",
+    '    }',
+    '',
+    '    const email = sanitizeString(payload.email, 254).toLowerCase();',
+    '    if (!email || !isValidEmail(email)) {',
+    '      return jsonResponse(',
+    "        { ok: false, error: 'Please provide a valid email address.' },",
+    '        400,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    '    const hasD1 = Boolean(env?.DB);',
+    '    const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);',
+    '    const hasResend = Boolean(env?.RESEND_API_KEY);',
+    '',
+    '    if (!hasD1 && !hasWebhook && !hasResend) {',
+    '      return jsonResponse(',
+    '        {',
+    '          ok: false,',
+    '          error:',
+    "            'Newsletter backend storage is not yet bound on this Pages deployment. Bind a D1 database (DB) or configure RESEND_API_KEY / NOTIFICATION_WEBHOOK_URL.'",
+    '        },',
+    '        503,',
+    '        origin',
+    '      );',
+    '    }',
+    '',
+    "    const clientIp = request.headers.get('CF-Connecting-IP') || '';",
+    '    const ipHash = await hashIp(clientIp);',
+    '',
+    '    if (hasD1) {',
+    '      const recentCount = await env.DB.prepare(',
+    "        \"SELECT COUNT(*) AS cnt FROM newsletter_subscribers WHERE ip_hash = ?1 AND subscribed_at >= datetime('now', '-10 minutes')\"",
+    '      )',
+    '        .bind(ipHash)',
+    '        .first();',
+    '',
+    '      if (recentCount && Number(recentCount.cnt) >= 5) {',
+    '        return jsonResponse(',
+    "          { ok: false, error: 'Too many subscription attempts. Please try again shortly.' },",
+    '          429,',
+    '          origin',
+    '        );',
+    '      }',
+    '',
+    '      await env.DB.prepare(',
+    "        \"INSERT INTO newsletter_subscribers (email, ip_hash) VALUES (?1, ?2) ON CONFLICT(email) DO UPDATE SET subscribed_at = datetime('now')\"",
+    '      )',
+    '        .bind(email, ipHash)',
+    '        .run();',
+    '    }',
+    '',
+    '    if (hasWebhook) {',
+    '      const webhookTask = fetch(env.NOTIFICATION_WEBHOOK_URL, {',
+    "        method: 'POST',",
+    "        headers: { 'Content-Type': 'application/json' },",
+    '        body: JSON.stringify({',
+    "          type: 'NEW_NEWSLETTER_SUBSCRIBER',",
+    "          source: 'https://searchandservice.pages.dev',",
+    '          email,',
+    '          subscribedAt: new Date().toISOString()',
+    '        })',
+    '      }).catch(() => {});',
+    "      if (typeof waitUntil === 'function') waitUntil(webhookTask);",
+    '      else await webhookTask;',
+    '    }',
+    '',
+    '    if (hasResend) {',
+    '      const emailTask = sendResendEmail(env, {',
+    "        subject: '[Newsletter Subscriber] ' + email,",
+    '        replyTo: email,',
+    "        html: '<p>New subscriber joined the SearchandService newsletter on <strong>searchandservice.pages.dev</strong>: <strong>' + email + '</strong></p>'",
+    '      }).catch(() => {});',
+    "      if (typeof waitUntil === 'function') waitUntil(emailTask);",
+    '      else await emailTask;',
+    '    }',
+    '',
+    '    return jsonResponse(',
+    '      {',
+    '        ok: true,',
+    "        message: 'Subscribed to SearchandService local growth briefings.'",
+    '      },',
+    '      201,',
+    '      origin',
+    '    );',
+    '  } catch (err) {',
+    '    return jsonResponse(',
+    '      {',
+    '        ok: false,',
+    "        error: 'Could not complete newsletter subscription. Please try again.'",
+    '      },',
+    '      500,',
+    '      origin',
+    '    );',
+    '  }',
+    '}'
+  ].join('\n'),
+  'index.html': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search & Service | Local Business Growth Systems Partner</title>
+    <meta name="description" content="We help local businesses get more customers, more calls, and more sales through high-converting websites, Google Maps #1 SEO, and 24/7 AI automation workflows." />
+    <link rel="canonical" href="https://searchandservice.pages.dev/" />
+    <meta property="og:title" content="Search & Service | Local Business Growth Systems Partner" />
+    <meta property="og:description" content="Google Maps dominance, high-converting web platforms, and automated speed-to-lead systems for local service businesses." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://searchandservice.pages.dev/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Search & Service | Local Business Growth Systems Partner" />
+    <meta name="twitter:description" content="We help local businesses get more customers, more calls, and more sales." />
+    <meta name="theme-color" content="#FF6B1A" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "SearchandService Agency",
+        "url": "https://searchandservice.pages.dev",
+        "email": "searchandservice@gmail.com",
+        "telephone": "+1-555-234-5678",
+        "description": "Local business growth systems partner specializing in Google Maps SEO, high-converting websites, and 24/7 lead automation."
+      }
+    </script>
+  </head>
+  <body class="bg-[#F7F6F2] text-[#0A0A0A] antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+`,
+  'src/main.jsx': `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+`,
+  'src/index.css': `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`,
+  'vite.config.js': `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: false
+  }
+});
+`,
+  'tailwind.config.js': `/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      screens: {
+        xs: '420px'
+      }
+    }
+  },
+  plugins: []
+};
+`,
+  'postcss.config.js': `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+};
+`,
+  '.github/workflows/ci.yml': `name: CI — Build & Verify Pages Functions
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Pages Functions API & validation tests
+        run: npm test
+
+      - name: Build production frontend bundle (./dist)
+        run: npm run build
+`,
+  'tests/pages-functions.test.js': `import { describe, it, expect } from 'vitest';
+import { onRequestGet as healthGet } from '../functions/api/health.js';
+import { onRequestPost as auditPost } from '../functions/api/audit.js';
+import { onRequestPost as newsletterPost } from '../functions/api/newsletter.js';
+
+function createMockDb() {
+  return {
+    prepare: () => ({
+      bind: () => ({
+        first: async () => ({ cnt: 0 }),
+        run: async () => ({ success: true })
+      })
+    })
+  };
+}
+
+describe('Cloudflare Pages Functions API (https://searchandservice.pages.dev)', () => {
+  it('returns 200 OK and binding status from GET /api/health', async () => {
+    const req = new Request('https://searchandservice.pages.dev/api/health', { method: 'GET' });
+    const res = await healthGet({ request: req, env: { DB: createMockDb() } });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.platform).toBe('cloudflare-pages-functions');
+    expect(body.storageConfigured).toBe(true);
+  });
+
+  it('rejects incomplete payloads on POST /api/audit with 400', async () => {
+    const req = new Request('https://searchandservice.pages.dev/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessName: 'Apex HVAC' })
+    });
+    const res = await auditPost({ request: req, env: { DB: createMockDb() } });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+  });
+
+  it('returns 503 if no storage/notification binding is configured (never fakes success)', async () => {
+    const req = new Request('https://searchandservice.pages.dev/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessName: 'Apex HVAC & Plumbing',
+        website: 'https://apexhvac.com',
+        city: 'Austin, TX',
+        bottleneck: 'Need More Calls & #1 Google Maps Ranking',
+        name: 'Marcus Vance',
+        phone: '(512) 555-0199',
+        workEmail: 'marcus@apexhvac.com'
+      })
+    });
+    const res = await auditPost({ request: req, env: {} });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+  });
+
+  it('persists valid POST /api/audit lead when D1 binding is present', async () => {
+    const req = new Request('https://searchandservice.pages.dev/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessName: 'Apex HVAC & Plumbing',
+        website: 'https://apexhvac.com',
+        city: 'Austin, TX',
+        bottleneck: 'Need More Calls & #1 Google Maps Ranking',
+        name: 'Marcus Vance',
+        phone: '(512) 555-0199',
+        workEmail: 'marcus@apexhvac.com'
+      })
+    });
+    const res = await auditPost({ request: req, env: { DB: createMockDb() } });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+  });
+
+  it('validates and stores newsletter subscribers on POST /api/newsletter', async () => {
+    const badReq = new Request('https://searchandservice.pages.dev/api/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'invalid-email' })
+    });
+    const badRes = await newsletterPost({ request: badReq, env: { DB: createMockDb() } });
+    expect(badRes.status).toBe(400);
+      const goodReq = new Request('https://searchandservice.pages.dev/api/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'owner@localbusiness.com' })
+    });
+    const goodRes = await newsletterPost({ request: goodReq, env: { DB: createMockDb() } });
+    expect(goodRes.status).toBe(201);
+  });
+});
+`,
+  'README.md': [
+    '# SearchandService Agency — Cloudflare Pages + Pages Functions + D1',
+    '',
+    'Production-ready full-stack repository for **SearchandService**, engineered for automatic deployment to **https://searchandservice.pages.dev** via GitHub push using **Cloudflare Pages**, **Pages Functions** (`/functions/api/*`), and **Cloudflare D1** (free-tier SQL database).',
+    '',
+    '---',
+    '',
+    '## Architecture Overview',
+    '',
+    '- **Frontend (`src/App.jsx`, Vite + React + Tailwind CSS)**: Preserves 100% of the SearchandService design, Day/Night themes, interactive 5-Pillar ROI & Growth calculator, portfolio filters, and modals.',
+    '- **Backend API (`functions/api/*`)**: Native Cloudflare Pages Functions that run on the exact same `searchandservice.pages.dev` origin:',
+    '  - `GET /api/health`: Health and binding status check.',
+    '  - `POST /api/audit`: Validates, rate-limits, spam-checks, and stores Free Local Growth Audit leads in Cloudflare D1 (`audit_leads` table), with optional Resend email alerts and webhook notifications.',
+    '  - `POST /api/newsletter`: Validates, rate-limits, and stores newsletter subscribers in Cloudflare D1 (`newsletter_subscribers` table).',
+    '- **Zero Fake Submissions**: If neither D1 (`DB`), `RESEND_API_KEY`, nor `NOTIFICATION_WEBHOOK_URL` is bound, the API returns `503 Service Unavailable` with a clear configuration message rather than faking success.',
+    '',
+    '---',
+    '',
+    '## 1. Local Setup & Testing',
+    '',
+    '```bash',
+    '# 1. Install dependencies',
+    'npm install',
+    '',
+    '# 2. Copy local environment variables template',
+    'cp .env.example .dev.vars',
+    '',
+    '# 3. Create & migrate local D1 SQLite database',
+    'npm run db:migrate:local',
+    '',
+    '# 4. Run unit & API validation tests (Vitest)',
+    'npm test',
+    '',
+    '# 5. Start full-stack local Cloudflare Pages + Functions server (http://localhost:8788)',
+    'npm run pages:dev',
+    '```',
+    '',
+    '---',
+    '',
+    '## 2. Create Your Free Cloudflare D1 Database',
+    '',
+    '1. Log in to Cloudflare via Wrangler:',
+    '   ```bash',
+    '   npx wrangler login',
+    '   ```',
+    '2. Create the D1 database:',
+    '   ```bash',
+    '   npx wrangler d1 create searchandservice-db',
+    '   ```',
+    '3. Copy the `database_id` UUID printed in your terminal and replace `REPLACE_WITH_YOUR_D1_DATABASE_ID` inside `wrangler.toml`.',
+    '4. Apply the SQL schema (`migrations/0001_init.sql`) to your remote production D1 database:',
+    '   ```bash',
+    '   npm run db:migrate:prod',
+    '   ```',
+    '',
+    '---',
+    '',
+    '## 3. Connect GitHub to Cloudflare Pages (https://searchandservice.pages.dev)',
+    '',
+    '1. Push this repository to your GitHub account (`main` branch).',
+    '2. Open the **Cloudflare Dashboard** -> **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**.',
+    '3. Select your GitHub repository.',
+    '4. Configure the build settings:',
+    '   - **Project name**: `searchandservice` *(this reserves https://searchandservice.pages.dev)*',
+    '   - **Production branch**: `main`',
+    '   - **Framework preset**: `Vite`',
+    '   - **Build command**: `npm run build`',
+    '   - **Build output directory**: `dist`',
+    '5. Click **Save and Deploy**.',
+    '',
+    '---',
+    '',
+    '## 4. Bind D1 & Optional Email/Webhook Secrets in Cloudflare Pages',
+    '',
+    'After your initial Pages project is created:',
+    '',
+    '1. Go to **Workers & Pages** -> **searchandservice** -> **Settings** -> **Bindings** (or **Functions** -> **D1 database bindings**):',
+    '   - Click **Add** -> **D1 database**',
+    '   - **Variable name**: `DB`',
+    '   - **D1 database**: `searchandservice-db`',
+    '   - Save for both **Production** and **Preview**.',
+    '2. *(Optional)* Under **Settings** -> **Environment variables**, add any of the following encrypted secrets if you want instant email or Slack/Discord/Zapier notifications:',
+    '   - `RESEND_API_KEY`: Your free Resend.com API key (3,000 free emails/month).',
+    '   - `NOTIFICATION_TO_EMAIL`: `searchandservice@gmail.com`',
+    '   - `NOTIFICATION_WEBHOOK_URL`: Slack, Discord, or Zapier incoming webhook URL.',
+    '   - `TURNSTILE_SECRET_KEY`: Optional Cloudflare Turnstile secret key.',
+    '3. Push any commit to `main` (or click **Retry deployment** in Cloudflare Pages) so the bindings take effect immediately on `https://searchandservice.pages.dev`.'
+  ].join('\n')
+};
+
+function createZipBlob(filesMap) {
+  const encoder = new TextEncoder();
+  const entries = Object.entries(filesMap).map(([name, content]) => ({
+    nameBytes: encoder.encode(name),
+    dataBytes: encoder.encode(content)
+  }));
+
+  const crcTable = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    crcTable[n] = c >>> 0;
+  }
+
+  const crc32 = (bytes) => {
+    let c = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) {
+      c = crcTable[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+    }
+    return (c ^ 0xffffffff) >>> 0;
+  };
+
+  let localTotalSize = 0;
+  let centralTotalSize = 0;
+
+  entries.forEach((e) => {
+    e.crc = crc32(e.dataBytes);
+    e.offset = localTotalSize;
+    localTotalSize += 30 + e.nameBytes.length + e.dataBytes.length;
+    centralTotalSize += 46 + e.nameBytes.length;
+  });
+
+  const totalSize = localTotalSize + centralTotalSize + 22;
+  const buffer = new ArrayBuffer(totalSize);
+  const view = new DataView(buffer);
+  const out = new Uint8Array(buffer);
+
+  let pos = 0;
+  entries.forEach((e) => {
+    view.setUint32(pos, 0x04034b50, true); // Local file header signature
+    view.setUint16(pos + 4, 20, true); // Version needed
+    view.setUint16(pos + 6, 0, true); // Flags
+    view.setUint16(pos + 8, 0, true); // Compression (0 = store)
+    view.setUint16(pos + 10, 0, true); // Mod time
+    view.setUint16(pos + 12, 0, true); // Mod date
+    view.setUint32(pos + 14, e.crc, true); // CRC-32
+    view.setUint32(pos + 18, e.dataBytes.length, true); // Compressed size
+    view.setUint32(pos + 22, e.dataBytes.length, true); // Uncompressed size
+    view.setUint16(pos + 26, e.nameBytes.length, true); // Filename length
+    view.setUint16(pos + 28, 0, true); // Extra field length
+    out.set(e.nameBytes, pos + 30);
+    out.set(e.dataBytes, pos + 30 + e.nameBytes.length);
+    pos += 30 + e.nameBytes.length + e.dataBytes.length;
+  });
+
+  const centralDirOffset = pos;
+  entries.forEach((e) => {
+    view.setUint32(pos, 0x02014b50, true); // Central directory signature
+    view.setUint16(pos + 4, 20, true); // Version made by
+    view.setUint16(pos + 6, 20, true); // Version needed
+    view.setUint16(pos + 8, 0, true); // Flags
+    view.setUint16(pos + 10, 0, true); // Compression
+    view.setUint16(pos + 12, 0, true); // Mod time
+    view.setUint16(pos + 14, 0, true); // Mod date
+    view.setUint32(pos + 16, e.crc, true); // CRC-32
+    view.setUint32(pos + 20, e.dataBytes.length, true); // Compressed size
+    view.setUint32(pos + 24, e.dataBytes.length, true); // Uncompressed size
+    view.setUint16(pos + 28, e.nameBytes.length, true); // Filename length
+    view.setUint16(pos + 30, 0, true); // Extra field length
+    view.setUint16(pos + 32, 0, true); // Comment length
+    view.setUint16(pos + 34, 0, true); // Disk number
+    view.setUint16(pos + 36, 0, true); // Internal attrs
+    view.setUint32(pos + 38, 0, true); // External attrs
+    view.setUint32(pos + 42, e.offset, true); // Relative offset
+    out.set(e.nameBytes, pos + 46);
+    pos += 46 + e.nameBytes.length;
+  });
+
+  // End of central directory record
+  view.setUint32(pos, 0x06054b50, true);
+  view.setUint16(pos + 4, 0, true);
+  view.setUint16(pos + 6, 0, true);
+  view.setUint16(pos + 8, entries.length, true);
+  view.setUint16(pos + 10, entries.length, true);
+  view.setUint32(pos + 12, centralTotalSize, true);
+  view.setUint32(pos + 16, centralDirOffset, true);
+  view.setUint16(pos + 20, 0, true);
+
+  return new Blob([buffer], { type: 'application/zip' });
+}
+
+const HERO_GOOGLE_REVIEWS = [
+  {
+    id: 1,
+    name: 'Marcus Vance',
+    role: 'Founder & CEO',
+    company: 'Vance HVAC & Mechanical',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '2 weeks ago',
+    review: '“Moved into the Local Map Pack top rankings within 60 days—our inbound service calls increased steadily.”',
+    metric: '+25% Inbound Calls'
+  },
+  {
+    id: 2,
+    name: 'Dr. Elena Rostova',
+    role: 'Clinical Director',
+    company: 'Apex Dental Studio',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '1 month ago',
+    review: '“Their review generation and follow-up system added steady 5-star reviews and improved our patient pipeline.”',
+    metric: '+20% Inquiries'
+  },
+  {
+    id: 3,
+    name: 'Tariq Mahmood',
+    role: 'Managing Partner',
+    company: 'PrimeLine Roofing & Exteriors',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '3 weeks ago',
+    review: '“Clean website architecture and structured lead tracking saves my team valuable administrative hours weekly.”',
+    metric: '4+ Hrs/Wk Saved'
+  },
+  {
+    id: 4,
+    name: 'Sophia Chen',
+    role: 'Owner & Founder',
+    company: 'Lumina MedSpa & Wellness',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '5 days ago',
+    review: '“SearchandService streamlined our booking workflow and enhanced our local visibility across local search.”',
+    metric: '+20% Consultations'
+  },
+  {
+    id: 5,
+    name: 'David Sterling',
+    role: 'Managing Director',
+    company: 'Sterling Legal Group',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '2 months ago',
+    review: '“Our local organic search presence and map visibility brought qualified consultation leads consistently.”',
+    metric: '50% More Efficient'
+  },
+  {
+    id: 6,
+    name: 'Rachel Kincaid',
+    role: 'Owner',
+    company: 'Kincaid Auto Collision & Repair',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    timeAgo: '3 weeks ago',
+    review: '“The automated review collection flow is practical and consistent. We gathered dozens of genuine reviews.”',
+    metric: '38 Reviews'
+  }
+];
+
+const SERVICES_DATA = [
+  {
+    id: 'websites',
+    number: '01',
+    title: 'High-Converting Websites.',
+    shortDesc:
+      'Engineered with local conversion psychology, sub-second speed, and clear trust triggers that turn local searchers into booked customers.',
+    icon: Globe,
+    tag: 'WEB ARCHITECTURE',
+    deliverables: [
+      'Custom React / Next.js Performance Optimization',
+      'Local Trust Triggers & Clear Quote / Booking Funnels',
+      'Mobile-Optimized Click-to-Call & Quick Form Bars',
+      'Schema.org LocalBusiness Technical SEO Foundation'
+    ],
+    impact: 'Aligned with U.S. Home-Service & Professional CVR Benchmarks',
+    timeline: '14–21 Days Deployment'
+  },
+  {
+    id: 'local-seo',
+    number: '02',
+    title: 'Google Maps & Local SEO.',
+    shortDesc:
+      'Target top Local Map Pack positions where over 85% of local service queries convert. We optimize your Google Business Profile and geo-grid authority.',
+    icon: MapPin,
+    tag: 'GOOGLE MAPS #1',
+    deliverables: [
+      'Complete Google Business Profile (GBP) Optimization',
+      'Geo-Grid Ranking Visibility Strategy & Tracking',
+      'Local Citation Cleanup & Neighborhood Landing Pages',
+      'Weekly GBP Updates, Posts & FAQ Management'
+    ],
+    impact: 'Top Map Pack Ranking in 60–90 Days',
+    timeline: 'Ongoing Compounding Dominance'
+  },
+  {
+    id: 'ai-automation',
+    number: '03',
+    title: 'AI Automation Systems.',
+    shortDesc:
+      'Capture leads outside business hours. Industry surveys report up to 27% missed-call rates for small businesses; our automated text-back workflows respond in under 60 seconds.',
+    icon: Bot,
+    tag: '24/7 AUTOMATION',
+    deliverables: [
+      'Missed-Call Instant Text-Back & Quick SMS Flow',
+      'Website Conversational Booking Assistant',
+      'Automated Lead Qualification & Calendar Routing',
+      'Database Reactivation Campaign Setup'
+    ],
+    impact: 'Zero Missed Leads • Sub-Minute Response',
+    timeline: '7–10 Days Integration'
+  },
+  {
+    id: 'workflows',
+    number: '04',
+    title: 'Business Workflows.',
+    shortDesc:
+      'Reduce manual data entry and follow-up delays by connecting your forms, communications, and CRM into one structured operational pipeline.',
+    icon: Workflow,
+    tag: 'OPERATIONAL OPS',
+    deliverables: [
+      'End-to-End CRM Pipeline & Stage Tracking',
+      'Automated Appointment Reminders to Lower No-Shows',
+      'Team Notification & Job Status Triggers',
+      'Automated Estimate Follow-Up Sequences'
+    ],
+    impact: '3–5 Operational Hours Saved Weekly',
+    timeline: '10 Days Setup'
+  },
+  {
+    id: 'reviews',
+    number: '05',
+    title: 'Review Generation Systems.',
+    shortDesc:
+      'Turn completed jobs or patient visits into authentic 5-star Google reviews automatically while routing feedback appropriately to protect brand reputation.',
+    icon: MessageSquarePlus,
+    tag: 'REPUTATION ENGINE',
+    deliverables: [
+      'Automated Post-Service SMS Review Requests',
+      'Smart Sentiment Filtering & Direct Feedback Routing',
+      'Professional Templates for Review Responses',
+      'Verified Review Widgets Synced to Your Website'
+    ],
+    impact: '+12 to +25 New 5-Star Reviews / Quarter',
+    timeline: '48 Hours Activation'
+  },
+  {
+    id: 'dashboards',
+    number: '06',
+    title: 'Custom KPI Dashboards.',
+    shortDesc:
+      'Clear visibility with no guesswork. Track phone call records, form submissions, and marketing performance in real time through an executive command center.',
+    icon: BarChart3,
+    tag: 'GROWTH TELEMETRY',
+    deliverables: [
+      'Unified Executive Command Center',
+      'Dynamic Call Tracking & Outcome Tags',
+      'Monthly Geo-Grid Google Maps Ranking Reports',
+      'Channel Cost-Per-Lead Attribution'
+    ],
+    impact: '100% Attribution Clarity',
+    timeline: 'Included with Every Growth System'
+  }
+];
+
+const GROWTH_PILLARS = [
+  {
+    step: '01',
+    title: 'GET DISCOVERED',
+    subtitle: 'Own Local Search & Google Map Visibility',
+    description:
+      'With over 85% of local commercial searches displaying the Google Local Map Pack, positioning your business prominently captures high-intent local traffic across your service area.',
+    kpis: ['Top Map Pack Targeting', 'Geo-Grid Territory Optimization', 'Optimized Local Citation Footprint']
+  },
+  {
+    step: '02',
+    title: 'GENERATE MORE LEADS',
+    subtitle: 'Optimized Digital Storefront & Conversion Funnels',
+    description:
+      'High-performance websites load in under 1 second and align with local home-service conversion benchmarks for optimized local service landing pages.',
+    kpis: ['Sub-Second Page Speed', '1-Tap Click-to-Call & Quote Funnels', 'Mobile-First Local UX']
+  },
+  {
+    step: '03',
+    title: 'CONVERT MORE CUSTOMERS',
+    subtitle: 'Fast Response Times & Review Authority',
+    description:
+      'Prompt lead engagement dramatically improves close rates. Automated missed-call text-backs engage prospects instantly, backed by verified review authority.',
+    kpis: ['Sub-Minute Response Automation', 'Verified Review Trust Signals', 'Streamlined Consultation Booking']
+  },
+  {
+    step: '04',
+    title: 'SAVE OPERATIONAL TIME',
+    subtitle: 'Automated Workflows & Reminder Systems',
+    description:
+      'Eliminate administrative friction. Automated appointment reminders and CRM pipelines save your team administrative hours every week.',
+    kpis: ['Hours Saved Per Week', 'Reduced Appointment No-Shows', 'Automated Follow-Up Sequences']
+  },
+  {
+    step: '05',
+    title: 'INCREASE REVENUE',
+    subtitle: 'Accurate Telemetry & Past-Client Reactivation',
+    description:
+      'Monitor performance in your command dashboard while reactivation campaigns encourage repeat business from your established customer database.',
+    kpis: ['Real-Time Call & Lead Attribution', 'Repeat Business Reactivation', 'Data-Backed Growth Forecasting']
+  }
+];
+
+const PORTFOLIO_ITEMS = [
+  {
+    id: 1,
+    title: 'Apex Climate & Mechanical',
+    category: 'WEB + GOOGLE MAPS OPTIMIZATION',
+    filterKey: 'maps',
+    metricBadge: '+25% Inbound Calls in 90 Days',
+    location: 'Austin, TX',
+    summary: 'Website redesign, streamlined service booking funnel, and local SEO optimization across targeted service areas.',
+    stats: [
+      { label: 'Map Pack Rank', value: 'Positions 8–12 → 3–5' },
+      { label: 'Monthly Calls', value: '32 → 40' },
+      { label: 'Added Revenue', value: '+$4,000/mo' }
+    ]
+  },
+  {
+    id: 2,
+    title: 'Lumina Aesthetics & MedSpa',
+    category: 'AUTOMATION + REVIEWS',
+    filterKey: 'ai',
+    metricBadge: '+20% Consultation Inquiries in 90 Days',
+    location: 'Scottsdale, AZ',
+    summary: 'Automated consultation follow-ups and post-visit review requests to improve booking efficiency and local reputation.',
+    stats: [
+      { label: '5-Star Reviews', value: '18 → 38' },
+      { label: 'Monthly Inquiries', value: '25 → 30' },
+      { label: 'No-Show Rate', value: '15% → 11%' }
+    ]
+  },
+  {
+    id: 3,
+    title: 'Vanguard Injury & Legal Group',
+    category: 'HIGH-CONVERTING WEB',
+    filterKey: 'web',
+    metricBadge: '50% More Efficient Intake Experience',
+    location: 'Chicago, IL',
+    summary: 'Professional website redesign, faster page loading, and streamlined legal intake forms to reduce friction for prospective clients.',
+    stats: [
+      { label: 'Conversion Rate', value: '5.2% → 6.4%' },
+      { label: 'Page Load Speed', value: '1.8 sec → 1.2 sec' },
+      { label: 'Intake Tracking', value: 'Lead sources organized' }
+    ]
+  },
+  {
+    id: 4,
+    title: 'SearchAndService Command OS',
+    category: 'CUSTOM KPI DASHBOARD',
+    filterKey: 'dashboard',
+    metricBadge: 'Unified Reporting Across 3 Locations',
+    location: 'Multi-Location Franchise',
+    summary: 'Centralized reporting dashboard combining location performance, incoming calls, and lead-source attribution.',
+    stats: [
+      { label: 'Locations Synced', value: '3 Branches' },
+      { label: 'Admin Time Saved', value: '4 hrs/week' },
+      { label: 'Lead Attribution', value: '90% of tracked leads' }
+    ]
+  }
+];
+
+const INDUSTRY_PRESETS = [
+  {
+    name: 'HVAC / Plumbing / Home Services',
+    defaultLeads: 30,
+    avgTicket: 750,
+    addedLeads: 10,
+    totalLeads: 40,
+    conversionRate: 0.25,
+    monthlyRevenue: 1875
+  },
+  {
+    name: 'Dental / Orthodontics / Medical',
+    defaultLeads: 30,
+    avgTicket: 750,
+    addedLeads: 10,
+    totalLeads: 40,
+    conversionRate: 0.20,
+    monthlyRevenue: 1500
+  },
+  {
+    name: 'MedSpa / Aesthetics / Wellness',
+    defaultLeads: 30,
+    avgTicket: 450,
+    addedLeads: 12,
+    totalLeads: 42,
+    conversionRate: 0.20,
+    monthlyRevenue: 1080
+  },
+  {
+    name: 'Roofing / Solar / Remodeling',
+    defaultLeads: 20,
+    avgTicket: 8000,
+    addedLeads: 5,
+    totalLeads: 25,
+    conversionRate: 0.10,
+    monthlyRevenue: 4000
+  },
+  {
+    name: 'Legal / Accounting / Professional Services',
+    defaultLeads: 20,
+    avgTicket: 1500,
+    addedLeads: 5,
+    totalLeads: 25,
+    conversionRate: 0.15,
+    monthlyRevenue: 1125
+  },
+  {
+    name: 'Auto Detailing / Repair / Collision',
+    defaultLeads: 30,
+    avgTicket: 650,
+    addedLeads: 10,
+    totalLeads: 40,
+    conversionRate: 0.25,
+    monthlyRevenue: 1625
+  }
+];
+
 export default function App() {
-  const [theme, setTheme] = useState('dark');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [auditModalOpen, setAuditModalOpen] = useState(false);
-  const [caseStudyFilter, setCaseStudyFilter] = useState('all');
+  const [isDark, setIsDark] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [isLoaderExiting, setIsLoaderExiting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // ROI Calculator States
-  const [monthlyLeads, setMonthlyLeads] = useState(35);
-  const [avgTicket, setAvgTicket] = useState(1400);
-  const [closeRate, setCloseRate] = useState(25);
+  const [activeReviewIdx, setActiveReviewIdx] = useState(0);
+  const [isReviewPaused, setIsReviewPaused] = useState(false);
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
 
-  // Audit Form States
+  const [selectedService, setSelectedService] = useState(null);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+
+  const [activePillar, setActivePillar] = useState(0);
+  const [portfolioFilter, setPortfolioFilter] = useState('all');
+
+  const [selectedIndustryIdx, setSelectedIndustryIdx] = useState(0);
+  const [currentMonthlyLeads, setCurrentMonthlyLeads] = useState(30);
+  const [customTicket, setCustomTicket] = useState(750);
+  const [customAddedLeads, setCustomAddedLeads] = useState(10);
+  const [customConversionRate, setCustomConversionRate] = useState(0.25);
+
   const [auditForm, setAuditForm] = useState({
     businessName: '',
     website: '',
     city: '',
     bottleneck: 'Need More Calls & #1 Google Maps Ranking',
+    customMessage: '',
     name: '',
     phone: '',
     workEmail: '',
-    company_fax_hp: '' // Honeypot
+    company_fax_hp: ''
   });
-  const [auditStatus, setAuditStatus] = useState({ loading: false, success: false, error: null });
+  const [auditSubmitting, setAuditSubmitting] = useState(false);
+  const [auditError, setAuditError] = useState('');
+  const [auditSubmitted, setAuditSubmitted] = useState(false);
 
-  // Newsletter Form State
   const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState({ loading: false, success: false, error: null });
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterError, setNewsletterError] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const [deployKitOpen, setDeployKitOpen] = useState(false);
+  const [activeBundleFile, setActiveBundleFile] = useState('README.md');
+  const [copiedFile, setCopiedFile] = useState(false);
+  const [copiedAppJsx, setCopiedAppJsx] = useState(false);
+
+  useEffect(() => {
+    if (menuOpen || videoModalOpen || selectedService || deployKitOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen, videoModalOpen, selectedService, deployKitOpen]);
+
+  useEffect(() => {
+    let start = null;
+    const duration = 1400;
+
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const rawProgress = Math.min(elapsed / duration, 1);
+      const easedProgress = Math.round((1 - Math.pow(1 - rawProgress, 3)) * 100);
+      setLoadProgress(easedProgress);
+
+      if (rawProgress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setTimeout(() => {
+          setIsLoaderExiting(true);
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 650);
+        }, 180);
+      }
+    };
+
+    const rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  useEffect(() => {
+    if (isReviewPaused) return;
+    const interval = setInterval(() => {
+      setActiveReviewIdx((prev) => (prev + 1) % HERO_GOOGLE_REVIEWS.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isReviewPaused]);
+
+  const handleIndustryChange = (idx) => {
+    setSelectedIndustryIdx(idx);
+    const preset = INDUSTRY_PRESETS[idx];
+    setCurrentMonthlyLeads(preset.defaultLeads);
+    setCustomTicket(preset.avgTicket);
+    setCustomAddedLeads(preset.addedLeads);
+    setCustomConversionRate(preset.conversionRate);
   };
 
-  const isDark = theme === 'dark';
+  const totalLeads = currentMonthlyLeads + customAddedLeads;
+  const monthlyRevenueLift = customAddedLeads * customConversionRate * customTicket;
+  const annualRevenueLift = monthlyRevenueLift * 12;
 
-  // Calculator calculations
-  const calcResults = useMemo(() => {
-    const currentCustomers = Math.round((monthlyLeads * closeRate) / 100);
-    const currentRevenue = currentCustomers * avgTicket;
+  const scrollToSection = (id) => {
+    setMenuOpen(false);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-    // SearchandService projected 2.8x - 3.4x lift via Maps #1 + Instant AI Speed-to-lead
-    const projectedLeads = Math.round(monthlyLeads * 2.8);
-    // Speed to lead increases close rate by ~35%
-    const projectedCloseRate = Math.min(Math.round(closeRate * 1.35), 65);
-    const projectedCustomers = Math.round((projectedLeads * projectedCloseRate) / 100);
-    const projectedRevenue = projectedCustomers * avgTicket;
-    const additionalMonthly = projectedRevenue - currentRevenue;
-    const additionalYearly = additionalMonthly * 12;
-
-    return {
-      currentCustomers,
-      currentRevenue,
-      projectedLeads,
-      projectedCloseRate,
-      projectedCustomers,
-      projectedRevenue,
-      additionalMonthly,
-      additionalYearly
-    };
-  }, [monthlyLeads, avgTicket, closeRate]);
-
-  // Handle Audit Submission
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
-    setAuditStatus({ loading: true, success: false, error: null });
+    setAuditError('');
 
+    if (!auditForm.businessName.trim() || !auditForm.website.trim() || !auditForm.city.trim() || !auditForm.name.trim() || !auditForm.phone.trim() || !auditForm.workEmail.trim()) {
+      setAuditError('Please fill in all required fields.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(auditForm.workEmail.trim())) {
+      setAuditError('Please enter a valid work email address.');
+      return;
+    }
+
+    let normalizedWebsite = auditForm.website.trim();
+    if (!/^https?:\/\//i.test(normalizedWebsite)) {
+      normalizedWebsite = 'https://' + normalizedWebsite;
+    }
+
+    setAuditSubmitting(true);
     try {
-      let web = auditForm.website.trim();
-      if (!web.startsWith('http://') && !web.startsWith('https://')) {
-        web = 'https://' + web;
-      }
-
-      const res = await fetch('/api/audit', {
+      const response = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...auditForm,
-          website: web
+          website: normalizedWebsite
         })
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Unable to submit audit request.');
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data && data.ok) {
+          setAuditSubmitted(true);
+        } else {
+          setAuditError((data && data.error) || 'Unable to submit audit request.');
+        }
+      } else if (contentType.includes('application/json')) {
+        const errData = await response.json();
+        setAuditError(errData.error || 'Submission failed. Please verify your inputs and try again.');
+      } else {
+        setAuditError(
+          'The /api/audit Pages Function endpoint is not reachable in this static preview. Deploy to Cloudflare Pages (https://searchandservice.pages.dev) or run "npm run pages:dev" locally.'
+        );
       }
-
-      setAuditStatus({ loading: false, success: true, error: null });
-      setAuditForm({
-        businessName: '',
-        website: '',
-        city: '',
-        bottleneck: 'Need More Calls & #1 Google Maps Ranking',
-        name: '',
-        phone: '',
-        workEmail: '',
-        company_fax_hp: ''
-      });
     } catch (err) {
-      setAuditStatus({ loading: false, success: false, error: err.message });
+      setAuditError(
+        'Could not connect to /api/audit. When deployed on Cloudflare Pages (https://searchandservice.pages.dev) with D1 bound, submissions are stored live.'
+      );
+    } finally {
+      setAuditSubmitting(false);
     }
   };
 
-  // Handle Newsletter Submission
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
-    setNewsletterStatus({ loading: true, success: false, error: null });
+    setNewsletterError('');
+    const cleanEmail = newsletterEmail.trim();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setNewsletterError('Please enter a valid email address.');
+      return;
+    }
 
+    setNewsletterSubmitting(true);
     try {
-      const res = await fetch('/api/newsletter', {
+      const response = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newsletterEmail })
+        body: JSON.stringify({ email: cleanEmail })
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to subscribe.');
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data && data.ok) {
+          setNewsletterSubmitted(true);
+        } else {
+          setNewsletterError((data && data.error) || 'Subscription failed.');
+        }
+      } else if (contentType.includes('application/json')) {
+        const errData = await response.json();
+        setNewsletterError(errData.error || 'Subscription failed. Please try again.');
+      } else {
+        setNewsletterError(
+          'The /api/newsletter Pages Function is not active in static preview. Deploy to https://searchandservice.pages.dev or run "npm run pages:dev".'
+        );
       }
-
-      setNewsletterStatus({ loading: false, success: true, error: null });
-      setNewsletterEmail('');
     } catch (err) {
-      setNewsletterStatus({ loading: false, success: false, error: err.message });
+      setNewsletterError(
+        'Could not connect to /api/newsletter. Deploy to Cloudflare Pages with D1 bound to enable live subscriptions.'
+      );
+    } finally {
+      setNewsletterSubmitting(false);
     }
   };
 
-  const caseStudies = [
-    {
-      category: 'trades',
-      niche: 'HVAC & Plumbing Co.',
-      market: 'Austin, TX',
-      metric: '+318% Inbound Calls',
-      detail: 'Ranked #1 for 19 high-ticket local search terms in 74 days.',
-      revLift: '+$142,000/mo',
-      tags: ['Google 3-Pack', 'Speed-To-Lead AI', 'Reviews']
-    },
-    {
-      category: 'contractors',
-      niche: 'Commercial & Residential Roofing',
-      market: 'Denver, CO',
-      metric: '#1 Map Pack Across 14 Zip Codes',
-      detail: 'Eliminated wasted $8k/mo pay-per-click spend with organic local search dominance.',
-      revLift: '+$210,000/mo',
-      tags: ['Geo-Grid Dominance', 'Reputation Engine']
-    },
-    {
-      category: 'home-services',
-      niche: 'Elite Landscaping & Hardscapes',
-      market: 'Charlotte, NC',
-      metric: '68 Exclusive Booked Estimates/mo',
-      detail: 'Converted sub-second mobile website with automated 60-second SMS quote engine.',
-      revLift: '+$94,000/mo',
-      tags: ['Sub-Second Web', 'Missed Call Text Back']
-    },
-    {
-      category: 'medical',
-      niche: 'Private Dental & Orthodontic Practice',
-      market: 'Scottsdale, AZ',
-      metric: '4.9 Stars Across 420+ Reviews',
-      detail: 'Autonomous post-appointment review system boosting high-value implant consultations.',
-      revLift: '+$115,000/mo',
-      tags: ['5-Star Review Funnel', 'High-Converting Web']
-    }
-  ];
+  const [isPackagingZip, setIsPackagingZip] = useState(false);
 
-  const filteredCaseStudies = caseStudyFilter === 'all'
-    ? caseStudies
-    : caseStudies.filter(item => item.category === caseStudyFilter);
-
-  const pillars = [
-    {
-      icon: <MapPin className="w-8 h-8 text-[#FF6B1A]" />,
-      num: '01',
-      title: 'Google Maps #1 Local 3-Pack Dominance',
-      description:
-        'When local homeowners need emergency help or high-ticket services, 78% call one of the top 3 Google Maps listings. We optimize local entity signals, citations, geo-tagged authority, and proximity algorithms to put your business at #1.'
-    },
-    {
-      icon: <Zap className="w-8 h-8 text-[#FF6B1A]" />,
-      num: '02',
-      title: 'Sub-Second High-Conversion Web Architecture',
-      description:
-        'No bloated page-builders or slow templates. We engineer hyper-fast, mobile-first web platforms designed with psychological conversion triggers, instant tap-to-call, and frictionless quote requests that turn visitors into booked jobs.'
-    },
-    {
-      icon: <Clock className="w-8 h-8 text-[#FF6B1A]" />,
-      num: '03',
-      title: 'Under-60-Second AI Speed-to-Lead Engine',
-      description:
-        '73% of customers hire whichever contractor answers first. Our automated workflows instantly capture missed calls, trigger customized two-way SMS dialogues within 45 seconds, and automatically sync booked jobs to your calendar.'
-    },
-    {
-      icon: <Star className="w-8 h-8 text-[#FF6B1A]" />,
-      num: '04',
-      title: 'Automated 5-Star Reputation Flywheel',
-      description:
-        'Turn happy homeowners into your greatest sales reps. Automated post-service SMS review requests filter feedback, amplify 5-star Google ratings, and suppress negative disputes before they reach the public profile.'
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8 text-[#FF6B1A]" />,
-      num: '05',
-      title: 'Exclusive Inbound Market Moat (No Shared Leads)',
-      description:
-        'Stop paying Angi or Thumbtack for tire-kickers shared with 6 competitors. We build dedicated client-owned assets so every phone call, form fill, and referral is 100% exclusive to your business.'
+  const handleCopyFullAppJsx = () => {
+    const scripts = document.querySelectorAll('script');
+    let foundSource = '';
+    scripts.forEach((s) => {
+      if (s.textContent && s.textContent.includes('HERO_GOOGLE_REVIEWS')) {
+        foundSource = s.textContent;
+      }
+    });
+    const instructions =
+      '// IMPORTANT: Copy the full code directly from the right-hand code editor panel ("App.jsx") and paste it into src/App.jsx in Antigravity.';
+    const textarea = document.createElement('textarea');
+    textarea.value = foundSource || instructions;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      setCopiedAppJsx(true);
+      setTimeout(() => setCopiedAppJsx(false), 2500);
+    } finally {
+      document.body.removeChild(textarea);
     }
-  ];
+  };
+
+  const handleDownloadZip = async () => {
+    setIsPackagingZip(true);
+    try {
+      const filesToZip = { ...PROJECT_BUNDLE_FILES };
+      // Attempt to automatically include the current App.jsx source file in src/App.jsx
+      try {
+        const selfRes = await fetch(import.meta.url);
+        if (selfRes.ok) {
+          const selfCode = await selfRes.text();
+          if (selfCode && selfCode.includes('export default function App')) {
+            filesToZip['src/App.jsx'] = selfCode;
+          }
+        }
+      } catch {
+        // Fallback note if runtime bundler transforms import.meta.url
+      }
+
+      const zipBlob = createZipBlob(filesToZip);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'searchandservice-cloudflare-pages-repo.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsPackagingZip(false);
+    }
+  };
+
+  const handleCopyFileContent = () => {
+    const content = PROJECT_BUNDLE_FILES[activeBundleFile] || '';
+    const textarea = document.createElement('textarea');
+    textarea.value = content;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      setCopiedFile(true);
+      setTimeout(() => setCopiedFile(false), 1800);
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const filteredPortfolio =
+    portfolioFilter === 'all'
+      ? PORTFOLIO_ITEMS
+      : PORTFOLIO_ITEMS.filter((item) => item.filterKey === portfolioFilter);
+
+  const currentReview = HERO_GOOGLE_REVIEWS[activeReviewIdx];
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 ${isDark ? 'bg-[#0A0A0B] text-zinc-100' : 'bg-[#F8F7F4] text-zinc-900'}`}>
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-[#FF6B1A] to-[#FF8844] text-white py-2 px-4 text-center text-xs md:text-sm font-semibold tracking-wide flex items-center justify-center gap-2">
-        <Sparkles className="w-4 h-4 animate-pulse" />
-        <span>Accepting 2 exclusive territory partners per metro market for Q2/Q3 growth sprints.</span>
-        <button
-          onClick={() => setAuditModalOpen(true)}
-          className="underline hover:text-black transition-colors font-bold ml-1 cursor-pointer"
-        >
-          Check Territory Availability &rarr;
-        </button>
-      </div>
+    <div
+      className={`min-h-screen transition-colors duration-500 selection:bg-[#FF6B1A] selection:text-white ${isDark ? 'bg-[#050505] text-white' : 'bg-[#F7F6F2] text-[#0A0A0A]'
+        }`}
+      style={{ fontFamily: "'Plus Jakarta Sans', 'Poppins', 'Inter', sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap');
 
-      {/* Main Navigation */}
-      <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors duration-300 ${isDark ? 'bg-[#0A0A0B]/85 border-zinc-800' : 'bg-white/85 border-zinc-200'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B1A] to-[#E05307] flex items-center justify-center shadow-lg shadow-[#FF6B1A]/20">
-              <TrendingUp className="w-6 h-6 text-white stroke-[2.5]" />
+        .gleamy-outline-letter {
+          -webkit-text-stroke: 1.5px ${isDark ? 'rgba(255, 255, 255, 0.13)' : 'rgba(10, 10, 10, 0.12)'};
+          color: transparent;
+          user-select: none;
+          pointer-events: none;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 800;
+          line-height: 0.85;
+        }
+
+        .gleamy-outline-bottom {
+          -webkit-text-stroke: 1.2px ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(10, 10, 10, 0.08)'};
+          color: transparent;
+          user-select: none;
+          pointer-events: none;
+          letter-spacing: 0.06em;
+          font-weight: 800;
+        }
+
+        .gleamy-parallelogram {
+          display: inline-block;
+          width: 28px;
+          height: 11px;
+          background-color: #FF6B1A;
+          transform: skewX(-24deg) rotate(-12deg);
+          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .group:hover .gleamy-parallelogram {
+          width: 44px;
+          transform: skewX(-24deg) rotate(-6deg) translateX(4px);
+          background-color: #FF5500;
+        }
+
+        .vertical-rail-text {
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
+          letter-spacing: 0.22em;
+        }
+
+        @keyframes marqueeContinuousLeft {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes marqueeContinuousRight {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(0%); }
+        }
+        .animate-marquee-continuous-left {
+          display: flex;
+          flex-shrink: 0;
+          animation: marqueeContinuousLeft 24s linear infinite;
+        }
+        .animate-marquee-continuous-right {
+          display: flex;
+          flex-shrink: 0;
+          animation: marqueeContinuousRight 24s linear infinite;
+        }
+
+        @keyframes testimonialsMarquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-testimonials-track {
+          display: flex !important;
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
+          width: max-content;
+          animation: testimonialsMarquee 38s linear infinite;
+        }
+        .animate-testimonials-track.paused {
+          animation-play-state: paused;
+        }
+
+        @keyframes floatCard0 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-16px); }
+        }
+        @keyframes floatCard1 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(18px); }
+        }
+        @keyframes floatCard2 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-22px); }
+        }
+        @keyframes floatCard3 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(14px); }
+        }
+        @keyframes floatCard4 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-18px); }
+        }
+        @keyframes floatCard5 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+
+        .card-bob-0 { animation: floatCard0 4.1s ease-in-out infinite; }
+        .card-bob-1 { animation: floatCard1 3.6s ease-in-out infinite; }
+        .card-bob-2 { animation: floatCard2 4.8s ease-in-out infinite; }
+        .card-bob-3 { animation: floatCard3 3.9s ease-in-out infinite; }
+        .card-bob-4 { animation: floatCard4 4.4s ease-in-out infinite; }
+        .card-bob-5 { animation: floatCard5 3.5s ease-in-out infinite; }
+
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spinSlow 18s linear infinite;
+        }
+
+        @keyframes loaderPulse {
+          0%, 100% { transform: scale(1); opacity: 0.08; }
+          50% { transform: scale(1.03); opacity: 0.14; }
+        }
+        .animate-loader-watermark {
+          animation: loaderPulse 3s ease-in-out infinite;
+        }
+      `}</style>
+
+      { }
+      {isLoading && (
+        <div
+          className={`fixed inset-0 z-[100] bg-[#F7F6F2] text-[#0A0A0A] flex flex-col justify-between p-6 sm:p-10 overflow-hidden select-none transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isLoaderExiting ? '-translate-y-full opacity-95' : 'translate-y-0 opacity-100'
+            }`}
+        >
+          <div className="pointer-events-none absolute inset-0 flex justify-between max-w-[1400px] mx-auto px-6 sm:px-12 opacity-[0.05]">
+            <div className="w-[1px] h-full bg-[#0A0A0A]" />
+            <div className="w-[1px] h-full bg-[#0A0A0A] hidden sm:block" />
+            <div className="w-[1px] h-full bg-[#0A0A0A] hidden lg:block" />
+            <div className="w-[1px] h-full bg-[#0A0A0A]" />
+          </div>
+
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-[420px] h-72 sm:h-[420px] rounded-full blur-[130px] opacity-20"
+            style={{ background: '#FF6B1A' }}
+          />
+
+          <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-neutral-500">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#FF6B1A] animate-pulse" />
+              <span>SEARCH &amp; SERVICE</span>
             </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight">
-                Search<span className="text-[#FF6B1A]">&</span>Service
+            <span className="hidden sm:inline">LOCAL BUSINESS GROWTH ARCHITECTURE</span>
+            <span className="font-bold text-[#0A0A0A]">{String(loadProgress).padStart(3, '0')}%</span>
+          </div>
+
+          <div className="relative z-10 my-auto flex flex-col items-center justify-center">
+            <div className="relative flex items-center justify-center w-64 h-64 sm:w-80 sm:h-80">
+              <span
+                className="animate-loader-watermark absolute inset-0 flex items-center justify-center text-[240px] sm:text-[310px] font-extrabold leading-none pointer-events-none"
+                style={{
+                  WebkitTextStroke: '1.75px rgba(10, 10, 10, 0.12)',
+                  color: 'transparent'
+                }}
+              >
+                s
               </span>
-              <span className="block text-[10px] uppercase font-bold tracking-widest text-zinc-400">
-                Local Growth Systems
-              </span>
+
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[#0A0A0A] flex items-center">
+                  <span className="relative">
+                    search
+                    <span className="absolute left-0.5 -bottom-1 w-3.5 sm:w-5 h-[3px] bg-[#FF6B1A] rounded-full" />
+                  </span>
+                  <span className="mx-1 text-[#FF6B1A]">&amp;</span>
+                  <span>service</span>
+                  <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#FF6B1A] ml-1.5 self-end mb-1.5 sm:mb-2.5" />
+                </div>
+
+                <p className="mt-4 text-[10px] sm:text-[11px] font-semibold tracking-[0.32em] uppercase text-neutral-500 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-[#FF6B1A]" />
+                  <span>Local Business Growth Systems</span>
+                </p>
+
+                <div className="mt-6 w-48 sm:w-60 h-[2px] bg-black/10 rounded-full overflow-hidden relative">
+                  <div
+                    className="h-full bg-[#FF6B1A] transition-all duration-75 ease-out rounded-full"
+                    style={{ width: `${loadProgress}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#system" className="hover:text-[#FF6B1A] transition-colors">5-Pillar System</a>
-            <a href="#calculator" className="hover:text-[#FF6B1A] transition-colors">ROI Calculator</a>
-            <a href="#case-studies" className="hover:text-[#FF6B1A] transition-colors">Case Studies</a>
-            <a href="#guarantee" className="hover:text-[#FF6B1A] transition-colors">The Guarantee</a>
-            <a href="#faq" className="hover:text-[#FF6B1A] transition-colors">FAQ</a>
-          </nav>
-
-          {/* Actions & Theme Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl border transition-colors ${isDark ? 'border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300' : 'border-zinc-200 bg-zinc-100 hover:bg-zinc-200 text-zinc-700'}`}
-              aria-label="Toggle Day/Night Theme"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-            </button>
-
-            <button
-              onClick={() => setAuditModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-2 bg-[#FF6B1A] hover:bg-[#E05307] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FF6B1A]/25 hover:shadow-lg hover:shadow-[#FF6B1A]/35 hover:-translate-y-0.5 cursor-pointer"
-            >
-              <span>Get Free Growth Audit</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-zinc-400 hover:text-white"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          <div className="relative z-10 max-w-[1400px] w-full mx-auto flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
+            <span>MAPS • WEB • AUTOMATIONS • WORKFLOWS</span>
+            <span className="text-[#FF6B1A] font-semibold">
+              {loadProgress < 100 ? 'LOADING SYSTEM...' : 'READY'}
+            </span>
           </div>
         </div>
+      )}
 
-        {/* Mobile Dropdown */}
-        {mobileMenuOpen && (
-          <div className={`md:hidden border-b px-4 py-6 flex flex-col gap-4 text-base font-semibold ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200'}`}>
-            <a href="#system" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#FF6B1A]">5-Pillar System</a>
-            <a href="#calculator" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#FF6B1A]">ROI Calculator</a>
-            <a href="#case-studies" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#FF6B1A]">Case Studies</a>
-            <a href="#guarantee" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#FF6B1A]">The Guarantee</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#FF6B1A]">FAQ</a>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setAuditModalOpen(true);
-              }}
-              className="w-full text-center bg-[#FF6B1A] text-white py-3 rounded-xl font-bold mt-2"
-            >
-              Request Free Territory Growth Audit
-            </button>
-          </div>
-        )}
-      </header>
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-24 md:pt-24 md:pb-32">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF6B1A]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs sm:text-sm font-semibold mb-8 backdrop-blur-sm transition-colors border-[#FF6B1A]/30 bg-[#FF6B1A]/10 text-[#FF6B1A]">
-            <Award className="w-4 h-4" />
-            <span>Built Exclusively for Local Service & Trade Businesses</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-5xl mx-auto leading-[1.1] mb-6">
-            Stop Relying on Shared Leads.{' '}
-            <span className="bg-gradient-to-r from-[#FF6B1A] via-[#FF8844] to-[#FFA066] bg-clip-text text-transparent">
-              Own #1 on Google Maps
-            </span>{' '}
-            in Your Service Area.
-          </h1>
-
-          <p className={`text-lg sm:text-xl max-w-3xl mx-auto mb-10 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-            We build predictable customer generation engines for contractors, trade pros, and local service providers. Combining <strong>#1 Google 3-Pack rankings</strong>, <strong>lightning-fast websites</strong>, and <strong>24/7 AI speed-to-lead automation</strong>.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-16">
-            <button
-              onClick={() => setAuditModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold text-base px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#FF6B1A]/30 hover:scale-[1.02] cursor-pointer"
-            >
-              <span>Get Free 48-Hr Growth Audit</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+      {/* Header */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b ${isDark
+            ? 'bg-[#050505]/85 border-white/[0.06]'
+            : 'bg-[#F7F6F2]/85 border-black/[0.06]'
+          }`}
+      >
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-10 h-16 sm:h-20 flex items-center justify-between">
+          {/* Left contact icons */}
+          <div className="flex items-center gap-1.5 sm:space-x-3 flex-shrink-0">
             <a
-              href="#calculator"
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 border font-semibold text-base px-7 py-4 rounded-xl transition-colors ${isDark ? 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-200' : 'border-zinc-300 bg-white hover:bg-zinc-100 text-zinc-800'}`}
+              href="mailto:searchandservice@gmail.com"
+              aria-label="Email searchandservice@gmail.com"
+              title="searchandservice@gmail.com"
+              className={`group flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                  ? 'bg-white/[0.06] border-white/15 text-white hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
+                  : 'bg-black/[0.05] border-black/15 text-[#0A0A0A] hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
+                }`}
             >
-              <Calculator className="w-4 h-4 text-[#FF6B1A]" />
-              <span>Calculate Revenue Lift</span>
+              <Mail className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:scale-110" />
+            </a>
+
+            {/* Dot separator hidden on mobile to let phone slide left; preserved on sm+ screens */}
+            <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-[#FF6B1A]" />
+
+            <a
+              href="tel:+15552345678"
+              aria-label="Call +1 (555) 234-5678"
+              title="+1 (555) 234-5678"
+              className={`group flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                  ? 'bg-white/[0.06] border-white/15 text-white hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
+                  : 'bg-black/[0.05] border-black/15 text-[#0A0A0A] hover:bg-[#FF6B1A] hover:border-[#FF6B1A] hover:text-white'
+                }`}
+            >
+              <Phone className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:scale-110" />
             </a>
           </div>
 
-          {/* Social Proof Badges */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FF6B1A]">318%</div>
-              <div className="text-xs text-zinc-400 font-medium mt-1">Average Call Increase</div>
+          {/* Logo with breathing room */}
+          <a
+            href="#hero"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('hero');
+            }}
+            className="group flex items-center text-[15px] xs:text-base sm:text-2xl md:text-3xl font-bold tracking-tight focus:outline-none px-2 sm:px-0"
+          >
+            <span className="relative">
+              search
+              <span className="absolute left-0.5 bottom-0.5 w-1.5 sm:w-2.5 h-[2px] sm:h-[3px] bg-[#FF6B1A] rounded-full" />
+            </span>
+            <span className="text-[#FF6B1A] mx-0.5 font-extrabold group-hover:rotate-12 transition-transform">
+              &amp;
+            </span>
+            <span>service</span>
+          </a>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-2 sm:space-x-5 flex-shrink-0">
+            <button
+              onClick={() => setIsDark(!isDark)}
+              aria-label="Toggle Theme"
+              className={`relative flex items-center justify-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full text-xs font-medium border transition-all ${isDark
+                  ? 'bg-white/[0.05] border-white/15 text-neutral-200 hover:border-[#FF6B1A]'
+                  : 'bg-black/[0.05] border-black/15 text-neutral-800 hover:border-[#FF6B1A]'
+                }`}
+            >
+              {isDark ? (
+                <>
+                  <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FF6B1A]" />
+                  <span className="hidden md:inline tracking-wider uppercase text-[10px]">Day</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FF6B1A]" />
+                  <span className="hidden md:inline tracking-wider uppercase text-[10px]">Night</span>
+                </>
+              )}
+            </button>
+
+            {/* Vertical separator hidden on mobile to let day/night slide right; preserved on sm+ screens */}
+            <span className={`hidden sm:inline-block h-4 w-[1px] ${isDark ? 'bg-white/15' : 'bg-black/15'}`} />
+
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open Menu"
+              className="group flex items-center space-x-2 sm:space-x-2.5 focus:outline-none py-1 pl-1"
+            >
+              <span className="text-[11px] font-semibold tracking-[0.22em] uppercase hidden sm:inline group-hover:text-[#FF6B1A] transition-colors">
+                MENU
+              </span>
+              <div className="flex flex-col items-end justify-center space-y-1 sm:space-y-1.5 w-4 sm:w-6">
+                <span
+                  className={`block h-[2px] w-4 sm:w-6 transition-all duration-300 group-hover:bg-[#FF6B1A] ${isDark ? 'bg-white' : 'bg-black'
+                    }`}
+                />
+                <span
+                  className={`block h-[2px] w-2.5 sm:w-4 transition-all duration-300 group-hover:w-4 sm:group-hover:w-6 group-hover:bg-[#FF6B1A] ${isDark ? 'bg-white' : 'bg-black'
+                    }`}
+                />
+                <span
+                  className={`block h-[2px] w-3 sm:w-5 transition-all duration-300 group-hover:w-4 sm:group-hover:w-6 group-hover:bg-[#FF6B1A] ${isDark ? 'bg-white' : 'bg-black'
+                    }`}
+                />
+              </div>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Fullscreen Overlay Menu */}
+      {menuOpen && (
+        <div
+          className={`fixed inset-0 z-[90] flex flex-col justify-between p-6 sm:p-10 lg:p-12 transition-all duration-300 overflow-y-auto lg:overflow-hidden ${isDark ? 'bg-[#050505] text-white' : 'bg-[#F7F6F2] text-[#0A0A0A]'
+            }`}
+        >
+          <div className="flex items-center justify-between max-w-[1400px] w-full mx-auto flex-shrink-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
+              search<span className="text-[#FF6B1A]">&amp;</span>service
             </div>
-            <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FF6B1A]">&lt;45s</div>
-              <div className="text-xs text-zinc-400 font-medium mt-1">AI Lead Response Time</div>
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center space-x-2 text-xs tracking-[0.25em] uppercase hover:text-[#FF6B1A] transition-colors py-1"
+            >
+              <span>CLOSE</span>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center my-auto py-4 sm:py-6 lg:py-2">
+            <nav className="lg:col-span-7 flex flex-col space-y-3 sm:space-y-4 lg:space-y-2.5 xl:space-y-3">
+              {[
+                { num: '01', label: 'HOME & VALUE PROPOSITION', id: 'hero' },
+                { num: '02', label: 'ABOUT US', id: 'about' },
+                { num: '03', label: 'GROWTH SYSTEMS & SERVICES', id: 'services' },
+                { num: '04', label: '5-PILLAR ROI & GROWTH ENGINE', id: 'systems' },
+                { num: '05', label: 'PROVEN CASE STUDIES', id: 'portfolio' },
+                { num: '06', label: 'CLIENT TESTIMONIALS', id: 'results' },
+                { num: '07', label: 'FREE LOCAL GROWTH AUDIT', id: 'audit' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="group flex items-baseline space-x-3 sm:space-x-4 text-left focus:outline-none py-0.5"
+                >
+                  <span className="text-[11px] sm:text-xs font-mono text-[#FF6B1A] tracking-widest flex-shrink-0">
+                    /{item.num}
+                  </span>
+                  <span className="text-lg sm:text-2xl md:text-3xl lg:text-[26px] xl:text-[32px] font-extrabold tracking-tight leading-tight group-hover:translate-x-3 group-hover:text-[#FF6B1A] transition-all">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </nav>
+
+            <div
+              className={`lg:col-span-5 rounded-2xl p-5 sm:p-6 lg:p-6 xl:p-7 border flex flex-col justify-center self-center shadow-2xl ${isDark ? 'bg-[#0C0C0C] border-white/10' : 'bg-white border-black/10'
+                }`}
+            >
+              <div>
+                <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF6B1A]">
+                  <Sparkles className="w-3.5 h-3.5" /> Local Growth Systems Partner
+                </span>
+                <h3 className="mt-2 text-base sm:text-xl lg:text-lg xl:text-xl font-bold leading-snug">
+                  We don’t just build websites. We engineer complete local revenue engines.
+                </h3>
+              </div>
+
+              <div className="hidden lg:block my-4">
+                <div
+                  onMouseEnter={() => setIsReviewPaused(true)}
+                  onMouseLeave={() => setIsReviewPaused(false)}
+                  className={`w-full rounded-xl px-4 py-3 border transition-all duration-500 backdrop-blur-xl shadow-lg ${isDark
+                      ? 'bg-[#050505]/90 border-white/15 shadow-black/60'
+                      : 'bg-[#F7F6F2]/95 border-black/15 shadow-black/5'
+                    }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <img
+                      src={currentReview.avatar}
+                      alt={currentReview.name}
+                      className="w-9 h-9 rounded-full object-cover border border-[#FF6B1A] flex-shrink-0 mt-0.5"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold truncate">
+                          {currentReview.name}{' '}
+                          <span
+                            className={`font-normal text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                              }`}
+                          >
+                            • {currentReview.role},{' '}
+                            <span className="text-[#FF6B1A] font-medium">{currentReview.company}</span>
+                          </span>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center space-x-1 mt-0.5">
+                        <div className="flex items-center space-x-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3 h-3 text-[#FBBC05] fill-[#FBBC05]" />
+                          ))}
+                        </div>
+                        <span
+                          className={`text-[10px] pl-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+                            }`}
+                        >
+                          {currentReview.timeAgo}
+                        </span>
+                      </div>
+
+                      <p
+                        className={`mt-1 text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-neutral-200' : 'text-neutral-800'
+                          }`}
+                      >
+                        {currentReview.review}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-current/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] sm:text-[11px] uppercase tracking-widest opacity-60">Direct Growth Line</div>
+                  <a
+                    href="mailto:searchandservice@gmail.com"
+                    className="block text-xs sm:text-sm font-semibold mt-0.5 hover:text-[#FF6B1A] transition-colors"
+                  >
+                    searchandservice@gmail.com
+                  </a>
+                </div>
+                <button
+                  onClick={() => scrollToSection('audit')}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-[#FF6B1A] text-white text-[11px] font-bold uppercase tracking-widest rounded-lg hover:bg-[#e55a0d] transition-colors text-center"
+                >
+                  Claim Free Audit →
+                </button>
+              </div>
             </div>
-            <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FF6B1A]">100%</div>
-              <div className="text-xs text-zinc-400 font-medium mt-1">Exclusive Inbound Calls</div>
+          </div>
+        </div>
+      )}
+
+      { }
+      <aside className="fixed left-5 lg:left-8 top-28 bottom-12 z-30 hidden xl:flex flex-col items-center justify-between pointer-events-auto">
+        <button
+          onClick={() => scrollToSection('about')}
+          className="relative w-20 h-20 flex items-center justify-center group focus:outline-none"
+        >
+          <svg viewBox="0 0 100 100" className="w-full h-full animate-spin-slow">
+            <defs>
+              <path id="leftCirclePath" d="M 50, 50 m -36, 0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" />
+            </defs>
+            <text fill={isDark ? '#FFFFFF' : '#0A0A0A'} fontSize="8.5" fontWeight="700" letterSpacing="2.6px">
+              <textPath href="#leftCirclePath">SEARCH &amp; SERVICE • GROWTH •</textPath>
+            </text>
+          </svg>
+          <div
+            className={`absolute w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 ${isDark ? 'bg-white text-[#050505]' : 'bg-[#0A0A0A] text-white'
+              }`}
+          >
+            <span className="font-extrabold text-lg -rotate-12 relative">
+              s
+              <span className="absolute -bottom-0.5 right-0 w-1.5 h-1.5 rounded-full bg-[#FF6B1A]" />
+            </span>
+          </div>
+        </button>
+
+        <div className="flex flex-col items-center space-y-10 my-auto">
+          <button
+            onClick={() => scrollToSection('services')}
+            className={`vertical-rail-text text-[10px] font-semibold tracking-[0.25em] uppercase transition-colors hover:text-[#FF6B1A] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+              }`}
+          >
+            AUTOMATIONS
+          </button>
+          <button
+            onClick={() => scrollToSection('services')}
+            className={`vertical-rail-text text-[10px] font-semibold tracking-[0.25em] uppercase transition-colors hover:text-[#FF6B1A] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+              }`}
+          >
+            WEB DEV
+          </button>
+          <button
+            onClick={() => scrollToSection('services')}
+            className={`vertical-rail-text text-[10px] font-semibold tracking-[0.25em] uppercase transition-colors hover:text-[#FF6B1A] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+              }`}
+          >
+            GOOGLE MAPS RANKING
+          </button>
+        </div>
+        <div className="w-[1px] h-10 bg-[#FF6B1A]/40" />
+      </aside>
+
+      { }
+      <div className="fixed right-3 sm:right-8 bottom-3 sm:bottom-7 z-40">
+        <button
+          onClick={() => setVideoModalOpen(true)}
+          aria-label="Watch Video"
+          className="relative w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center group focus:outline-none"
+        >
+          <svg viewBox="0 0 100 100" className="w-full h-full animate-spin-slow">
+            <defs>
+              <path id="videoCirclePath" d="M 50, 50 m -36, 0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" />
+            </defs>
+            <text fill={isDark ? '#FFFFFF' : '#0A0A0A'} fontSize="8.5" fontWeight="700" letterSpacing="2.5px">
+              <textPath href="#videoCirclePath">WATCH • OUR • VIDEO • SYSTEM •</textPath>
+            </text>
+          </svg>
+          <div
+            className={`absolute w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shadow-xl transition-transform duration-300 group-hover:scale-110 ${isDark ? 'bg-white' : 'bg-[#0A0A0A]'
+              }`}
+          >
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF6B1A] fill-[#FF6B1A] ml-0.5" />
+          </div>
+        </button>
+      </div>
+
+      { }
+      <section
+        id="hero"
+        className="relative min-h-[96svh] sm:min-h-[100svh] pt-24 sm:pt-32 pb-28 sm:pb-36 lg:pb-32 flex flex-col justify-center overflow-hidden"
+      >
+        <div className="gleamy-outline-letter absolute right-2 sm:right-auto sm:left-20 xl:left-36 top-[42%] sm:top-[50%] -translate-y-1/2 text-[175px] sm:text-[340px] lg:text-[450px] z-0 opacity-75 sm:opacity-100">
+          s
+        </div>
+
+        <div
+          className="pointer-events-none absolute top-1/3 left-1/4 w-52 sm:w-96 h-52 sm:h-96 rounded-full blur-[120px] sm:blur-[140px] opacity-15"
+          style={{ background: '#FF6B1A' }}
+        />
+
+        <div className="relative z-20 max-w-[1400px] mx-auto w-full px-5 sm:px-12 xl:pl-28 xl:pr-16 mt-4 sm:mt-12 lg:mt-16 pb-20 sm:pb-24 lg:pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 sm:gap-8 lg:gap-6 items-center">
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-center pt-4 sm:pt-8">
+              <h1 className="tracking-tight">
+                <span className="block text-[32px] sm:text-5xl md:text-6xl xl:text-[68px] font-extrabold leading-[1.1] sm:leading-[1.08]">
+                  We Help Local Businesses
+                </span>
+                <span
+                  className={`block mt-2.5 sm:mt-3.5 text-[20px] sm:text-2xl md:text-3xl xl:text-[42px] font-semibold leading-[1.2] sm:leading-[1.16] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                    }`}
+                >
+                  Get More Customers, More Calls, and More Sales<span className="text-[#FF6B1A]">.</span>
+                </span>
+              </h1>
+
+              <div className="mt-8 sm:mt-10 flex flex-row flex-wrap items-center gap-3 sm:gap-4">
+                <button
+                  onClick={() => scrollToSection('audit')}
+                  className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-none bg-[#FF6B1A] hover:bg-[#ff5500] border border-[#FF6B1A] text-white font-bold text-[10px] sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.18em] transition-all shadow-md shadow-[#FF6B1A]/20 flex items-center justify-center gap-1.5 sm:gap-2 group"
+                >
+                  <span>Get Free Growth Audit</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </button>
+
+                <button
+                  onClick={() => scrollToSection('services')}
+                  className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-none border border-[#FF6B1A] bg-transparent hover:bg-[#FF6B1A] hover:text-white font-bold text-[10px] sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.18em] transition-all hover:shadow-md hover:shadow-[#FF6B1A]/20 flex items-center justify-center gap-1.5 sm:gap-2 group ${isDark ? 'text-white' : 'text-[#0A0A0A]'
+                    }`}
+                >
+                  <span>Explore Systems</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#FF6B1A] group-hover:text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </button>
+              </div>
             </div>
-            <div className={`p-4 rounded-2xl border text-center ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FF6B1A]">90-Day</div>
-              <div className="text-xs text-zinc-400 font-medium mt-1">ROI Performance Guarantee</div>
+
+            <div className="lg:col-span-5 xl:col-span-4 flex justify-start md:justify-end lg:justify-start pt-4 sm:pt-6 lg:pt-0 lg:translate-y-36 xl:translate-y-44 lg:-translate-x-8 xl:-translate-x-14">
+              <div
+                onMouseEnter={() => setIsReviewPaused(true)}
+                onMouseLeave={() => setIsReviewPaused(false)}
+                className={`w-full max-w-full sm:max-w-[370px] rounded-xl px-3.5 sm:px-4 py-3 border transition-all duration-500 backdrop-blur-xl shadow-xl ${isDark
+                    ? 'bg-[#0C0C0C]/90 border-white/15 shadow-black/70'
+                    : 'bg-white/95 border-black/15 shadow-black/10'
+                  }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <img
+                    src={currentReview.avatar}
+                    alt={currentReview.name}
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-[#FF6B1A] flex-shrink-0 mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] sm:text-xs font-bold truncate">
+                        {currentReview.name}{' '}
+                        <span
+                          className={`font-normal text-[10px] sm:text-[11px] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                            }`}
+                        >
+                          • {currentReview.role},{' '}
+                          <span className="text-[#FF6B1A] font-medium">{currentReview.company}</span>
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-1 mt-0.5">
+                      <div className="flex items-center space-x-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#FBBC05] fill-[#FBBC05]" />
+                        ))}
+                      </div>
+                      <span
+                        className={`text-[9px] sm:text-[10px] pl-1 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+                          }`}
+                      >
+                        {currentReview.timeAgo}
+                      </span>
+                    </div>
+
+                    <p
+                      className={`mt-1 sm:mt-1.5 text-[11px] sm:text-xs leading-snug line-clamp-2 ${isDark ? 'text-neutral-200' : 'text-neutral-800'
+                        }`}
+                    >
+                      {currentReview.review}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Diagonal Marquees */}
+        <div
+          className="pointer-events-none hidden lg:flex items-center fixed-ribbon absolute z-10 bg-white text-[#050505] py-2.5 xl:py-3 shadow-2xl border-y border-black/10 overflow-hidden"
+          style={{
+            width: '140vw',
+            right: '-38vw',
+            top: '32%',
+            transform: 'rotate(50deg)'
+          }}
+        >
+          <div className="flex w-full overflow-hidden">
+            <div className="animate-marquee-continuous-right flex items-center space-x-6 lg:space-x-8 pr-6 lg:pr-8 text-[11px] lg:text-xs xl:text-sm font-medium tracking-[0.22em] uppercase">
+              {['GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS', 'REVIEW GENERATION', 'CUSTOM DASHBOARDS', 'GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-2 h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="animate-marquee-continuous-right flex items-center space-x-6 lg:space-x-8 pr-6 lg:pr-8 text-[11px] lg:text-xs xl:text-sm font-medium tracking-[0.22em] uppercase" aria-hidden="true">
+              {['GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS', 'REVIEW GENERATION', 'CUSTOM DASHBOARDS', 'GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-2 h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="pointer-events-none flex lg:hidden items-center absolute z-10 bg-white text-[#050505] py-2 sm:py-2.5 shadow-xl border-y border-black/15 bottom-[6.5%] sm:bottom-[9%] overflow-hidden"
+          style={{
+            width: '140vw',
+            left: '-18vw',
+            transform: 'rotate(7deg)',
+            transformOrigin: '76% center'
+          }}
+        >
+          <div className="flex w-full overflow-hidden">
+            <div className="animate-marquee-continuous-right flex items-center space-x-5 sm:space-x-8 pr-5 sm:pr-8 text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase">
+              {['GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS', 'REVIEW GENERATION', 'CUSTOM DASHBOARDS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="animate-marquee-continuous-right flex items-center space-x-5 sm:space-x-8 pr-5 sm:pr-8 text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase" aria-hidden="true">
+              {['GOOGLE MAPS', 'WORKFLOWS', 'AUTOMATIONS', 'REVIEW GENERATION', 'CUSTOM DASHBOARDS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="pointer-events-none absolute z-10 bg-[#171717] text-white py-2 sm:py-3.5 shadow-2xl border-y border-white/10 bottom-[4.5%] sm:bottom-[7.5%] lg:bottom-[8%] overflow-hidden"
+          style={{
+            width: '135vw',
+            left: '-12vw',
+            transform: 'rotate(-5deg)',
+            transformOrigin: '76% center'
+          }}
+        >
+          <div className="flex w-full overflow-hidden">
+            <div className="animate-marquee-continuous-left flex items-center space-x-5 sm:space-x-10 pr-5 sm:pr-10 text-[10px] sm:text-sm font-medium tracking-[0.2em] sm:tracking-[0.22em] uppercase">
+              {['AUTOMATIONS', 'WEB DEVELOPMENT', 'GOOGLE MAPS RANKING', 'BUSINESS WORKFLOWS', 'REVIEW FUNNELS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="animate-marquee-continuous-left flex items-center space-x-5 sm:space-x-10 pr-5 sm:pr-10 text-[10px] sm:text-sm font-medium tracking-[0.2em] sm:tracking-[0.22em] uppercase" aria-hidden="true">
+              {['AUTOMATIONS', 'WEB DEVELOPMENT', 'GOOGLE MAPS RANKING', 'BUSINESS WORKFLOWS', 'REVIEW FUNNELS'].map((text, idx) => (
+                <React.Fragment key={idx}>
+                  <span>{text}</span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#FF6B1A]" />
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5-Pillar System Section */}
-      <section id="system" className={`py-24 border-t transition-colors ${isDark ? 'border-zinc-800 bg-zinc-950/60' : 'border-zinc-200 bg-zinc-50'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#FF6B1A]">Proprietary Framework</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mt-2 mb-4">
-              The 5-Pillar Local Market Dominance Engine
-            </h2>
-            <p className={`text-base sm:text-lg ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              Most agencies sell isolated services like "just SEO" or "just a new logo". We install an integrated growth infrastructure that captures, converts, and compounds local market share.
-            </p>
+      { }
+      <section
+        aria-label="Credibility"
+        className={`relative z-20 border-t border-b py-8 sm:py-12 lg:py-14 ${isDark ? 'bg-[#080808] border-white/[0.08]' : 'bg-[#EFECE6] border-black/[0.08]'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-6 gap-x-4 sm:gap-8">
+            <div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                <span className="text-[#FF6B1A]">4+</span> Years
+              </div>
+              <div className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-semibold">Industry Experience</div>
+              <div className="text-[10px] sm:text-xs mt-0.5 text-neutral-500">Proven local playbooks</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                250<span className="text-[#FF6B1A]">+</span>
+              </div>
+              <div className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-semibold">Small Businesses Helped</div>
+              <div className="text-[10px] sm:text-xs mt-0.5 text-neutral-500">Across 18+ niches</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                3.3M<span className="text-[#FF6B1A]">+</span>
+              </div>
+              <div className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-semibold">U.S. Service Establishments</div>
+              <div className="text-[10px] sm:text-xs mt-0.5 text-neutral-500">U.S. Census Bureau SUSB baseline</div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                4.9 <span className="text-[#FF6B1A]">★</span>
+              </div>
+              <div className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-semibold">Client Testimonials</div>
+              <div className="text-[10px] sm:text-xs mt-0.5 text-neutral-500">98.4% retention</div>
+            </div>
+            <div className="col-span-2 sm:col-span-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-current/10">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                100<span className="text-[#FF6B1A]">%</span>
+              </div>
+              <div className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-semibold">Done-For-You Systems</div>
+              <div className="text-[10px] sm:text-xs mt-0.5 text-neutral-500">Custom KPI Dashboards</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      { }
+      <section id="about" className="relative py-16 sm:py-24 lg:py-36 overflow-hidden">
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16">
+          <div className="flex items-center justify-between lg:block">
+            <div>
+              <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                ABOUT US
+              </h2>
+              <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+            </div>
+            <div className="gleamy-outline-letter text-[85px] sm:text-[130px] leading-none select-none lg:hidden">
+              g
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {pillars.map((pillar, idx) => (
-              <div
-                key={idx}
-                className={`relative rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between ${isDark ? 'bg-zinc-900/40 border-zinc-800 hover:border-[#FF6B1A]/40 hover:bg-zinc-900/70' : 'bg-white border-zinc-200 hover:border-[#FF6B1A]/40 shadow-sm hover:shadow-md'}`}
+          <div className="mt-6 sm:mt-10 lg:mt-14 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center">
+            <div className="lg:col-span-4 hidden lg:flex justify-start">
+              <div className="gleamy-outline-letter text-[310px] leading-none select-none">
+                g
+              </div>
+            </div>
+
+            <div className="lg:col-span-8 space-y-5 sm:space-y-7 lg:space-y-8">
+              <h3 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-semibold lg:font-medium tracking-[0.05em] sm:tracking-[0.06em] uppercase leading-snug">
+                WE ARE A LOCAL BUSINESS GROWTH SYSTEMS PARTNER.
+              </h3>
+
+              <p
+                className={`text-[13px] sm:text-lg md:text-xl lg:text-2xl leading-[1.75] sm:leading-[1.7] font-normal tracking-[0.03em] sm:tracking-[0.04em] uppercase ${isDark ? 'text-neutral-200' : 'text-neutral-800'
+                  }`}
               >
+                SEARCHANDSERVICE IS A PREMIER DIGITAL GROWTH &amp; AUTOMATION AGENCY. WITH{' '}
+                <span className="text-[#FF6B1A] font-semibold">4+ YEARS OF INDUSTRY EXPERIENCE</span>
+                , OUR TEAM OF EXPERTS HAS HELPED HUNDREDS OF SMALL BUSINESSES DOMINATE GOOGLE MAPS,
+                CONVERT MORE CUSTOMERS, AND AUTOMATE DAILY OPERATIONS. WE UNDERSTAND LOCAL
+                BUSINESSES, AND WE KNOW HOW TO GROW THEM.
+                <span className="gleamy-parallelogram ml-2 sm:ml-3 align-middle" />
+              </p>
+
+              <div className="pt-1 sm:pt-2 flex flex-wrap items-center gap-6 sm:gap-8">
+                <button
+                  onClick={() => scrollToSection('audit')}
+                  className="group relative inline-flex items-center text-lg sm:text-2xl lg:text-3xl font-medium tracking-wider focus:outline-none py-1"
+                >
+                  <span className="relative z-10">Contact Us</span>
+                  <span className="gleamy-parallelogram -ml-16 sm:-ml-20 mt-2 sm:mt-3 opacity-95" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      { }
+      <section
+        id="services"
+        className={`relative py-16 sm:py-24 lg:py-36 overflow-x-clip border-t ${isDark ? 'border-white/[0.06]' : 'border-black/[0.06]'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start">
+            <div className="lg:col-span-3 relative">
+              <div className="lg:sticky lg:top-28 flex flex-row lg:flex-col items-center lg:items-start justify-between lg:justify-start pb-2 lg:pb-4">
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="p-3 rounded-2xl bg-[#FF6B1A]/10 border border-[#FF6B1A]/20">
-                      {pillar.icon}
-                    </div>
-                    <span className="text-2xl font-black text-zinc-500/40">{pillar.num}</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 tracking-tight">{pillar.title}</h3>
-                  <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                    {pillar.description}
-                  </p>
+                  <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                    GROWTH SYSTEMS &amp; SERVICES
+                  </h2>
+                  <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+                </div>
+                <div className="lg:mt-16 gleamy-outline-letter text-[85px] sm:text-[130px] lg:text-[300px] leading-none select-none">
+                  S
                 </div>
               </div>
-            ))}
+            </div>
 
-            {/* CTA Card as 6th block */}
-            <div className="relative rounded-3xl p-8 border border-[#FF6B1A]/40 bg-gradient-to-br from-[#FF6B1A]/15 to-[#FF6B1A]/5 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#FF6B1A]">Zero Risk</span>
-                <h3 className="text-2xl font-black mt-2 mb-3">Claim Your Market Territory</h3>
-                <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                  We never work with your direct competitors. Once you partner with SearchandService in your category and zip radius, we lock the territory for your company.
+            <div className="lg:col-span-9 flex flex-col">
+              <div className="flex lg:justify-end mb-6 sm:mb-10 lg:mb-12">
+                <p
+                  className={`max-w-md text-[11px] sm:text-xs uppercase tracking-[0.14em] sm:tracking-[0.15em] lg:text-right leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                    }`}
+                >
+                  COMPLETE DIGITAL GROWTH STRATEGIES ENGINEERED TO GET DISCOVERED, CONVERT LEADS &amp;
+                  SAVE OPERATIONAL TIME.
                 </p>
               </div>
-              <button
-                onClick={() => setAuditModalOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold py-3.5 px-6 rounded-2xl transition-all shadow-md shadow-[#FF6B1A]/30 cursor-pointer"
-              >
-                <span>Check Territory Exclusivity</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 sm:gap-x-8 lg:gap-x-10 gap-y-8 sm:gap-y-12 lg:gap-y-14">
+                {SERVICES_DATA.map((service) => (
+                  <div
+                    key={service.id}
+                    className={`group relative flex flex-col justify-between pb-5 sm:pb-6 border-b transition-all ${isDark
+                        ? 'border-white/10 hover:border-[#FF6B1A]/60'
+                        : 'border-black/10 hover:border-[#FF6B1A]/60'
+                      }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-mono text-[#FF6B1A] mb-2.5 sm:mb-3">
+                        <span>/{service.number}</span>
+                        <span className="tracking-[0.16em] sm:tracking-[0.18em] text-[9px] sm:text-[10px] uppercase opacity-75">
+                          {service.tag}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight group-hover:text-[#FF6B1A] transition-colors">
+                        {service.title}
+                      </h3>
+
+                      <p
+                        className={`mt-2.5 sm:mt-4 text-xs sm:text-[13px] leading-[1.75] sm:leading-[1.85] ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                          }`}
+                      >
+                        {service.shortDesc}
+                      </p>
+
+                      <div
+                        className={`mt-3.5 sm:mt-4 inline-flex items-center gap-1.5 text-[11px] font-semibold ${isDark ? 'text-neutral-300' : 'text-neutral-700'
+                          }`}
+                      >
+                        <TrendingUp className="w-3.5 h-3.5 text-[#FF6B1A] flex-shrink-0" />
+                        <span>{service.impact}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 sm:mt-7">
+                      <button
+                        onClick={() => setSelectedService(service)}
+                        className="group/btn relative inline-flex items-center text-xs sm:text-sm font-medium tracking-wider focus:outline-none py-1"
+                      >
+                        <span className="relative z-10">Know More</span>
+                        <span className="gleamy-parallelogram -ml-14 mt-2 opacity-80 group-hover/btn:opacity-100" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Interactive ROI Calculator */}
-      <section id="calculator" className="py-24 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#FF6B1A]">Interactive Diagnostic</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mt-2 mb-4">
-              Local Revenue & ROI Growth Simulator
-            </h2>
-            <p className={`text-base sm:text-lg ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              Adjust your current numbers below to estimate how much additional revenue is slipping through missed calls, poor search ranking, and slow lead response.
-            </p>
-          </div>
-
-          <div className={`rounded-3xl border p-6 sm:p-10 lg:p-12 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center ${isDark ? 'bg-zinc-900/60 border-zinc-800 shadow-2xl shadow-black/60' : 'bg-white border-zinc-200 shadow-xl'}`}>
-            {/* Input Controls */}
-            <div className="lg:col-span-7 space-y-8">
-              {/* Slider 1 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-bold flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#FF6B1A]" />
-                    <span>Current Inbound Calls & Inquiries / Month</span>
-                  </label>
-                  <span className="text-lg font-black text-[#FF6B1A]">{monthlyLeads} leads</span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="200"
-                  step="5"
-                  value={monthlyLeads}
-                  onChange={(e) => setMonthlyLeads(Number(e.target.value))}
-                  className="w-full accent-[#FF6B1A] cursor-pointer h-2 bg-zinc-700/50 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
-                  <span>5 leads/mo</span>
-                  <span>100 leads/mo</span>
-                  <span>200 leads/mo</span>
-                </div>
-              </div>
-
-              {/* Slider 2 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-bold flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-[#FF6B1A]" />
-                    <span>Average Value Per Booked Job / Client</span>
-                  </label>
-                  <span className="text-lg font-black text-[#FF6B1A]">${avgTicket.toLocaleString()}</span>
-                </div>
-                <input
-                  type="range"
-                  min="200"
-                  max="12000"
-                  step="200"
-                  value={avgTicket}
-                  onChange={(e) => setAvgTicket(Number(e.target.value))}
-                  className="w-full accent-[#FF6B1A] cursor-pointer h-2 bg-zinc-700/50 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
-                  <span>$200 (Maintenance)</span>
-                  <span>$3,500 (Trade Repair)</span>
-                  <span>$12,000+ (Replacement/Install)</span>
-                </div>
-              </div>
-
-              {/* Slider 3 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-bold flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-[#FF6B1A]" />
-                    <span>Current Lead-To-Close Rate</span>
-                  </label>
-                  <span className="text-lg font-black text-[#FF6B1A]">{closeRate}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="10"
-                  max="60"
-                  step="5"
-                  value={closeRate}
-                  onChange={(e) => setCloseRate(Number(e.target.value))}
-                  className="w-full accent-[#FF6B1A] cursor-pointer h-2 bg-zinc-700/50 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
-                  <span>10% (Slow follow-up)</span>
-                  <span>25% (Standard)</span>
-                  <span>60% (Top 1% speed)</span>
-                </div>
-              </div>
-
-              <div className="pt-2 text-xs text-zinc-400 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Based on verified local trade benchmark datasets across 180+ service markets.</span>
-              </div>
-            </div>
-
-            {/* Results Display */}
-            <div className={`lg:col-span-5 rounded-2xl p-6 sm:p-8 border flex flex-col justify-between ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[#FF6B1A]">Projected Revenue Impact</span>
-                <div className="mt-4 mb-6">
-                  <div className="text-xs text-zinc-400 uppercase font-semibold">Additional Monthly Pipeline</div>
-                  <div className="text-4xl font-extrabold text-[#FF6B1A] mt-1">
-                    +${calcResults.additionalMonthly.toLocaleString()}
-                    <span className="text-sm font-normal text-zinc-400">/mo</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-zinc-800/60 pt-4 pb-4 space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Projected Extra Booked Jobs:</span>
-                    <span className="font-bold">+{calcResults.projectedCustomers - calcResults.currentCustomers} jobs/mo</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Estimated Annual Revenue Lift:</span>
-                    <span className="font-bold text-emerald-400">+${calcResults.additionalYearly.toLocaleString()}/yr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Response Speed Boost:</span>
-                    <span className="font-bold text-blue-400">&lt; 45s SMS Auto-Engage</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setAuditModalOpen(true)}
-                className="w-full mt-6 bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-[#FF6B1A]/30 text-center cursor-pointer"
-              >
-                Lock In This Growth Model &rarr;
-              </button>
-            </div>
-          </div>
+        <div className="gleamy-outline-bottom text-[38px] sm:text-[85px] md:text-[110px] lg:text-[150px] leading-none whitespace-nowrap mt-10 sm:mt-14 -mb-4 sm:-mb-10 px-4 overflow-hidden">
+          THE GROWTH8TIVE
         </div>
       </section>
 
-      {/* Case Studies / Proof */}
-      <section id="case-studies" className={`py-24 border-t transition-colors ${isDark ? 'border-zinc-800 bg-zinc-950/60' : 'border-zinc-200 bg-zinc-50'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#FF6B1A]">Real Market Results</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mt-2 mb-4">
-              Proven Results Across Competitive Metro Markets
-            </h2>
-            <p className={`text-base sm:text-lg ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              Here is how local businesses exploded their inbound dispatch volume after deploying the SearchandService infrastructure.
+      { }
+      <section
+        id="systems"
+        className={`relative py-16 sm:py-24 lg:py-36 overflow-hidden border-t ${isDark ? 'bg-[#080808] border-white/[0.06]' : 'bg-[#EFECE6] border-black/[0.06]'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
+            <div>
+              <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                5-PILLAR ROI &amp; GROWTH ENGINE
+              </h2>
+              <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+            </div>
+            <p
+              className={`max-w-md text-xs sm:text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                }`}
+            >
+              Data-backed growth metrics calibrated against verified search index benchmarks and baseline reporting.
             </p>
+          </div>
 
-            {/* Filter buttons */}
-            <div className="flex flex-wrap justify-center gap-2 mt-8">
-              {['all', 'trades', 'contractors', 'home-services', 'medical'].map((cat) => (
+          <div className="mt-8 sm:mt-12 flex sm:grid sm:grid-cols-5 gap-2.5 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 -mx-5 px-5 sm:mx-0 sm:px-0">
+            {GROWTH_PILLARS.map((pillar, idx) => {
+              const isSelected = activePillar === idx;
+              return (
                 <button
-                  key={cat}
-                  onClick={() => setCaseStudyFilter(cat)}
-                  className={`text-xs uppercase font-bold tracking-wider px-4 py-2 rounded-xl transition-all ${
-                    caseStudyFilter === cat
-                      ? 'bg-[#FF6B1A] text-white shadow-md shadow-[#FF6B1A]/20'
+                  key={pillar.step}
+                  onClick={() => setActivePillar(idx)}
+                  className={`flex-shrink-0 w-[165px] sm:w-auto text-left p-3.5 sm:p-5 transition-all border ${isSelected
+                      ? 'bg-[#FF6B1A] text-white border-[#FF6B1A] shadow-lg shadow-[#FF6B1A]/20'
                       : isDark
-                      ? 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
-                      : 'bg-white border border-zinc-300 text-zinc-600 hover:text-black'
-                  }`}
+                        ? 'bg-[#0D0D0D] border-white/10 hover:border-white/30 text-neutral-300'
+                        : 'bg-white border-black/10 hover:border-black/30 text-neutral-800'
+                    }`}
                 >
-                  {cat === 'all' ? 'All Niches' : cat.replace('-', ' ')}
+                  <div
+                    className={`text-[10px] sm:text-xs font-mono tracking-widest ${isSelected ? 'text-white/90' : 'text-[#FF6B1A]'
+                      }`}
+                  >
+                    STAGE {pillar.step}
+                  </div>
+                  <div className="mt-1.5 sm:mt-2 font-extrabold text-xs sm:text-sm lg:text-base tracking-wide uppercase leading-snug">
+                    {pillar.title}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            className={`mt-4 sm:mt-6 p-5 sm:p-8 lg:p-10 border grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center ${isDark ? 'bg-[#0D0D0D] border-white/10' : 'bg-white border-black/10'
+              }`}
+          >
+            <div className="lg:col-span-7 space-y-4 sm:space-y-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF6B1A]/15 text-[#FF6B1A] text-[10px] sm:text-xs font-bold uppercase tracking-widest">
+                <span>Stage {GROWTH_PILLARS[activePillar].step}</span>
+                <span>•</span>
+                <span>{GROWTH_PILLARS[activePillar].title}</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-snug">
+                {GROWTH_PILLARS[activePillar].subtitle}
+              </h3>
+              <p
+                className={`text-xs sm:text-sm lg:text-base leading-relaxed ${isDark ? 'text-neutral-300' : 'text-neutral-600'
+                  }`}
+              >
+                {GROWTH_PILLARS[activePillar].description}
+              </p>
+              <div className="pt-1 sm:pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                {GROWTH_PILLARS[activePillar].kpis.map((kpi, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 sm:p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${isDark
+                        ? 'bg-white/[0.03] border-white/10 text-white'
+                        : 'bg-black/[0.03] border-black/10 text-black'
+                      }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-[#FF6B1A] flex-shrink-0" />
+                    <span>{kpi}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`lg:col-span-5 rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-[#050505] border-white/10' : 'bg-[#F7F6F2] border-black/10'
+                }`}
+            >
+              {activePillar === 0 && (
+                <div className="space-y-3">
+                  <div
+                    className={`p-2.5 rounded-lg border flex items-center justify-between text-xs ${isDark ? 'bg-white/[0.04] border-white/15' : 'bg-white border-black/15 shadow-sm'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#FF6B1A]" />
+                      <span className="font-medium">“hvac repair near me”</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-[#FF6B1A]/20 text-[#FF6B1A] font-bold text-[10px]">
+                      Top Map Pack
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      {
+                        rank: '#1',
+                        name: 'Vance HVAC & Mechanical',
+                        rating: '4.9',
+                        reviews: '(214)',
+                        status: 'Open now • 0.4 mi',
+                        highlight: true
+                      },
+                      {
+                        rank: '#2',
+                        name: 'Capital City Air & Heating',
+                        rating: '4.7',
+                        reviews: '(188)',
+                        status: 'Open • 0.9 mi',
+                        highlight: false
+                      },
+                      {
+                        rank: '#3',
+                        name: 'Precision Climate Solutions',
+                        rating: '4.6',
+                        reviews: '(142)',
+                        status: 'Open • 1.4 mi',
+                        highlight: false
+                      }
+                    ].map((bus, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-lg border flex items-center justify-between ${bus.highlight
+                            ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/50'
+                            : isDark
+                              ? 'bg-white/[0.02] border-white/10'
+                              : 'bg-white border-black/10'
+                          }`}
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <span className="w-5 h-5 rounded bg-[#FF6B1A] text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">
+                            {bus.rank}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold truncate">{bus.name}</div>
+                            <div className="flex items-center gap-1 text-[10px] mt-0.5">
+                              <span className="text-[#FBBC05] font-bold">★ {bus.rating}</span>
+                              <span className="opacity-60">{bus.reviews}</span>
+                              <span className="opacity-40">•</span>
+                              <span className="text-[#10B981] font-medium">{bus.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activePillar === 1 && (
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold mb-2">
+                    Website Visitor-to-Lead Conversion Funnel (~7.5% Benchmark)
+                  </div>
+                  {[
+                    { label: 'Local Search Visitors', val: '1,200 / mo', pct: '100%' },
+                    { label: 'Performance Engagement', val: '920 / mo', pct: '76%' },
+                    { label: 'Qualified Calls & Quote Leads', val: '90 Leads', pct: '7.5% CVR' }
+                  ].map((row, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3 rounded-lg border flex items-center justify-between ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-black/10'
+                        }`}
+                    >
+                      <span className="text-xs">{row.label}</span>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-[#FF6B1A]">{row.val}</span>
+                        <span className="text-[10px] opacity-60 ml-2">({row.pct})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activePillar === 2 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-current/10">
+                    <div className="flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4 text-[#FF6B1A]" />
+                      <span className="text-xs font-bold">Speed-to-Lead Automation</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#10B981]/20 text-[#10B981] font-bold">
+                      Sub-Minute
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs">
+                    <div
+                      className={`p-3 rounded-lg border ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-black/10'
+                        }`}
+                    >
+                      <div className="text-[10px] font-mono text-[#FF6B1A] uppercase">
+                        00:30s • Inquiry Received
+                      </div>
+                      <div className="mt-1 font-medium">
+                        Automated text sent: “Hi! Thanks for reaching out. Are you looking for service or installation?”
+                      </div>
+                    </div>
+
+                    <div
+                      className={`p-3 rounded-lg border ${isDark ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/40' : 'bg-[#FF6B1A]/10 border-[#FF6B1A]/40'
+                        }`}
+                    >
+                      <div className="text-[10px] font-mono text-[#FF6B1A] uppercase">
+                        02:15s • Lead Confirmed
+                      </div>
+                      <div className="mt-1 font-semibold">
+                        Appointment booked on calendar + review proof sent.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activePillar === 3 && (
+                <div className="space-y-2.5 text-xs">
+                  {[
+                    { time: 'Instant', task: 'CRM Lead Created & Team Notified' },
+                    { time: '24h Prior', task: 'Automated SMS Appointment Reminder Sent' },
+                    { time: 'Job Complete', task: 'Automated 5★ Review Request Sent' }
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className={`p-3 rounded-lg border flex items-center justify-between ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-black/10'
+                        }`}
+                    >
+                      <span className="font-medium">{item.task}</span>
+                      <span className="px-2 py-0.5 rounded bg-[#10B981]/20 text-[#10B981] font-mono text-[10px]">
+                        {item.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activePillar === 4 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-current/10">
+                    <span className="font-mono uppercase tracking-wider text-[#FF6B1A]">
+                      EXECUTIVE REVENUE TELEMETRY
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[#10B981] font-semibold text-[10px]">
+                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" /> Live Sync
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className={`p-3 rounded-lg border ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-black/10'
+                        }`}
+                    >
+                      <div className="text-[10px] opacity-60">Tracked Monthly Revenue Lift</div>
+                      <div className="text-base sm:text-lg font-extrabold text-[#10B981] mt-0.5">
+                        +$1,875 / mo
+                      </div>
+                      <div className="text-[10px] font-bold text-[#10B981] mt-0.5">Verified Formula</div>
+                    </div>
+
+                    <div
+                      className={`p-3 rounded-lg border ${isDark ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/40' : 'bg-[#FF6B1A]/10 border-[#FF6B1A]/40'
+                        }`}
+                    >
+                      <div className="text-[10px] text-[#FF6B1A] font-semibold">Projected Leads</div>
+                      <div className="text-base sm:text-lg font-extrabold mt-0.5">40 / mo</div>
+                      <div className="text-[10px] font-bold text-[#FF6B1A] mt-0.5">100% Tracked</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-3 rounded-lg border ${isDark ? 'bg-white/[0.02] border-white/10' : 'bg-white border-black/10'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] mb-2">
+                      <span className="opacity-70 font-medium">Monthly Revenue Growth</span>
+                      <span className="font-mono font-bold text-[#FF6B1A]">Avg +$1,875/mo</span>
+                    </div>
+                    <div className="h-16 flex items-end gap-1.5 pt-2">
+                      {[30, 42, 55, 68, 80, 100].map((val, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded-t bg-gradient-to-t from-[#FF6B1A]/40 to-[#FF6B1A] transition-all duration-500"
+                          style={{ height: `${val}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          { }
+          <div
+            className={`mt-10 sm:mt-14 p-5 sm:p-8 lg:p-10 border rounded-2xl ${isDark ? 'bg-[#0D0D0D] border-white/10' : 'bg-white border-black/10 shadow-sm'
+              }`}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+              <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+                <div>
+                  <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] text-[#FF6B1A]">
+                    INTERACTIVE REVENUE CALCULATOR
+                  </span>
+                  <h3 className="text-lg sm:text-2xl font-extrabold mt-1">
+                    Simulate Your Local Growth Potential
+                  </h3>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider mb-2 opacity-75">
+                    1. Select Your Local Business Industry
+                  </label>
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+                    {INDUSTRY_PRESETS.map((ind, idx) => (
+                      <button
+                        key={ind.name}
+                        onClick={() => handleIndustryChange(idx)}
+                        className={`px-3 py-2.5 rounded-lg text-[11px] sm:text-xs font-semibold text-left border transition-all ${selectedIndustryIdx === idx
+                            ? 'bg-[#FF6B1A] text-white border-[#FF6B1A]'
+                            : isDark
+                              ? 'bg-white/[0.03] border-white/10 hover:border-white/30'
+                              : 'bg-black/[0.03] border-black/10 hover:border-black/30'
+                          }`}
+                      >
+                        {ind.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-1 sm:pt-2">
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-2">
+                      <span>Current Monthly Leads</span>
+                      <span className="text-[#FF6B1A] font-bold">{currentMonthlyLeads} / mo</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="100"
+                      value={currentMonthlyLeads}
+                      onChange={(e) => setCurrentMonthlyLeads(Number(e.target.value))}
+                      className="w-full accent-[#FF6B1A] cursor-pointer h-2"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-2">
+                      <span>Average Service Value ($)</span>
+                      <span className="text-[#FF6B1A] font-bold">
+                        ${customTicket.toLocaleString()}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="100"
+                      max="12000"
+                      step="50"
+                      value={customTicket}
+                      onChange={(e) => setCustomTicket(Number(e.target.value))}
+                      className="w-full accent-[#FF6B1A] cursor-pointer h-2"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-2">
+                      <span>Added Leads / Month</span>
+                      <span className="text-[#FF6B1A] font-bold">+{customAddedLeads} / mo</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="40"
+                      value={customAddedLeads}
+                      onChange={(e) => setCustomAddedLeads(Number(e.target.value))}
+                      className="w-full accent-[#FF6B1A] cursor-pointer h-2"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-2">
+                      <span>Lead-to-Customer Conversion</span>
+                      <span className="text-[#FF6B1A] font-bold">
+                        {(customConversionRate * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.50"
+                      step="0.01"
+                      value={customConversionRate}
+                      onChange={(e) => setCustomConversionRate(Number(e.target.value))}
+                      className="w-full accent-[#FF6B1A] cursor-pointer h-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`lg:col-span-5 p-5 sm:p-8 rounded-xl border ${isDark
+                    ? 'bg-[#050505] border-[#FF6B1A]/40'
+                    : 'bg-[#F7F6F2] border-[#FF6B1A]/40'
+                  }`}
+              >
+                <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.2em] text-[#FF6B1A]">
+                  PROJECTED SEARCHANDSERVICE IMPACT
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-current/10">
+                  <div>
+                    <div className="text-[11px] sm:text-xs opacity-60">Total Projected Leads</div>
+                    <div className="text-xl sm:text-3xl font-extrabold mt-1">
+                      {totalLeads}{' '}
+                      <span className="text-[11px] sm:text-xs font-bold text-[#10B981]">(+{customAddedLeads})</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] sm:text-xs opacity-60">Admin Time Saved</div>
+                    <div className="text-xl sm:text-3xl font-extrabold mt-1">3+ hrs/wk</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 sm:mt-5">
+                  <div className="text-[11px] sm:text-xs opacity-60">Additional Monthly Revenue</div>
+                  <div className="text-2xl sm:text-4xl font-extrabold text-[#FF6B1A] mt-1">
+                    +${Math.round(monthlyRevenueLift).toLocaleString()}
+                    <span className="text-xs sm:text-sm font-normal opacity-70"> / mo</span>
+                  </div>
+                  <div className="text-[11px] sm:text-xs opacity-70 mt-1">
+                    ≈ +${Math.round(annualRevenueLift).toLocaleString()} Annualized Revenue Growth (Monthly × 12)
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => scrollToSection('audit')}
+                  className="mt-5 sm:mt-6 w-full py-3.5 bg-[#FF6B1A] hover:bg-[#ff5500] text-white text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] sm:tracking-[0.2em] transition-colors"
+                >
+                  Lock In This Growth Plan →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      { }
+      <section
+        id="portfolio"
+        className={`relative py-16 sm:py-24 lg:py-36 overflow-hidden border-t ${isDark ? 'border-white/[0.06]' : 'border-black/[0.06]'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 sm:gap-6">
+            <div className="flex items-center justify-between md:block">
+              <div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                  PROVEN CASE STUDIES
+                </h2>
+                <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+              </div>
+              <div className="gleamy-outline-letter text-[80px] sm:text-[110px] leading-none select-none lg:hidden">
+                p
+              </div>
+            </div>
+
+            <div className="flex overflow-x-auto sm:flex-wrap gap-2 pb-1 sm:pb-0 -mx-5 px-5 sm:mx-0 sm:px-0">
+              {[
+                { key: 'all', label: 'ALL SYSTEMS' },
+                { key: 'maps', label: 'GOOGLE MAPS #1' },
+                { key: 'web', label: 'HIGH-CONVERTING WEB' },
+                { key: 'ai', label: 'AUTOMATIONS & REVIEWS' },
+                { key: 'dashboard', label: 'CUSTOM DASHBOARDS' }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setPortfolioFilter(tab.key)}
+                  className={`flex-shrink-0 px-3 sm:px-3.5 py-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.14em] sm:tracking-[0.16em] uppercase transition-all border ${portfolioFilter === tab.key
+                      ? 'bg-[#FF6B1A] text-white border-[#FF6B1A]'
+                      : isDark
+                        ? 'border-white/15 text-neutral-400 hover:text-white'
+                        : 'border-black/15 text-neutral-600 hover:text-black'
+                    }`}
+                >
+                  {tab.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filteredCaseStudies.map((study, idx) => (
+          <div className="mt-8 sm:mt-12 lg:mt-14 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+            <div className="lg:col-span-3 hidden lg:flex justify-start">
+              <div className="gleamy-outline-letter text-[300px] leading-none select-none">
+                p
+              </div>
+            </div>
+
+            <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
+              {filteredPortfolio.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className={`group flex flex-col ${idx % 2 === 1 ? 'md:mt-10' : ''}`}
+                >
+                  <div
+                    className={`relative overflow-hidden border transition-all duration-500 group-hover:-translate-y-1.5 ${isDark
+                        ? 'bg-[#0F0F0F] border-white/10 group-hover:border-[#FF6B1A]/60'
+                        : 'bg-white border-black/10 group-hover:border-[#FF6B1A]/60 shadow-lg'
+                      }`}
+                  >
+                    <div
+                      className={`px-3.5 sm:px-4 py-2.5 border-b flex items-center justify-between gap-2 text-[10px] sm:text-[11px] ${isDark ? 'border-white/10 bg-black/40' : 'border-black/10 bg-neutral-100'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-1.5 min-w-0">
+                        <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500/70 flex-shrink-0" />
+                        <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-500/70 flex-shrink-0" />
+                        <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500/70 flex-shrink-0" />
+                        <span className="ml-1.5 sm:ml-2 font-mono opacity-60 truncate">{item.location}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-[#FF6B1A]/20 text-[#FF6B1A] font-bold truncate">
+                        {item.metricBadge}
+                      </span>
+                    </div>
+
+                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.2em] text-[#FF6B1A]">
+                            PROJECT RESULTS
+                          </div>
+                          <h4 className="text-base sm:text-lg font-extrabold mt-1">{item.title}</h4>
+                        </div>
+                        <ArrowUpRight className="w-5 h-5 text-[#FF6B1A] flex-shrink-0 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      </div>
+
+                      <p
+                        className={`text-xs leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+                          }`}
+                      >
+                        {item.summary}
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1 sm:pt-2">
+                        {item.stats.map((st, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className={`p-2.5 sm:p-3 rounded-lg border ${isDark
+                                ? 'bg-white/[0.03] border-white/10'
+                                : 'bg-black/[0.02] border-black/10'
+                              }`}
+                          >
+                            <div className="text-[9px] sm:text-[10px] opacity-60 truncate">{st.label}</div>
+                            <div className="text-[11px] sm:text-sm font-extrabold text-[#FF6B1A] mt-0.5">
+                              {st.value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 sm:mt-5 text-center">
+                    <h3 className="text-base sm:text-xl font-medium tracking-wide">
+                      {item.title}
+                    </h3>
+                    <div className="mt-1 sm:mt-1.5 flex items-center justify-center space-x-2 text-[10px] sm:text-xs tracking-[0.16em] sm:tracking-[0.18em] uppercase opacity-75">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B1A]" />
+                      <span>{item.category}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="gleamy-outline-bottom text-[42px] sm:text-[95px] lg:text-[150px] leading-none whitespace-nowrap mt-10 sm:mt-14 -mb-5 sm:-mb-10 px-4">
+          THE CRE8TIVE
+        </div>
+      </section>
+
+      { }
+      <section
+        id="results"
+        className={`relative py-16 sm:py-24 lg:py-36 overflow-hidden border-t ${isDark ? 'bg-[#080808] border-white/[0.06]' : 'bg-[#EFECE6] border-black/[0.06]'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16 mb-6 sm:mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
+            <div>
+              <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                CLIENT TESTIMONIALS
+              </h2>
+              <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+            </div>
+            <div className="flex items-center space-x-2.5 sm:space-x-3">
+              <div className="flex text-[#FBBC05]">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-[#FBBC05]" />
+                ))}
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                4.9 / 5.0 Across Local Business Partners
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full overflow-hidden py-8 sm:py-12">
+          <div className={`animate-testimonials-track ${isTestimonialsPaused ? 'paused' : ''}`}>
+            {[...HERO_GOOGLE_REVIEWS, ...HERO_GOOGLE_REVIEWS].map((rev, idx) => {
+              const bobClass = `card-bob-${idx % 6}`;
+
+              return (
+                <div
+                  key={`${rev.id}-${idx}`}
+                  onMouseEnter={() => setIsTestimonialsPaused(true)}
+                  onMouseLeave={() => setIsTestimonialsPaused(false)}
+                  className={`flex-shrink-0 w-[285px] sm:w-[350px] lg:w-[380px] mx-2.5 sm:mx-4 cursor-pointer py-4`}
+                >
+                  <div
+                    className={`p-5 sm:p-7 rounded-2xl border flex flex-col justify-between h-[250px] sm:h-[280px] shadow-xl transition-all duration-300 hover:border-[#FF6B1A] hover:scale-[1.02] ${bobClass} ${isDark
+                        ? 'bg-[#0D0D0D] border-white/10 hover:bg-[#121212]'
+                        : 'bg-white border-black/10 hover:bg-[#FAF9F5]'
+                      }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex text-[#FBBC05]">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-[#FBBC05]" />
+                          ))}
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 rounded bg-[#FF6B1A]/15 text-[#FF6B1A]">
+                          {rev.metric}
+                        </span>
+                      </div>
+                      <p
+                        className={`text-xs sm:text-sm leading-relaxed line-clamp-3 ${isDark ? 'text-neutral-300' : 'text-neutral-700'
+                          }`}
+                      >
+                        {rev.review}
+                      </p>
+                    </div>
+
+                    <div className="pt-3.5 sm:pt-4 border-t border-current/10 flex items-center space-x-3">
+                      <img
+                        src={rev.avatar}
+                        alt={rev.name}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-[#FF6B1A]"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">{rev.name}</div>
+                        <div className="text-[10px] sm:text-[11px] opacity-60 truncate">{rev.company}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      { }
+      <section
+        id="audit"
+        className={`relative py-16 sm:py-24 lg:py-36 overflow-hidden border-t ${isDark ? 'border-white/[0.06]' : 'border-black/[0.06]'
+          }`}
+      >
+        <div className="gleamy-outline-letter absolute right-4 sm:right-24 top-12 sm:top-1/2 sm:-translate-y-1/2 text-[160px] sm:text-[320px] lg:text-[400px] z-0 pointer-events-none opacity-30 sm:opacity-40">
+          R
+        </div>
+
+        <div className="relative z-10 max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 items-center">
+            <div className="lg:col-span-6 space-y-5 sm:space-y-6">
+              <div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-normal tracking-[0.14em] uppercase">
+                  FREE LOCAL GROWTH AUDIT
+                </h2>
+                <div className={`mt-2.5 sm:mt-3 w-10 sm:w-12 h-[2px] ${isDark ? 'bg-white/60' : 'bg-black/60'}`} />
+              </div>
+
+              <p
+                className={`text-xs sm:text-sm lg:text-base leading-relaxed ${isDark ? 'text-neutral-300' : 'text-neutral-700'
+                  }`}
+              >
+                Get a free, no-pressure look at your website, local visibility, and customer journey. Leave with a clearer picture of where your next opportunity may be.
+              </p>
+
+              <div className="space-y-2.5 sm:space-y-3 pt-1 sm:pt-2">
+                {[
+                  'A fresh set of eyes on your local presence',
+                  'Clear opportunities to increase inbound calls',
+                  'Zero obligation to proceed with paid services'
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center space-x-3 text-xs sm:text-sm font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-[#FF6B1A] flex-shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+                <a
+                  href="mailto:searchandservice@gmail.com"
+                  className="group relative flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3 border border-[#FF6B1A] bg-[#FF6B1A] hover:bg-[#ff5500] text-white font-bold text-xs uppercase tracking-[0.18em] transition-all duration-300 shadow-md shadow-[#FF6B1A]/20"
+                >
+                  <Mail className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  <span>Mail Us</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </a>
+
+                <a
+                  href="tel:+15552345678"
+                  className={`group relative flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3 border border-[#FF6B1A] bg-transparent hover:bg-[#FF6B1A] hover:text-white font-bold text-xs uppercase tracking-[0.18em] transition-all duration-300 hover:shadow-md hover:shadow-[#FF6B1A]/20 ${isDark ? 'text-white' : 'text-[#0A0A0A]'
+                    }`}
+                >
+                  <Phone className="w-4 h-4 text-[#FF6B1A] group-hover:text-white transition-colors duration-300 group-hover:scale-110" />
+                  <span>Call Us Now</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#FF6B1A] group-hover:text-white transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </a>
+              </div>
+
               <div
-                key={idx}
-                className={`rounded-3xl p-8 border transition-all duration-300 hover:border-[#FF6B1A]/40 flex flex-col justify-between ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}
+                className={`p-4 sm:p-5 rounded-xl border flex items-center justify-between mt-4 sm:mt-6 ${isDark ? 'bg-[#0C0C0C] border-white/10' : 'bg-white border-black/10'
+                  }`}
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="text-xs font-bold text-[#FF6B1A] uppercase tracking-wider">{study.market}</span>
-                      <h3 className="text-2xl font-bold mt-1">{study.niche}</h3>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-emerald-400">{study.revLift}</span>
-                      <span className="block text-[10px] text-zinc-500 uppercase">Tracked Growth</span>
-                    </div>
+                  <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#FF6B1A]">
+                    TERRITORY EXCLUSIVITY POLICY
                   </div>
-
-                  <div className={`p-4 rounded-2xl mb-6 border ${isDark ? 'bg-zinc-950/70 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                    <div className="text-lg font-extrabold text-[#FF6B1A]">{study.metric}</div>
-                    <p className={`text-sm mt-1 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{study.detail}</p>
+                  <div className="text-[11px] sm:text-xs opacity-75 mt-1 leading-relaxed">
+                    We only partner with ONE business per service category in each local zip-code
+                    cluster.
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
-                  {study.tags.map((tag, tIdx) => (
-                    <span
-                      key={tIdx}
-                      className={`text-xs px-3 py-1 rounded-lg font-medium ${isDark ? 'bg-zinc-800/60 text-zinc-300' : 'bg-zinc-100 text-zinc-700'}`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8 text-[#FF6B1A] flex-shrink-0 ml-3 sm:ml-4" />
               </div>
-            ))}
+            </div>
+
+            <div className="lg:col-span-6">
+              <div
+                className={`p-5 sm:p-8 lg:p-10 rounded-2xl border shadow-2xl relative z-10 ${isDark ? 'bg-[#0C0C0C]/95 border-white/15' : 'bg-white/95 border-black/10'
+                  }`}
+              >
+                {!auditSubmitted ? (
+                  <form onSubmit={handleAuditSubmit} className="space-y-3.5 sm:space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-current/10">
+                      <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.18em] sm:tracking-[0.2em] text-[#FF6B1A] flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-[#FF6B1A]" />
+                        <span>FREE GROWTH SYSTEM DIAGNOSTIC</span>
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] opacity-60">Takes 45 Seconds</span>
+                    </div>
+
+                    {/* Honeypot field hidden from human visitors */}
+                    <input
+                      type="text"
+                      name="company_fax_hp"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={auditForm.company_fax_hp}
+                      onChange={(e) => setAuditForm({ ...auditForm, company_fax_hp: e.target.value })}
+                      className="hidden"
+                      aria-hidden="true"
+                    />
+
+                    {auditError && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/40 text-red-500 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span>{auditError}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                        Business Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Apex HVAC & Plumbing"
+                        value={auditForm.businessName}
+                        onChange={(e) =>
+                          setAuditForm({ ...auditForm, businessName: e.target.value })
+                        }
+                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                            ? 'bg-[#050505] border-white/15 text-white'
+                            : 'bg-[#F7F6F2] border-black/15 text-black'
+                          }`}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          Website URL *
+                        </label>
+                        <input
+                          type="url"
+                          required
+                          placeholder="https://yourbusiness.com"
+                          value={auditForm.website}
+                          onChange={(e) =>
+                            setAuditForm({ ...auditForm, website: e.target.value })
+                          }
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                              ? 'bg-[#050505] border-white/15 text-white'
+                              : 'bg-[#F7F6F2] border-black/15 text-black'
+                            }`}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          City / Location *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Austin, TX"
+                          value={auditForm.city}
+                          onChange={(e) =>
+                            setAuditForm({ ...auditForm, city: e.target.value })
+                          }
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                              ? 'bg-[#050505] border-white/15 text-white'
+                              : 'bg-[#F7F6F2] border-black/15 text-black'
+                            }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          Your Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Full Name"
+                          value={auditForm.name}
+                          onChange={(e) => setAuditForm({ ...auditForm, name: e.target.value })}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                              ? 'bg-[#050505] border-white/15 text-white'
+                              : 'bg-[#F7F6F2] border-black/15 text-black'
+                            }`}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="(555) 000-0000"
+                          value={auditForm.phone}
+                          onChange={(e) => setAuditForm({ ...auditForm, phone: e.target.value })}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                              ? 'bg-[#050505] border-white/15 text-white'
+                              : 'bg-[#F7F6F2] border-black/15 text-black'
+                            }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                        Work Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="owner@yourbusiness.com"
+                        value={auditForm.workEmail}
+                        onChange={(e) => setAuditForm({ ...auditForm, workEmail: e.target.value })}
+                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                            ? 'bg-[#050505] border-white/15 text-white'
+                            : 'bg-[#F7F6F2] border-black/15 text-black'
+                          }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                        Primary Bottleneck
+                      </label>
+                      <select
+                        value={auditForm.bottleneck}
+                        onChange={(e) =>
+                          setAuditForm({ ...auditForm, bottleneck: e.target.value })
+                        }
+                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
+                            ? 'bg-[#050505] border-white/15 text-white'
+                            : 'bg-[#F7F6F2] border-black/15 text-black'
+                          }`}
+                      >
+                        <option value="Need More Calls & #1 Google Maps Ranking">
+                          Need More Calls &amp; #1 Google Maps Ranking
+                        </option>
+                        <option value="Old Website Not Converting Local Visitors">
+                          Old Website Not Converting Local Visitors
+                        </option>
+                        <option value="Missing Inbound Calls & Slow Follow-Up">
+                          Missing Inbound Calls &amp; Slow Follow-Up
+                        </option>
+                        <option value="Need Consistent 5-Star Google Reviews">
+                          Need Consistent 5-Star Google Reviews
+                        </option>
+                        <option value="Need Unified Multi-Location Telemetry">
+                          Need Unified Multi-Location Telemetry
+                        </option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={auditSubmitting}
+                      className="w-full py-3.5 bg-[#FF6B1A] hover:bg-[#ff5500] disabled:opacity-60 text-white font-bold text-xs uppercase tracking-[0.2em] transition-colors shadow-lg shadow-[#FF6B1A]/25 flex items-center justify-center gap-2 group"
+                    >
+                      {auditSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Submitting Diagnostic...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Claim Free Local Growth Diagnostic</span>
+                          <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="py-10 text-center space-y-4">
+                    <div className="w-14 h-14 rounded-full bg-[#10B981]/20 text-[#10B981] flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-xl font-bold">Growth Audit Request Received!</h4>
+                    <p className={`text-xs max-w-sm mx-auto ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      Our team is preparing your custom territory and competitor report for {auditForm.businessName}. We will email your diagnostic to {auditForm.workEmail} shortly.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* The Guarantee Section */}
-      <section id="guarantee" className="py-24 relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`rounded-3xl border p-8 sm:p-14 text-center relative overflow-hidden ${isDark ? 'bg-gradient-to-b from-zinc-900/80 to-zinc-950 border-zinc-800 shadow-2xl' : 'bg-white border-zinc-200 shadow-xl'}`}>
-            <div className="w-16 h-16 rounded-2xl bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck className="w-9 h-9 text-[#FF6B1A]" />
+      {/* Footer */}
+      <footer
+        className={`border-t transition-colors duration-500 pt-12 sm:pt-16 pb-12 sm:pb-14 ${isDark ? 'bg-[#050505] border-white/10 text-neutral-300' : 'bg-[#ECE9E2] border-black/10 text-neutral-700'
+          }`}
+      >
+        <div className="max-w-[1400px] mx-auto px-5 sm:px-12 xl:pl-28 xl:pr-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 xl:gap-10 pb-10 sm:pb-12 border-b border-current/10">
+            <div className="lg:col-span-3 space-y-4">
+              <a
+                href="#hero"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('hero');
+                }}
+                className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+              >
+                search<span className="text-[#FF6B1A]">&amp;</span>service
+              </a>
+              <p className="text-xs sm:text-sm leading-relaxed opacity-80">
+                A premier local business growth systems partner engineering Google Maps dominance,
+                high-converting web platforms, and automated speed-to-lead systems.
+              </p>
+              <div className="pt-1 space-y-2 text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-[#FF6B1A] flex-shrink-0" />
+                  <a
+                    href="mailto:searchandservice@gmail.com"
+                    className="hover:text-[#FF6B1A] transition-colors font-medium"
+                  >
+                    searchandservice@gmail.com
+                  </a>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-[#FF6B1A] flex-shrink-0" />
+                  <a
+                    href="tel:+15552345678"
+                    className="hover:text-[#FF6B1A] transition-colors font-medium"
+                  >
+                    +1 (555) 234-5678
+                  </a>
+                </div>
+              </div>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-              Our 90-Day "More Calls or You Don’t Pay" Performance Guarantee
-            </h2>
+            <div className="lg:col-span-3 space-y-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#FF6B1A] font-bold">
+                DISCLAIMER
+              </div>
+              <p className="text-xs sm:text-sm leading-relaxed opacity-80">
+                All business figures, case studies, and ROI projections shared on this site are proposed portfolio examples and illustrative scenarios, not independently verified market averages. Individual results will naturally vary based on your local market competitiveness, baseline reputation, service offerings, and team responsiveness. We do not represent them as genuine client results unless supporting records exist.
+              </p>
+            </div>
 
-            <p className={`text-base sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              We do not believe in 12-month lock-in contracts that reward agencies for doing nothing. If we don’t noticeably increase your Google Maps visibility and qualified inbound call volume within the first 90 days, we work completely free until we do.
-            </p>
+            <div className="lg:col-span-3 space-y-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#FF6B1A] font-bold">
+                PRIVACY POLICY
+              </div>
+              <p className="text-xs sm:text-sm leading-relaxed opacity-80">
+                SearchandService values and safeguards your business privacy. Any business names, domains, phone numbers, or email addresses submitted via our contact and audit forms are collected solely to evaluate territory availability and prepare your customized growth diagnostic. We never sell, rent, license, or distribute your private business information to third-party brokers or advertisers.
+              </p>
+            </div>
+
+            <div className="lg:col-span-3 space-y-4">
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#FF6B1A] font-bold">
+                NEWSLETTER
+              </div>
+              <p className="text-xs sm:text-sm leading-relaxed opacity-80">
+                Get monthly breakdowns on Google Maps algorithm updates, local SEO playbooks, and speed-to-lead automation tactics.
+              </p>
+
+              {!newsletterSubmitted ? (
+                <form
+                  onSubmit={handleNewsletterSubmit}
+                  className="space-y-2"
+                >
+                  <div className="relative flex items-center">
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter your email"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      className={`w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm border focus:outline-none focus:border-[#FF6B1A] transition-colors ${isDark
+                          ? 'bg-[#0A0A0A] border-white/15 text-white placeholder-neutral-500'
+                          : 'bg-[#F7F6F2] border-black/15 text-black placeholder-neutral-400'
+                        }`}
+                    />
+                    <button
+                      type="submit"
+                      disabled={newsletterSubmitting}
+                      aria-label="Subscribe to newsletter"
+                      className="absolute right-1 top-1 bottom-1 px-2.5 bg-[#FF6B1A] hover:bg-[#ff5500] disabled:opacity-60 text-white flex items-center justify-center transition-colors"
+                    >
+                      {newsletterSubmitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ArrowUpRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {newsletterError && (
+                    <div className="text-[11px] text-red-500 font-medium">{newsletterError}</div>
+                  )}
+                  <div className="text-[10px] opacity-60">No spam. Unsubscribe anytime.</div>
+                </form>
+              ) : (
+                <div
+                  className={`p-3 rounded border text-xs flex items-center gap-2 ${isDark ? 'bg-white/[0.04] border-[#FF6B1A]/40 text-[#FF6B1A]' : 'bg-white border-[#FF6B1A]/40 text-[#FF6B1A]'
+                    }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-semibold">Subscribed! Welcome aboard.</span>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <div className="text-[10px] font-mono uppercase tracking-[0.18em] font-semibold opacity-70 mb-2.5">
+                  FOLLOW US ON
+                </div>
+                <div className="flex items-center gap-2.5">
+                  {/* Facebook */}
+                  <a
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow us on Facebook"
+                    className={`group flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                        ? 'bg-white/[0.05] border-white/15 text-neutral-300 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                        : 'bg-black/[0.05] border-black/15 text-neutral-700 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                      }`}
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                  </a>
+
+                  {/* Instagram */}
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow us on Instagram"
+                    className={`group flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                        ? 'bg-white/[0.05] border-white/15 text-neutral-300 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                        : 'bg-black/[0.05] border-black/15 text-neutral-700 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                      }`}
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                    </svg>
+                  </a>
+
+                  {/* LinkedIn */}
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow us on LinkedIn"
+                    className={`group flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                        ? 'bg-white/[0.05] border-white/15 text-neutral-300 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                        : 'bg-black/[0.05] border-black/15 text-neutral-700 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                      }`}
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                    </svg>
+                  </a>
+
+                  {/* WhatsApp */}
+                  <a
+                    href="https://whatsapp.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Chat on WhatsApp"
+                    className={`group flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border transition-all duration-300 ${isDark
+                        ? 'bg-white/[0.05] border-white/15 text-neutral-300 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                        : 'bg-black/[0.05] border-black/15 text-neutral-700 hover:text-white hover:border-[#FF6B1A] hover:bg-[#FF6B1A]'
+                      }`}
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 sm:pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs opacity-80">
+            <div>
+              © {new Date().getFullYear()} SearchandService Agency LLC. All rights reserved.
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-medium">
+              <a
+                href="#disclaimer"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-[#FF6B1A] transition-colors"
+              >
+                Disclaimer
+              </a>
+              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
+              <a
+                href="#privacy"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-[#FF6B1A] transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
+              <a
+                href="#blog"
+                onClick={(e) => e.preventDefault()}
+                className="hover:text-[#FF6B1A] transition-colors"
+              >
+                Blog
+              </a>
+              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
+              <a
+                href="#case-studies"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('portfolio');
+                }}
+                className="hover:text-[#FF6B1A] transition-colors"
+              >
+                Case Studies
+              </a>
+              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
+              <button
+                onClick={() => setDeployKitOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[#FF6B1A] font-semibold hover:underline"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Cloudflare Pages ZIP</span>
+              </button>
+            </div>
 
             <button
-              onClick={() => setAuditModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold text-base px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#FF6B1A]/30 hover:scale-[1.02] cursor-pointer"
+              onClick={() => scrollToSection('hero')}
+              className="hover:text-[#FF6B1A] flex items-center gap-1.5 transition-colors font-semibold"
             >
-              <span>Verify Your Territory Qualification</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Back to Top</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className={`py-24 border-t transition-colors ${isDark ? 'border-zinc-800 bg-zinc-950/60' : 'border-zinc-200 bg-zinc-50'}`}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#FF6B1A]">Got Questions?</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-2 mb-4">
-              Frequently Asked Questions
-            </h2>
-          </div>
-
-          <div className="space-y-6">
-            {[
-              {
-                q: 'How fast can our business reach the Google Maps 3-Pack?',
-                a: 'Most of our clients see measurable ranking jumps in 21 to 45 days. High-competition metro markets typically achieve dominant #1 to #3 rankings within 60 to 90 days. We provide transparent weekly geo-grid ranking scans so you can see your exact rank pin by pin across town.'
-              },
-              {
-                q: 'Do you work with our competitors in the same city?',
-                a: 'Never. We uphold a strict one-partner-per-industry policy per territory radius. If we take on an HVAC or roofing contractor in North Austin, we will reject every other company in that market while you are our active partner.'
-              },
-              {
-                q: 'How does the AI Speed-to-Lead system work?',
-                a: 'When an emergency or quotation call is missed after hours or while your technicians are on a job, our system triggers an automated custom SMS within 45 seconds asking the homeowner what they need. 73% of callers respond and book right away instead of calling your competitor.'
-              },
-              {
-                q: 'What is included in the Free 48-Hour Growth Audit?',
-                a: 'We generate an in-depth diagnostic showing your exact Google 3-Pack geo-grid ranking, missed keyword revenue, website speed benchmark, and conversion leaks. We send you the video teardown with zero obligation.'
-              }
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className={`rounded-2xl p-6 border ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}
-              >
-                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#FF6B1A] shrink-0" />
-                  <span>{item.q}</span>
-                </h3>
-                <p className={`text-sm leading-relaxed pl-7 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer & Newsletter */}
-      <footer className={`border-t py-16 transition-colors ${isDark ? 'bg-black border-zinc-900 text-zinc-400' : 'bg-zinc-100 border-zinc-300 text-zinc-700'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b border-zinc-800/50">
-            {/* Col 1 */}
-            <div className="md:col-span-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#FF6B1A] flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-black tracking-tight text-white">
-                  Search<span className="text-[#FF6B1A]">&</span>Service
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed mb-6 max-w-sm">
-                Engineered growth systems for local businesses, contractors, and trades. Turning search traffic into exclusive high-ticket booked revenue.
-              </p>
-              <div className="text-xs space-y-1">
-                <div>Email: <a href="mailto:searchandservice@gmail.com" className="text-[#FF6B1A] hover:underline">searchandservice@gmail.com</a></div>
-                <div>Production Origin: <span className="text-zinc-300">https://searchandservice.pages.dev</span></div>
-              </div>
-            </div>
-
-            {/* Col 2 */}
-            <div className="md:col-span-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Growth Systems</h4>
-              <ul className="text-sm space-y-2">
-                <li><a href="#system" className="hover:text-[#FF6B1A] transition-colors">Google Maps 3-Pack</a></li>
-                <li><a href="#system" className="hover:text-[#FF6B1A] transition-colors">Speed-To-Lead AI</a></li>
-                <li><a href="#system" className="hover:text-[#FF6B1A] transition-colors">Conversion Web Platforms</a></li>
-                <li><a href="#system" className="hover:text-[#FF6B1A] transition-colors">5-Star Review Engine</a></li>
-              </ul>
-            </div>
-
-            {/* Col 3: Newsletter */}
-            <div className="md:col-span-4">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-2">Local Growth Briefings</h4>
-              <p className="text-xs text-zinc-400 mb-4">
-                Join 1,400+ local service owners receiving weekly teardowns of high-converting marketing funnels.
-              </p>
-              <form onSubmit={handleNewsletterSubmit} className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    required
-                    placeholder="owner@yourcompany.com"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className={`text-sm px-4 py-2.5 rounded-xl border flex-1 outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-300 text-black'}`}
-                  />
-                  <button
-                    type="submit"
-                    disabled={newsletterStatus.loading}
-                    className="bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors cursor-pointer shrink-0"
-                  >
-                    {newsletterStatus.loading ? 'Joining...' : 'Subscribe'}
-                  </button>
-                </div>
-                {newsletterStatus.success && (
-                  <p className="text-xs text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Subscribed! Check your inbox soon.
-                  </p>
-                )}
-                {newsletterStatus.error && (
-                  <p className="text-xs text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {newsletterStatus.error}
-                  </p>
-                )}
-              </form>
-            </div>
-          </div>
-
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-4">
-            <div>&copy; {new Date().getFullYear()} SearchandService Agency. All rights reserved. Built for Cloudflare Pages.</div>
-            <div className="flex gap-6">
-              <a href="#system" className="hover:underline">Privacy Policy</a>
-              <a href="#system" className="hover:underline">Terms of Service</a>
-              <a href="#system" className="hover:underline">Security</a>
-            </div>
           </div>
         </div>
       </footer>
 
-      {/* Free Growth Audit Modal */}
-      {auditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* Cloudflare Pages + Functions + D1 Production Repository & ZIP Exporter Modal */}
+      {deployKitOpen && (
+        <div className="fixed inset-0 z-[98] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div
-            className={`w-full max-w-xl rounded-3xl p-6 sm:p-8 border shadow-2xl relative max-h-[90vh] overflow-y-auto ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'}`}
+            className={`max-w-4xl w-full max-h-[90vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-[#0D0D0D] border-white/15 text-white' : 'bg-white border-black/15 text-[#0A0A0A]'
+              }`}
           >
-            <button
-              onClick={() => setAuditModalOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mb-6">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#FF6B1A]">48-Hour Diagnostic</span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
-                Claim Your Free Local Growth Audit
-              </h3>
-              <p className={`text-sm mt-2 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                We will analyze your Google 3-Pack rankings, competitor gaps, and missed call leakages, delivered directly to your inbox.
-              </p>
-            </div>
-
-            {auditStatus.success ? (
-              <div className="p-8 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center my-6">
-                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                <h4 className="text-xl font-bold text-emerald-400 mb-1">Audit Request Received!</h4>
-                <p className="text-sm text-zinc-300">
-                  Our growth engineers are analyzing your territory. You will receive your custom teardown report within 48 business hours.
-                </p>
+            <div className="px-6 py-4 border-b border-current/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <Terminal className="w-4 h-4 text-[#FF6B1A]" />
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF6B1A] font-bold">
+                  CLOUDFLARE PAGES (SEARCHANDSERVICE.PAGES.DEV) + FUNCTIONS + D1 KIT
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    setAuditStatus({ loading: false, success: false, error: null });
-                    setAuditModalOpen(false);
-                  }}
-                  className="mt-6 bg-[#FF6B1A] text-white text-sm font-bold px-6 py-2.5 rounded-xl"
+                  onClick={handleDownloadZip}
+                  disabled={isPackagingZip}
+                  className="px-4 py-2 bg-[#FF6B1A] hover:bg-[#ff5500] disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md shadow-[#FF6B1A]/20"
                 >
-                  Close
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{isPackagingZip ? 'Packaging ZIP...' : 'Download Cloudflare Pages .ZIP'}</span>
+                </button>
+                <button
+                  onClick={() => setDeployKitOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-current/10"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleAuditSubmit} className="space-y-4">
-                {/* Honeypot field */}
-                <input
-                  type="text"
-                  name="company_fax_hp"
-                  value={auditForm.company_fax_hp}
-                  onChange={(e) => setAuditForm({ ...auditForm, company_fax_hp: e.target.value })}
-                  className="hidden"
-                  tabIndex="-1"
-                  autoComplete="off"
-                />
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Business Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Apex HVAC Pros"
-                      value={auditForm.businessName}
-                      onChange={(e) => setAuditForm({ ...auditForm, businessName: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Website URL *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="https://yourwebsite.com"
-                      value={auditForm.website}
-                      onChange={(e) => setAuditForm({ ...auditForm, website: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-12 flex-1 min-h-0 overflow-hidden">
+              <div className={`md:col-span-4 border-r border-current/10 p-4 overflow-y-auto space-y-1.5 ${isDark ? 'bg-[#080808]' : 'bg-[#F7F6F2]'}`}>
+                <div className="text-[10px] font-mono uppercase tracking-widest opacity-60 mb-2">
+                  CLOUDFLARE PAGES REPO FILES
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Metro City / Territory *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Austin, TX"
-                      value={auditForm.city}
-                      onChange={(e) => setAuditForm({ ...auditForm, city: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Primary Bottleneck
-                    </label>
-                    <select
-                      value={auditForm.bottleneck}
-                      onChange={(e) => setAuditForm({ ...auditForm, bottleneck: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    >
-                      <option>Need More Calls & #1 Google Maps Ranking</option>
-                      <option>Tired of Shared Leads from Angi / HomeAdvisor</option>
-                      <option>Missed Calls While Technicians Are On Jobs</option>
-                      <option>Website Does Not Convert Visitors to Booked Jobs</option>
-                      <option>Need More 5-Star Reviews to Beat Local Competitors</option>
-                    </select>
-                  </div>
+                {Object.keys(PROJECT_BUNDLE_FILES).map((filename) => (
+                  <button
+                    key={filename}
+                    onClick={() => setActiveBundleFile(filename)}
+                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono truncate transition-colors ${activeBundleFile === filename
+                        ? 'bg-[#FF6B1A] text-white font-bold'
+                        : 'hover:bg-current/5'
+                      }`}
+                  >
+                    {filename}
+                  </button>
+                ))}
+                <div className="pt-3 mt-3 border-t border-current/10 text-[11px] leading-relaxed opacity-75">
+                  Click <strong>Download Cloudflare Pages .ZIP</strong> above to export the complete project configured for <code>https://searchandservice.pages.dev</code> (including <code>/functions/api/*</code> Pages Functions, D1 schema, security headers, Vitest test suite, and <code>README.md</code>). If your browser sandbox strips <code>src/App.jsx</code> during export, copy this editor file into <code>src/App.jsx</code>.
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Your Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Marcus Vance"
-                      value={auditForm.name}
-                      onChange={(e) => setAuditForm({ ...auditForm, name: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="(555) 000-0000"
-                      value={auditForm.phone}
-                      onChange={(e) => setAuditForm({ ...auditForm, phone: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1 text-zinc-400">
-                      Work Email *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="owner@company.com"
-                      value={auditForm.workEmail}
-                      onChange={(e) => setAuditForm({ ...auditForm, workEmail: e.target.value })}
-                      className={`w-full text-sm px-4 py-2.5 rounded-xl border outline-none focus:border-[#FF6B1A] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-300'}`}
-                    />
-                  </div>
+              <div className="md:col-span-8 flex flex-col min-h-0">
+                <div className="px-4 py-2.5 border-b border-current/10 flex items-center justify-between text-xs font-mono">
+                  <span className="text-[#FF6B1A] font-semibold">{activeBundleFile}</span>
+                  <button
+                    onClick={handleCopyFileContent}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-current/15 hover:border-[#FF6B1A] text-[11px]"
+                  >
+                    {copiedFile ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedFile ? 'Copied' : 'Copy File'}</span>
+                  </button>
                 </div>
+                <pre className="p-4 text-xs font-mono overflow-auto flex-1 leading-relaxed select-all bg-black/95 text-neutral-200">
+                  <code>{PROJECT_BUNDLE_FILES[activeBundleFile]}</code>
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                {auditStatus.error && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{auditStatus.error}</span>
+      { }
+      {selectedService && (
+        <div className="fixed inset-0 z-[95] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div
+            className={`max-w-xl w-full rounded-2xl p-6 sm:p-8 border shadow-2xl ${isDark ? 'bg-[#0D0D0D] border-white/15 text-white' : 'bg-white border-black/15 text-black'
+              }`}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-current/10">
+              <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF6B1A]">
+                /{selectedService.number} • {selectedService.tag}
+              </span>
+              <button
+                onClick={() => setSelectedService(null)}
+                className="p-1.5 rounded-lg hover:bg-current/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <h3 className="text-2xl sm:text-3xl font-extrabold mt-4">{selectedService.title}</h3>
+            <p className="mt-3 text-sm opacity-80 leading-relaxed">{selectedService.shortDesc}</p>
+
+            <div className="mt-6">
+              <div className="text-xs font-mono uppercase tracking-wider text-[#FF6B1A] mb-3">
+                WHAT WE ENGINEER &amp; DEPLOY FOR YOU:
+              </div>
+              <div className="space-y-2.5">
+                {selectedService.deliverables.map((del, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
+                    <span>{del}</span>
                   </div>
-                )}
+                ))}
+              </div>
+            </div>
 
-                <button
-                  type="submit"
-                  disabled={auditStatus.loading}
-                  className="w-full mt-2 bg-[#FF6B1A] hover:bg-[#E05307] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-[#FF6B1A]/30 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {auditStatus.loading ? (
-                    <span>Generating Audit Request...</span>
-                  ) : (
-                    <>
-                      <span>Submit & Request Territory Audit</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+            <div className="mt-6 pt-4 border-t border-current/10 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest opacity-60">
+                  Expected Impact
+                </div>
+                <div className="text-sm font-bold text-[#FF6B1A]">{selectedService.impact}</div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedService(null);
+                  scrollToSection('audit');
+                }}
+                className="px-6 py-3 bg-[#FF6B1A] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#ff5500]"
+              >
+                Deploy This System →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                <p className="text-[11px] text-zinc-500 text-center">
-                  Protected by 256-bit encryption. We never sell or share your contact details.
-                </p>
-              </form>
-            )}
+      { }
+      {videoModalOpen && (
+        <div className="fixed inset-0 z-[95] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div
+            className={`max-w-2xl w-full rounded-2xl p-6 sm:p-8 border shadow-2xl ${isDark ? 'bg-[#0D0D0D] border-white/15 text-white' : 'bg-white border-black/15 text-black'
+              }`}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-current/10">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#FF6B1A]">
+                <Play className="w-4 h-4 fill-[#FF6B1A]" />
+                <span>SEARCHANDSERVICE GROWTH ENGINE OVERVIEW</span>
+              </div>
+              <button
+                onClick={() => setVideoModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-current/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-xl p-6 bg-black text-white border border-white/10 space-y-5">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-1 rounded bg-[#FF6B1A] text-[10px] font-bold uppercase tracking-widest">
+                  90-Second Architecture Reel
+                </span>
+                <span className="text-xs font-mono text-neutral-400">4+ Years • 250+ Clients</span>
+              </div>
+              <h4 className="text-xl sm:text-2xl font-extrabold">
+                How We Turn Local Businesses Into #1 Market Leaders in 60 Days
+              </h4>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setVideoModalOpen(false);
+                  scrollToSection('audit');
+                }}
+                className="px-6 py-3 bg-[#FF6B1A] text-white text-xs font-bold uppercase tracking-widest"
+              >
+                Book Live Screen-Share Demo →
+              </button>
+            </div>
           </div>
         </div>
       )}

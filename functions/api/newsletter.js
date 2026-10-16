@@ -65,7 +65,6 @@ export async function onRequestPost(context) {
       );
     }
 
-    const clientIp = request.headers.get('CF-Connecting-IP') || '';
     const ipHash = await hashIp(clientIp);
 
     if (hasD1) {

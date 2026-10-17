@@ -1,0 +1,246 @@
+import React from 'react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Lock,
+  Mail,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  FileText
+} from 'lucide-react';
+
+export default function PrivacyPolicyPage({ isDark, onNavigateHome, onOpenAudit }) {
+  return (
+    <div className="pt-24 sm:pt-32 pb-24">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-8 lg:px-10">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center justify-between pb-8 border-b border-current/10 mb-10 sm:mb-14">
+          <button
+            onClick={onNavigateHome}
+            className="group flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] opacity-75 hover:opacity-100 hover:text-[#FF6B1A] transition-all"
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            <span>Back to Homepage</span>
+          </button>
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-[#FF6B1A]">
+            <span>SEARCH &amp; SERVICE</span>
+            <span>•</span>
+            <span>PRIVACY POLICY</span>
+          </div>
+        </div>
+
+        {/* Hero Header */}
+        <div className="max-w-3xl mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-[0.2em] mb-4 border border-[#FF6B1A]/30 bg-[#FF6B1A]/10 text-[#FF6B1A]">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>GDPR &amp; CCPA Compliant Data Safeguards</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
+            Privacy Policy &amp; Data Safeguards.
+          </h1>
+          <p className="mt-4 text-sm sm:text-base opacity-80 leading-relaxed font-normal">
+            Last Updated &amp; Effective: <strong>October 2026</strong>. This Privacy Policy details how SearchandService Agency LLC (&ldquo;SearchandService&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) collects, safeguards, and processes business and personal information across our website, growth audit tools, and automated communication workflows.
+          </p>
+        </div>
+
+        {/* Core Territory Exclusivity & Privacy Guarantee Box */}
+        <div
+          className={`p-6 sm:p-8 rounded-2xl border mb-12 sm:mb-16 ${
+            isDark
+              ? 'bg-[#0D0D0D] border-[#FF6B1A]/30'
+              : 'bg-white border-[#FF6B1A]/30 shadow-md'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#FF6B1A]/10 text-[#FF6B1A] flex items-center justify-center flex-shrink-0 mt-1 border border-[#FF6B1A]/30">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold">
+                Our Territory Exclusivity &amp; Data Non-Disclosure Commitment
+              </h3>
+              <p className="mt-2 text-xs sm:text-sm opacity-85 leading-relaxed">
+                As a performance local growth agency, SearchandService operates under strict territory exclusivity agreements. We guarantee that your lead intake data, client phone numbers, ticket sizes, and localized keyword conversion intelligence will <strong>never</strong> be shared, pooled, or resold to any competing contractors or businesses within your defined service radius.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Policy Document Content */}
+        <div className="space-y-10 sm:space-y-12 text-sm sm:text-base leading-relaxed opacity-90">
+          {/* Section 1 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>1. Information We Collect</span>
+            </h2>
+            <p>
+              When you interact with our website, request a free Local Growth Audit, subscribe to our technical newsletters, or engage our services, we may collect the following categories of information:
+            </p>
+            <ul className="space-y-2 pl-4 list-disc marker:text-[#FF6B1A]">
+              <li>
+                <strong>Audit &amp; Form Submission Data:</strong> Business name, official company website URL, target metropolitan city/service area, identified operational bottlenecks, contact name, direct phone number, and business email address.
+              </li>
+              <li>
+                <strong>Automated System Telemetry:</strong> Hashed IP addresses (processed via cryptographic SHA-256 with rotating salting to prevent raw IP logging while mitigating automated spam), device user-agent strings, and form submission timestamps.
+              </li>
+              <li>
+                <strong>Security &amp; Bot-Mitigation Tokens:</strong> Cryptographic verification tokens generated by Cloudflare Turnstile to prevent automated scraping, bot attacks, and fraudulent lead injections.
+              </li>
+            </ul>
+          </section>
+
+          {/* Section 2 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>2. Form Submission &amp; Speed-to-Lead Practices</span>
+            </h2>
+            <p>
+              SearchandService designs and deploys speed-to-lead automation systems for local contractors. When you submit our Free Local Growth Audit form:
+            </p>
+            <ul className="space-y-2 pl-4 list-disc marker:text-[#FF6B1A]">
+              <li>Your submitted data is transmitted securely via HTTPS TLS 1.3 encryption directly to our Cloudflare Pages Functions infrastructure.</li>
+              <li>Records are stored in an encrypted Cloudflare D1 SQLite database binding protected by role-based identity authentication.</li>
+              <li>We may utilize your provided phone number to send an automated confirmation SMS or to coordinate your scheduled 15-minute screen-share review. We comply fully with TCPA regulations and never engage in unsolicited robocalling.</li>
+            </ul>
+          </section>
+
+          {/* Section 3 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>3. GDPR Compliance (European Union &amp; UK Data Subjects)</span>
+            </h2>
+            <p>
+              If you reside in the European Economic Area (EEA) or the United Kingdom, you are entitled to specific statutory rights under the General Data Protection Regulation (GDPR):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {[
+                { title: 'Right to Access', desc: 'Request a machine-readable copy of any personal data we hold about you.' },
+                { title: 'Right to Rectification', desc: 'Request immediate correction of inaccurate or incomplete records.' },
+                { title: 'Right to Erasure ("To Be Forgotten")', desc: 'Request permanent deletion of your contact records from our active database.' },
+                { title: 'Right to Object & Restrict', desc: 'Object at any time to the processing of your data for marketing communications.' }
+              ].map((right, rIdx) => (
+                <div
+                  key={rIdx}
+                  className={`p-4 rounded-xl border ${
+                    isDark ? 'bg-white/[0.02] border-white/10' : 'bg-black/[0.02] border-black/10'
+                  }`}
+                >
+                  <div className="font-bold text-xs uppercase tracking-wider text-[#FF6B1A] mb-1">
+                    {right.title}
+                  </div>
+                  <div className="text-xs opacity-80 leading-relaxed">{right.desc}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs opacity-75 pt-1">
+              To exercise any GDPR statutory right, submit a formal request to{' '}
+              <a href="mailto:searchandservicegrowth@gmail.com" className="text-[#FF6B1A] underline">
+                searchandservicegrowth@gmail.com
+              </a>
+              . Requests are verified and fulfilled within 30 days without fee.
+            </p>
+          </section>
+
+          {/* Section 4 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>4. CCPA / CPRA Notice (California Residents)</span>
+            </h2>
+            <p>
+              Under the California Consumer Privacy Act as amended by the California Privacy Rights Act (CPRA), California residents possess distinct privacy protections:
+            </p>
+            <ul className="space-y-2 pl-4 list-disc marker:text-[#FF6B1A]">
+              <li>
+                <strong>No Sale or Sharing of Personal Information:</strong> SearchandService does not sell, rent, or trade personal data or business contact lists to third-party data brokers or advertisers under any circumstances.
+              </li>
+              <li>
+                <strong>Right to Limit Use of Sensitive Personal Information:</strong> We only collect information strictly required to perform our contractual and consulting services.
+              </li>
+              <li>
+                <strong>Non-Discrimination:</strong> We do not deny services, charge differing rates, or provide lower quality if you exercise your California statutory privacy rights.
+              </li>
+            </ul>
+          </section>
+
+          {/* Section 5 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>5. Cookies, Analytics &amp; Edge Security</span>
+            </h2>
+            <p>
+              We do not utilize invasive cross-site advertising tracking cookies or third-party behavioral pixels. Our deployment applies strict enterprise HTTP security headers including:
+            </p>
+            <div
+              className={`p-4 rounded-xl font-mono text-xs overflow-x-auto ${
+                isDark ? 'bg-black text-neutral-300 border border-white/10' : 'bg-neutral-100 text-neutral-800'
+              }`}
+            >
+              <code>
+                X-Content-Type-Options: nosniff<br />
+                X-Frame-Options: DENY<br />
+                Referrer-Policy: strict-origin-when-cross-origin<br />
+                Strict-Transport-Security: max-age=31536000; includeSubDomains; preload<br />
+                Permissions-Policy: camera=(), microphone=(), geolocation=()
+              </code>
+            </div>
+          </section>
+
+          {/* Section 6 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>6. Data Retention &amp; Security Architecture</span>
+            </h2>
+            <p>
+              Audit lead submissions are retained for up to 24 months to support historical benchmarking and ongoing performance comparisons, unless deletion is requested sooner. Newsletter subscriber addresses are retained until you click the one-tap unsubscribe link included in every email transmission.
+            </p>
+          </section>
+
+          {/* Section 7 */}
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FF6B1A] flex items-center gap-2">
+              <span>7. Direct Contact &amp; Privacy Officer</span>
+            </h2>
+            <p>
+              For questions regarding this policy, data processing agreements, or to request record deletion:
+            </p>
+            <div
+              className={`p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                isDark ? 'bg-white/[0.02] border-white/10' : 'bg-black/[0.02] border-black/10'
+              }`}
+            >
+              <div>
+                <div className="font-bold text-sm">SearchandService Agency LLC</div>
+                <div className="text-xs opacity-75 mt-0.5">Attn: Privacy &amp; Data Safeguards Officer</div>
+                <div className="text-xs font-mono text-[#FF6B1A] mt-1">searchandservicegrowth@gmail.com</div>
+              </div>
+              <a
+                href="mailto:searchandservicegrowth@gmail.com"
+                className="px-4 py-2.5 rounded-lg bg-[#FF6B1A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#ff5500] transition-colors text-center"
+              >
+                Send Privacy Inquiry
+              </a>
+            </div>
+          </section>
+        </div>
+
+        {/* Bottom Back Button */}
+        <div className="mt-14 pt-8 border-t border-current/10 flex items-center justify-between">
+          <button
+            onClick={onNavigateHome}
+            className="text-xs font-mono uppercase tracking-widest text-[#FF6B1A] hover:underline flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Homepage</span>
+          </button>
+          <button
+            onClick={onOpenAudit}
+            className="text-xs font-mono uppercase tracking-widest opacity-80 hover:text-[#FF6B1A] transition-colors"
+          >
+            Claim Free Local Growth Audit →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

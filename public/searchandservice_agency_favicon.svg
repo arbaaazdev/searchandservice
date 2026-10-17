@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Deep obsidian background gradient for high contrast on both light and dark browser tabs -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111111" />
+      <stop offset="100%" stop-color="#050505" />
+    </linearGradient>
+
+    <!-- Signature SearchandService vibrant orange gradient -->
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7E36" />
+      <stop offset="100%" stop-color="#FF5500" />
+    </linearGradient>
+
+    <!-- Subtle ambient orange glow behind the monogram -->
+    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF6B1A" stop-opacity="0.24" />
+      <stop offset="100%" stop-color="#FF6B1A" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Crisp elevation shadow for the central monogram -->
+    <filter id="dropShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle (Apple Touch & Modern Browser Standard 22% radius) -->
+  <rect
+    x="16"
+    y="16"
+    width="480"
+    height="480"
+    rx="112"
+    ry="112"
+    fill="url(#bgGrad)"
+    stroke="#FFFFFF"
+    stroke-opacity="0.12"
+    stroke-width="8"
+  />
+
+  <!-- Ambient center glow -->
+  <circle cx="256" cy="256" r="210" fill="url(#ambientGlow)" />
+
+  <!-- Signature Gleamy-style ghosted outline watermark in the background -->
+  <text
+    x="256"
+    y="395"
+    text-anchor="middle"
+    font-family="'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="800"
+    font-size="420"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-opacity="0.06"
+    stroke-width="6"
+    letter-spacing="-10"
+  >
+    S
+  </text>
+
+  <!-- Main Foreground Emblem Group -->
+  <g filter="url(#dropShadow)">
+    <!-- Bold Lowercase 's' Monogram (matches the spinning badge and loader icon) -->
+    <g transform="translate(232, 268) rotate(-8)">
+      <text
+        x="0"
+        y="86"
+        text-anchor="middle"
+        font-family="'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif"
+        font-weight="800"
+        font-size="330"
+        fill="#F7F6F2"
+      >
+        s
+      </text>
+    </g>
+
+    <!-- Signature Gleamy Skewed Orange Parallelogram Slash -->
+    <rect
+      x="116"
+      y="376"
+      width="148"
+      height="34"
+      rx="6"
+      fill="url(#orangeGrad)"
+      transform="skewX(-24) rotate(-8 190 393)"
+    />
+
+    <!-- Signature Orange Status Dot (top-right accent) -->
+    <circle
+      cx="374"
+      cy="148"
+      r="28"
+      fill="url(#orangeGrad)"
+    />
+  </g>
+</svg>

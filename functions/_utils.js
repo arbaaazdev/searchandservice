@@ -47,13 +47,18 @@ export function csvSafe(value) {
 }
 
 export function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) && email.length <= 254;
 }
 
 export function isValidUrl(url) {
+  if (!url || typeof url !== 'string' || /\s/.test(url.trim())) return false;
+  const toTest = /^https?:\/\//i.test(url.trim()) ? url.trim() : 'https://' + url.trim();
   try {
-    const parsed = new URL(url);
-    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && Boolean(parsed.hostname);
+    const parsed = new URL(toTest);
+    return (
+      (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      Boolean(parsed.hostname && parsed.hostname.includes('.') && !parsed.hostname.endsWith('.'))
+    );
   } catch {
     return false;
   }

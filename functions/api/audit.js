@@ -27,15 +27,21 @@ export async function onRequestPost(context) {
 
     // 2. Sanitize & validate fields
     const businessName = sanitizeString(payload.businessName, 140);
-    const website = sanitizeString(payload.website, 250);
+    let rawWebsite = sanitizeString(payload.website, 250);
+    const website = rawWebsite && !/^https?:\/\//i.test(rawWebsite) ? 'https://' + rawWebsite : rawWebsite;
     const city = sanitizeString(payload.city, 120);
+    const customMessage = sanitizeString(payload.customMessage || payload.customService, 500);
+    const rawBottleneck =
+      sanitizeString(payload.bottleneck, 200) || 'Need More Calls & #1 Google Maps Ranking';
     const bottleneck =
-      sanitizeString(payload.bottleneck, 180) || 'Need More Calls & #1 Google Maps Ranking';
+      (rawBottleneck === 'Custom Service Requirement' || rawBottleneck.startsWith('Custom:')) && customMessage
+        ? sanitizeString(`Custom Service: ${customMessage}`, 220)
+        : rawBottleneck;
     const name = sanitizeString(payload.name, 120);
     const phone = sanitizeString(payload.phone, 40);
     const workEmail = sanitizeString(payload.workEmail, 254).toLowerCase();
 
-    if (!businessName || !website || !city || !name || !phone || !workEmail) {
+    if (!businessName || !name || !phone || !workEmail) {
       return jsonResponse(
         { ok: false, error: 'Please complete all required fields.' },
         400,
@@ -51,9 +57,21 @@ export async function onRequestPost(context) {
       );
     }
 
-    if (!isValidUrl(website)) {
+    if (website && !isValidUrl(website)) {
       return jsonResponse(
-        { ok: false, error: 'Please enter a valid website URL starting with https:// or http://.' },
+        { ok: false, error: 'Please enter a valid website domain or URL.' },
+        400,
+        origin
+      );
+    }
+
+    const digitsOnly = phone.replace(/[^\d]/g, '');
+    const isUsPhone =
+      (digitsOnly.length === 10 && /^[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly)) ||
+      (digitsOnly.length === 11 && digitsOnly.startsWith('1') && /^1[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly));
+    if (!isUsPhone) {
+      return jsonResponse(
+        { ok: false, error: 'Please enter a valid 10-digit US phone number.' },
         400,
         origin
       );
@@ -151,6 +169,7 @@ export async function onRequestPost(context) {
           '<p><strong>Website:</strong> <a href="' + website + '">' + website + '</a></p>' +
           '<p><strong>City / Territory:</strong> ' + city + '</p>' +
           '<p><strong>Primary Bottleneck:</strong> ' + bottleneck + '</p>' +
+          (customMessage ? '<p><strong>Custom Service Scope:</strong> ' + customMessage + '</p>' : '') +
           '<hr />' +
           '<p><strong>Contact Name:</strong> ' + name + '</p>' +
           '<p><strong>Phone:</strong> ' + phone + '</p>' +

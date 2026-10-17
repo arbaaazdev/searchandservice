@@ -26,6 +26,12 @@ import {
   Copy,
   Check
 } from 'lucide-react';
+import BlogPage from './pages/BlogPage.jsx';
+import BlogPostPage from './pages/BlogPostPage.jsx';
+import CaseStudiesPage from './pages/CaseStudiesPage.jsx';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
+import TermsPage from './pages/TermsPage.jsx';
+import DisclaimerPage from './pages/DisclaimerPage.jsx';
 
 const PROJECT_BUNDLE_FILES = {
   'package.json': `{
@@ -1424,6 +1430,23 @@ function TurnstileWidget({ sitekey, onVerify, isDark, widgetRef }) {
 }
 
 export default function App() {
+  const getPageInfoFromHash = () => {
+    if (typeof window === 'undefined') return { page: 'home', slug: null };
+    const hash = (window.location.hash || '').toLowerCase();
+    if (hash.startsWith('#/blog/') || hash.startsWith('#blog/')) {
+      const slug = hash.replace(/^#\/?blog\//, '').split('?')[0];
+      return { page: 'blog-post', slug };
+    }
+    if (hash.startsWith('#/blog') || hash.startsWith('#blog')) return { page: 'blog', slug: null };
+    if (hash.startsWith('#/case-studies') || hash.startsWith('#case-studies')) return { page: 'case-studies', slug: null };
+    if (hash.startsWith('#/privacy') || hash.startsWith('#privacy')) return { page: 'privacy', slug: null };
+    if (hash.startsWith('#/terms') || hash.startsWith('#terms')) return { page: 'terms', slug: null };
+    if (hash.startsWith('#/disclaimer') || hash.startsWith('#disclaimer')) return { page: 'disclaimer', slug: null };
+    return { page: 'home', slug: null };
+  };
+
+  const [currentPage, setCurrentPage] = useState(() => getPageInfoFromHash().page);
+  const [currentArticleSlug, setCurrentArticleSlug] = useState(() => getPageInfoFromHash().slug);
   const [turnstileToken, setTurnstileToken] = useState(null);
   const [auditTurnstileToken, setAuditTurnstileToken] = useState(null);
   const [newsletterTurnstileToken, setNewsletterTurnstileToken] = useState(null);
@@ -1434,6 +1457,19 @@ export default function App() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [isLoaderExiting, setIsLoaderExiting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const info = getPageInfoFromHash();
+      setCurrentPage(info.page);
+      setCurrentArticleSlug(info.slug);
+      if (info.page !== 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const [activeReviewIdx, setActiveReviewIdx] = useState(0);
   const [isReviewPaused, setIsReviewPaused] = useState(false);
@@ -1465,6 +1501,28 @@ export default function App() {
   const [auditSubmitting, setAuditSubmitting] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditSubmitted, setAuditSubmitted] = useState(false);
+  const [auditFieldErrors, setAuditFieldErrors] = useState({});
+  const [vibratingFields, setVibratingFields] = useState({});
+
+  const auditFormRef = useRef(null);
+  const focusTimeoutRef = useRef(null);
+  const businessNameInputRef = useRef(null);
+  const websiteInputRef = useRef(null);
+  const cityInputRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const workEmailInputRef = useRef(null);
+  const customMessageInputRef = useRef(null);
+
+  const auditInputRefs = {
+    businessName: businessNameInputRef,
+    website: websiteInputRef,
+    city: cityInputRef,
+    name: nameInputRef,
+    phone: phoneInputRef,
+    workEmail: workEmailInputRef,
+    customMessage: customMessageInputRef
+  };
 
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
@@ -1544,17 +1602,301 @@ export default function App() {
   const monthlyRevenueLift = customAddedLeads * customConversionRate * customTicket;
   const annualRevenueLift = monthlyRevenueLift * 12;
 
+  const navigateTo = (page, targetSection = null, slug = null) => {
+    setMenuOpen(false);
+    if (page === 'home') {
+      setCurrentPage('home');
+      setCurrentArticleSlug(null);
+      if (window.location.hash && window.location.hash !== '#/' && !window.location.hash.startsWith('#hero')) {
+        window.location.hash = targetSection ? `#${targetSection}` : '#/';
+      }
+      if (targetSection) {
+        setTimeout(() => {
+          const el = document.getElementById(targetSection);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else if (page === 'blog-post' && slug) {
+      window.location.hash = `#/blog/${slug}`;
+      setCurrentPage('blog-post');
+      setCurrentArticleSlug(slug);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.location.hash = `#/${page}`;
+      setCurrentPage(page);
+      setCurrentArticleSlug(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const scrollToSection = (id) => {
     setMenuOpen(false);
+    if (currentPage !== 'home') {
+      setCurrentPage('home');
+      window.location.hash = `#${id}`;
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  const selectServiceForAudit = (service) => {
+    let targetBottleneck = 'Need More Calls & #1 Google Maps Ranking';
+    let customText = '';
+
+    const id = service?.id || '';
+
+    if (id === 'local-seo') {
+      targetBottleneck = 'Need More Calls & #1 Google Maps Ranking';
+    } else if (id === 'websites') {
+      targetBottleneck = 'Old Website Not Converting Local Visitors';
+    } else if (id === 'ai-automation') {
+      targetBottleneck = 'Missing Inbound Calls & Slow Follow-Up';
+    } else if (id === 'reviews') {
+      targetBottleneck = 'Need Consistent 5-Star Google Reviews';
+    } else if (id === 'dashboards') {
+      targetBottleneck = 'Need Unified Multi-Location Telemetry';
+    } else if (id === 'workflows') {
+      // Workflows: auto-select custom service option with prefilled custom requirement text
+      targetBottleneck = 'Custom Service Requirement';
+      customText = 'Business Workflows: Connect CRM, forms, team dispatch, and automated estimate follow-up pipelines.';
+    } else {
+      targetBottleneck = 'Custom Service Requirement';
+      customText = `Custom Service: ${service?.title || 'Customized Growth System'}`;
+    }
+
+    setAuditForm((prev) => ({
+      ...prev,
+      bottleneck: targetBottleneck,
+      customMessage: customText
+    }));
+
+    scrollToSection('audit');
+  };
+
+  const selectCaseStudyForAudit = (study) => {
+    let targetBottleneck = 'Need More Calls & #1 Google Maps Ranking';
+    let customText = '';
+
+    if (study) {
+      const filterKey = study.filterKey || '';
+      const id = study.id;
+
+      if (filterKey === 'maps' || id === 1) {
+        targetBottleneck = 'Need More Calls & #1 Google Maps Ranking';
+      } else if (filterKey === 'ai' || id === 2) {
+        targetBottleneck = 'Missing Inbound Calls & Slow Follow-Up';
+      } else if (filterKey === 'web' || id === 3) {
+        targetBottleneck = 'Old Website Not Converting Local Visitors';
+      } else if (filterKey === 'dashboard' || id === 4) {
+        targetBottleneck = 'Need Unified Multi-Location Telemetry';
+      } else if (filterKey === 'reviews') {
+        targetBottleneck = 'Need Consistent 5-Star Google Reviews';
+      } else {
+        targetBottleneck = 'Custom Service Requirement';
+        customText = `Case Study System: ${study.title || 'Custom Deployment'} (${study.category || ''})`;
+      }
+
+      setAuditForm((prev) => ({
+        ...prev,
+        bottleneck: targetBottleneck,
+        customMessage: customText
+      }));
+    }
+
+    navigateTo('home', 'audit');
+  };
+
+  const focusAuditField = (fieldName) => {
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+    focusTimeoutRef.current = setTimeout(() => {
+      const ref = auditInputRefs[fieldName];
+      if (ref && ref.current) {
+        ref.current.focus({ preventScroll: true });
+      }
+    }, 20);
+  };
+
+  const triggerVibrate = (fieldName) => {
+    setVibratingFields((prev) => ({ ...prev, [fieldName]: true }));
+    setTimeout(() => {
+      setVibratingFields((prev) => ({ ...prev, [fieldName]: false }));
+    }, 450);
+  };
+
+  const isValidWebsiteUrl = (val) => {
+    if (!val || typeof val !== 'string') return false;
+    const trimmed = val.trim();
+    if (/\s/.test(trimmed)) return false;
+    // Allows domain.com, sub.domain.com, https://domain.com, domain.co.uk/path, etc.
+    // Rejects plain words without a TLD like "apex hvac" or "mycompany"
+    const urlPattern = /^(https?:\/\/)?(www\.)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d{1,5})?(\/[^\s]*)?$/i;
+    return urlPattern.test(trimmed);
+  };
+
+  const isValidUsPhone = (val) => {
+    if (!val || typeof val !== 'string') return false;
+    const digitsOnly = val.replace(/[^\d]/g, '');
+    // 10-digit US NANP (area code and exchange code cannot start with 0 or 1)
+    if (digitsOnly.length === 10) {
+      return /^[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly);
+    }
+    // 11-digit US number starting with country code 1
+    if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      return /^1[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly);
+    }
+    return false;
+  };
+
+  const isValidWorkEmail = (val) => {
+    if (!val || typeof val !== 'string') return false;
+    const trimmed = val.trim();
+    // Requires valid username@domain.ext with at least 2 alpha characters in TLD extension
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailPattern.test(trimmed);
+  };
+
+  const validateAuditField = (fieldName, rawValue, isSubmit = false) => {
+    const val = typeof rawValue === 'string' ? rawValue.trim() : '';
+
+    // Requirement 1 & 3:
+    // Only Business Name, Your Name, Phone Number, and Work Email are necessary.
+    // If field is empty:
+    if (!val) {
+      if (isSubmit) {
+        if (fieldName === 'businessName') return 'Business name is required.';
+        if (fieldName === 'name') return 'Your name is required.';
+        if (fieldName === 'phone') return 'Phone number is required.';
+        if (fieldName === 'workEmail') return 'Work email is required.';
+      }
+      // On blur or when user deletes data, empty field has no error
+      return '';
+    }
+
+    // Guardrails for filled fields:
+    if (fieldName === 'website') {
+      if (!isValidWebsiteUrl(val)) {
+        return 'Enter a valid domain or URL (e.g. domain.com or https://...).';
+      }
+    } else if (fieldName === 'phone') {
+      if (!isValidUsPhone(val)) {
+        return 'Enter a valid 10-digit US phone number (e.g. (555) 234-5678).';
+      }
+    } else if (fieldName === 'workEmail') {
+      if (!isValidWorkEmail(val)) {
+        return 'Enter a valid email with a domain extension (e.g. name@company.com).';
+      }
+    }
+
+    return '';
+  };
+
+  const handleAuditFieldBlur = (fieldName, e) => {
+    // Only intercept and validate on blur if the user is moving to another input/select/textarea inside the audit form.
+    // If the visitor clicked outside the audit form (e.g. footer links, nav links, buttons, other page content):
+    // DO NOT steal focus, DO NOT trigger vibration, and DO NOT block interaction!
+    const target = e?.relatedTarget;
+    const isAnotherAuditInput = Boolean(
+      target &&
+      auditFormRef.current &&
+      auditFormRef.current.contains(target) &&
+      (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')
+    );
+
+    if (!isAnotherAuditInput) {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+      return;
+    }
+
+    const error = validateAuditField(fieldName, auditForm[fieldName], false);
+    if (error) {
+      setAuditFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+      triggerVibrate(fieldName);
+      // Place visitor back into that wrong filled input
+      focusAuditField(fieldName);
+    } else {
+      setAuditFieldErrors((prev) => {
+        if (!prev[fieldName]) return prev;
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      });
+    }
+  };
+
+  const handleAuditFieldChange = (fieldName, value) => {
+    setAuditForm((prev) => ({ ...prev, [fieldName]: value }));
+
+    // Requirement 3: If user deletes all data from an input, error pop should be removed immediately
+    if (!value || !value.trim()) {
+      setAuditFieldErrors((prev) => {
+        if (!prev[fieldName]) return prev;
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      });
+      return;
+    }
+
+    // If an error is currently active for this field, revalidate to clear error
+    // as soon as the visitor fixes it to a valid value
+    if (auditFieldErrors[fieldName]) {
+      const error = validateAuditField(fieldName, value, false);
+      if (!error) {
+        setAuditFieldErrors((prev) => {
+          const next = { ...prev };
+          delete next[fieldName];
+          return next;
+        });
+      }
+    }
+  };
+
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
     setAuditError('');
+
+    // Requirement 1: Business name, Your name, Phone number, and Work Email are necessary only.
+    // Website is optional, but if filled, must satisfy URL guardrails.
+    const fieldsToCheck = ['businessName', 'name', 'phone', 'workEmail'];
+    if (auditForm.website.trim()) {
+      fieldsToCheck.push('website');
+    }
+
+    const newErrors = {};
+    let firstErrorField = null;
+
+    fieldsToCheck.forEach((fieldName) => {
+      const err = validateAuditField(fieldName, auditForm[fieldName], true);
+      if (err) {
+        newErrors[fieldName] = err;
+        triggerVibrate(fieldName);
+        if (!firstErrorField) {
+          firstErrorField = fieldName;
+        }
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setAuditFieldErrors(newErrors);
+      setAuditError('Please complete all required fields and verify highlighted inputs.');
+      if (firstErrorField) {
+        focusAuditField(firstErrorField);
+      }
+      return;
+    }
 
     const tokenToUse = auditTurnstileToken || turnstileToken;
     if (!tokenToUse) {
@@ -1563,19 +1905,8 @@ export default function App() {
       return;
     }
 
-    if (!auditForm.businessName.trim() || !auditForm.website.trim() || !auditForm.city.trim() || !auditForm.name.trim() || !auditForm.phone.trim() || !auditForm.workEmail.trim()) {
-      setAuditError('Please fill in all required fields.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(auditForm.workEmail.trim())) {
-      setAuditError('Please enter a valid work email address.');
-      return;
-    }
-
     let normalizedWebsite = auditForm.website.trim();
-    if (!/^https?:\/\//i.test(normalizedWebsite)) {
+    if (normalizedWebsite && !/^https?:\/\//i.test(normalizedWebsite)) {
       normalizedWebsite = 'https://' + normalizedWebsite;
     }
 
@@ -1586,6 +1917,12 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...auditForm,
+          bottleneck:
+            auditForm.bottleneck === 'Custom Service Requirement' && auditForm.customMessage.trim()
+              ? `Custom Service: ${auditForm.customMessage.trim()}`
+              : auditForm.bottleneck,
+          customMessage: auditForm.customMessage.trim(),
+          customService: auditForm.customMessage.trim(),
           website: normalizedWebsite,
           turnstileToken: tokenToUse,
           'cf-turnstile-response': tokenToUse
@@ -1824,6 +2161,19 @@ export default function App() {
           letter-spacing: 0.22em;
         }
 
+        @keyframes inputVibrate {
+          0%, 100% { transform: translateX(0); }
+          15% { transform: translateX(-6px); }
+          30% { transform: translateX(6px); }
+          45% { transform: translateX(-4px); }
+          60% { transform: translateX(4px); }
+          75% { transform: translateX(-2px); }
+          90% { transform: translateX(2px); }
+        }
+        .input-vibrate {
+          animation: inputVibrate 0.4s ease-in-out !important;
+        }
+
         @keyframes marqueeContinuousLeft {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-100%); }
@@ -2024,7 +2374,7 @@ export default function App() {
             href="#hero"
             onClick={(e) => {
               e.preventDefault();
-              scrollToSection('hero');
+              navigateTo('home', 'hero');
             }}
             className="group flex items-center text-[15px] xs:text-base sm:text-2xl md:text-3xl font-bold tracking-tight focus:outline-none px-2 sm:px-0"
           >
@@ -2300,9 +2650,11 @@ export default function App() {
         </button>
       </div>
 
-      { }
-      <section
-        id="hero"
+      {/* Main Page Content */}
+      {currentPage === 'home' ? (
+        <>
+          <section
+            id="hero"
         className="relative min-h-[96svh] sm:min-h-[100svh] pt-24 sm:pt-32 pb-28 sm:pb-36 lg:pb-32 flex flex-col justify-center overflow-hidden"
       >
         <div className="gleamy-outline-letter absolute right-2 sm:right-auto sm:left-20 xl:left-36 top-[42%] sm:top-[50%] -translate-y-1/2 text-[175px] sm:text-[340px] lg:text-[450px] z-0 opacity-75 sm:opacity-100">
@@ -2666,7 +3018,7 @@ export default function App() {
 
                     <div className="mt-5 sm:mt-7">
                       <button
-                        onClick={() => setSelectedService(service)}
+                        onClick={() => selectServiceForAudit(service)}
                         className="group/btn relative inline-flex items-center text-xs sm:text-sm font-medium tracking-wider focus:outline-none py-1"
                       >
                         <span className="relative z-10">Know More</span>
@@ -3199,7 +3551,8 @@ export default function App() {
                   className={`group flex flex-col ${idx % 2 === 1 ? 'md:mt-10' : ''}`}
                 >
                   <div
-                    className={`relative overflow-hidden border transition-all duration-500 group-hover:-translate-y-1.5 ${isDark
+                    onClick={() => selectCaseStudyForAudit(item)}
+                    className={`relative overflow-hidden border transition-all duration-500 group-hover:-translate-y-1.5 cursor-pointer ${isDark
                         ? 'bg-[#0F0F0F] border-white/10 group-hover:border-[#FF6B1A]/60'
                         : 'bg-white border-black/10 group-hover:border-[#FF6B1A]/60 shadow-lg'
                       }`}
@@ -3443,7 +3796,7 @@ export default function App() {
                   }`}
               >
                 {!auditSubmitted ? (
-                  <form onSubmit={handleAuditSubmit} className="space-y-3.5 sm:space-y-4">
+                  <form ref={auditFormRef} onSubmit={handleAuditSubmit} noValidate className="space-y-3.5 sm:space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-current/10">
                       <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.18em] sm:tracking-[0.2em] text-[#FF6B1A] flex items-center gap-1.5">
                         <Sparkles className="w-3 h-3 text-[#FF6B1A]" />
@@ -3476,57 +3829,92 @@ export default function App() {
                         Business Name *
                       </label>
                       <input
+                        ref={businessNameInputRef}
                         type="text"
-                        required
                         placeholder="e.g. Apex HVAC & Plumbing"
                         value={auditForm.businessName}
-                        onChange={(e) =>
-                          setAuditForm({ ...auditForm, businessName: e.target.value })
-                        }
-                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                            ? 'bg-[#050505] border-white/15 text-white'
-                            : 'bg-[#F7F6F2] border-black/15 text-black'
-                          }`}
+                        onChange={(e) => handleAuditFieldChange('businessName', e.target.value)}
+                        onBlur={(e) => handleAuditFieldBlur('businessName', e)}
+                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                          vibratingFields.businessName ? 'input-vibrate ' : ''
+                        }${
+                          auditFieldErrors.businessName
+                            ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                            : isDark
+                            ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                            : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                        }`}
                       />
+                      {auditFieldErrors.businessName && (
+                        <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{auditFieldErrors.businessName}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
-                          Website URL *
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                          <span>Website URL</span>
+                          <span className="text-[10px] font-mono text-neutral-400 font-normal">Optional</span>
                         </label>
                         <input
-                          type="url"
-                          required
-                          placeholder="https://yourbusiness.com"
+                          ref={websiteInputRef}
+                          type="text"
+                          inputMode="url"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          placeholder="e.g. searchandservice.com or https://..."
                           value={auditForm.website}
-                          onChange={(e) =>
-                            setAuditForm({ ...auditForm, website: e.target.value })
-                          }
-                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                              ? 'bg-[#050505] border-white/15 text-white'
-                              : 'bg-[#F7F6F2] border-black/15 text-black'
-                            }`}
+                          onChange={(e) => handleAuditFieldChange('website', e.target.value)}
+                          onBlur={(e) => handleAuditFieldBlur('website', e)}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                            vibratingFields.website ? 'input-vibrate ' : ''
+                          }${
+                            auditFieldErrors.website
+                              ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                              : isDark
+                              ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                              : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                          }`}
                         />
+                        {auditFieldErrors.website && (
+                          <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{auditFieldErrors.website}</span>
+                          </p>
+                        )}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
-                          City / Location *
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                          <span>City / Location</span>
+                          <span className="text-[10px] font-mono text-neutral-400 font-normal">Optional</span>
                         </label>
                         <input
+                          ref={cityInputRef}
                           type="text"
-                          required
                           placeholder="e.g. Austin, TX"
                           value={auditForm.city}
-                          onChange={(e) =>
-                            setAuditForm({ ...auditForm, city: e.target.value })
-                          }
-                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                              ? 'bg-[#050505] border-white/15 text-white'
-                              : 'bg-[#F7F6F2] border-black/15 text-black'
-                            }`}
+                          onChange={(e) => handleAuditFieldChange('city', e.target.value)}
+                          onBlur={(e) => handleAuditFieldBlur('city', e)}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                            vibratingFields.city ? 'input-vibrate ' : ''
+                          }${
+                            auditFieldErrors.city
+                              ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                              : isDark
+                              ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                              : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                          }`}
                         />
+                        {auditFieldErrors.city && (
+                          <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{auditFieldErrors.city}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -3536,16 +3924,28 @@ export default function App() {
                           Your Name *
                         </label>
                         <input
+                          ref={nameInputRef}
                           type="text"
-                          required
                           placeholder="Full Name"
                           value={auditForm.name}
-                          onChange={(e) => setAuditForm({ ...auditForm, name: e.target.value })}
-                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                              ? 'bg-[#050505] border-white/15 text-white'
-                              : 'bg-[#F7F6F2] border-black/15 text-black'
-                            }`}
+                          onChange={(e) => handleAuditFieldChange('name', e.target.value)}
+                          onBlur={(e) => handleAuditFieldBlur('name', e)}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                            vibratingFields.name ? 'input-vibrate ' : ''
+                          }${
+                            auditFieldErrors.name
+                              ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                              : isDark
+                              ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                              : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                          }`}
                         />
+                        {auditFieldErrors.name && (
+                          <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{auditFieldErrors.name}</span>
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -3553,16 +3953,28 @@ export default function App() {
                           Phone Number *
                         </label>
                         <input
+                          ref={phoneInputRef}
                           type="tel"
-                          required
                           placeholder="(555) 000-0000"
                           value={auditForm.phone}
-                          onChange={(e) => setAuditForm({ ...auditForm, phone: e.target.value })}
-                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                              ? 'bg-[#050505] border-white/15 text-white'
-                              : 'bg-[#F7F6F2] border-black/15 text-black'
-                            }`}
+                          onChange={(e) => handleAuditFieldChange('phone', e.target.value)}
+                          onBlur={(e) => handleAuditFieldBlur('phone', e)}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                            vibratingFields.phone ? 'input-vibrate ' : ''
+                          }${
+                            auditFieldErrors.phone
+                              ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                              : isDark
+                              ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                              : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                          }`}
                         />
+                        {auditFieldErrors.phone && (
+                          <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{auditFieldErrors.phone}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -3571,16 +3983,28 @@ export default function App() {
                         Work Email *
                       </label>
                       <input
+                        ref={workEmailInputRef}
                         type="email"
-                        required
                         placeholder="owner@yourbusiness.com"
                         value={auditForm.workEmail}
-                        onChange={(e) => setAuditForm({ ...auditForm, workEmail: e.target.value })}
-                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF6B1A] ${isDark
-                            ? 'bg-[#050505] border-white/15 text-white'
-                            : 'bg-[#F7F6F2] border-black/15 text-black'
-                          }`}
+                        onChange={(e) => handleAuditFieldChange('workEmail', e.target.value)}
+                        onBlur={(e) => handleAuditFieldBlur('workEmail', e)}
+                        className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors ${
+                          vibratingFields.workEmail ? 'input-vibrate ' : ''
+                        }${
+                          auditFieldErrors.workEmail
+                            ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                            : isDark
+                            ? 'bg-[#050505] border-white/15 text-white focus:border-[#FF6B1A]'
+                            : 'bg-[#F7F6F2] border-black/15 text-black focus:border-[#FF6B1A]'
+                        }`}
                       />
+                      {auditFieldErrors.workEmail && (
+                        <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{auditFieldErrors.workEmail}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -3612,8 +4036,45 @@ export default function App() {
                         <option value="Need Unified Multi-Location Telemetry">
                           Need Unified Multi-Location Telemetry
                         </option>
+                        <option value="Custom Service Requirement">
+                          Custom Service Requirement / Customized System
+                        </option>
                       </select>
                     </div>
+
+                    {auditForm.bottleneck === 'Custom Service Requirement' && (
+                      <div className="pt-1">
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                          <span>Describe Your Custom Service Requirement</span>
+                          <span className="text-[10px] text-[#FF6B1A] font-mono font-normal">Custom Scope</span>
+                        </label>
+                        <textarea
+                          ref={customMessageInputRef}
+                          rows={3}
+                          placeholder="Tell us about your specific service needs, custom workflow integrations, software stack, or unique operational requirements..."
+                          value={auditForm.customMessage}
+                          onChange={(e) =>
+                            handleAuditFieldChange('customMessage', e.target.value)
+                          }
+                          onBlur={(e) => handleAuditFieldBlur('customMessage', e)}
+                          className={`w-full px-4 py-2.5 text-sm border focus:outline-none transition-colors resize-none ${
+                            vibratingFields.customMessage ? 'input-vibrate ' : ''
+                          }${
+                            auditFieldErrors.customMessage
+                              ? 'border-red-500 bg-red-500/5 focus:border-red-500 text-red-500 dark:text-red-400'
+                              : isDark
+                              ? 'bg-[#050505] border-white/15 text-white placeholder-neutral-500 focus:border-[#FF6B1A]'
+                              : 'bg-[#F7F6F2] border-black/15 text-black placeholder-neutral-400 focus:border-[#FF6B1A]'
+                          }`}
+                        />
+                        {auditFieldErrors.customMessage && (
+                          <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{auditFieldErrors.customMessage}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     <TurnstileWidget
                       sitekey="0x4AAAAAAFYNhLoWTzQbSB6M"
@@ -3662,6 +4123,49 @@ export default function App() {
           </div>
         </div>
       </section>
+        </>
+      ) : currentPage === 'blog' ? (
+        <BlogPage
+          isDark={isDark}
+          onNavigateHome={() => navigateTo('home')}
+          onSelectArticle={(slug) => navigateTo('blog-post', null, slug)}
+          onOpenAudit={() => navigateTo('home', 'audit')}
+          onExploreServices={() => navigateTo('home', 'services')}
+        />
+      ) : currentPage === 'blog-post' ? (
+        <BlogPostPage
+          slug={currentArticleSlug}
+          isDark={isDark}
+          onNavigateBlog={() => navigateTo('blog')}
+          onNavigatePost={(slug) => navigateTo('blog-post', null, slug)}
+          onNavigateHome={() => navigateTo('home')}
+          onOpenAudit={() => navigateTo('home', 'audit')}
+        />
+      ) : currentPage === 'case-studies' ? (
+        <CaseStudiesPage
+          isDark={isDark}
+          onNavigateHome={() => navigateTo('home')}
+          onOpenAudit={(study) => selectCaseStudyForAudit(study)}
+        />
+      ) : currentPage === 'privacy' ? (
+        <PrivacyPolicyPage
+          isDark={isDark}
+          onNavigateHome={() => navigateTo('home')}
+          onOpenAudit={() => navigateTo('home', 'audit')}
+        />
+      ) : currentPage === 'terms' ? (
+        <TermsPage
+          isDark={isDark}
+          onNavigateHome={() => navigateTo('home')}
+          onOpenAudit={() => navigateTo('home', 'audit')}
+        />
+      ) : currentPage === 'disclaimer' ? (
+        <DisclaimerPage
+          isDark={isDark}
+          onNavigateHome={() => navigateTo('home')}
+          onOpenAudit={() => navigateTo('home', 'audit')}
+        />
+      ) : null}
 
       {/* Footer */}
       <footer
@@ -3869,44 +4373,50 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-medium">
-              <a
-                href="#disclaimer"
-                onClick={(e) => e.preventDefault()}
+              <button
+                onClick={() => navigateTo('disclaimer')}
                 className="hover:text-[#FF6B1A] transition-colors"
               >
                 Disclaimer
-              </a>
+              </button>
               <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
-              <a
-                href="#privacy"
-                onClick={(e) => e.preventDefault()}
+              <button
+                onClick={() => navigateTo('privacy')}
                 className="hover:text-[#FF6B1A] transition-colors"
               >
                 Privacy Policy
-              </a>
+              </button>
               <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
-              <a
-                href="#blog"
-                onClick={(e) => e.preventDefault()}
+              <button
+                onClick={() => navigateTo('terms')}
+                className="hover:text-[#FF6B1A] transition-colors"
+              >
+                Terms of Service
+              </button>
+              <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
+              <button
+                onClick={() => navigateTo('blog')}
                 className="hover:text-[#FF6B1A] transition-colors"
               >
                 Blog
-              </a>
+              </button>
               <span className="w-1 h-1 rounded-full bg-[#FF6B1A] opacity-60" />
-              <a
-                href="#case-studies"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection('portfolio');
-                }}
+              <button
+                onClick={() => navigateTo('case-studies')}
                 className="hover:text-[#FF6B1A] transition-colors"
               >
                 Case Studies
-              </a>
+              </button>
             </div>
 
             <button
-              onClick={() => scrollToSection('hero')}
+              onClick={() => {
+                if (currentPage !== 'home') {
+                  navigateTo('home', 'hero');
+                } else {
+                  scrollToSection('hero');
+                }
+              }}
               className="hover:text-[#FF6B1A] flex items-center gap-1.5 transition-colors font-semibold"
             >
               <span>Back to Top</span>
@@ -4035,8 +4545,8 @@ export default function App() {
               </div>
               <button
                 onClick={() => {
+                  selectServiceForAudit(selectedService);
                   setSelectedService(null);
-                  scrollToSection('audit');
                 }}
                 className="px-6 py-3 bg-[#FF6B1A] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#ff5500]"
               >

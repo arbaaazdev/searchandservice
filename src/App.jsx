@@ -2463,17 +2463,23 @@ export default function App() {
           <div className="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center my-auto py-4 sm:py-6 lg:py-2">
             <nav className="lg:col-span-7 flex flex-col space-y-3 sm:space-y-4 lg:space-y-2.5 xl:space-y-3">
               {[
-                { num: '01', label: 'HOME & VALUE PROPOSITION', id: 'hero' },
-                { num: '02', label: 'ABOUT US', id: 'about' },
-                { num: '03', label: 'GROWTH SYSTEMS & SERVICES', id: 'services' },
-                { num: '04', label: '5-PILLAR ROI & GROWTH ENGINE', id: 'systems' },
-                { num: '05', label: 'PROVEN CASE STUDIES', id: 'portfolio' },
-                { num: '06', label: 'CLIENT TESTIMONIALS', id: 'results' },
-                { num: '07', label: 'FREE LOCAL GROWTH AUDIT', id: 'audit' }
+                { num: '01', label: 'HOME', action: () => scrollToSection('hero') },
+                { num: '02', label: 'ABOUT US', action: () => scrollToSection('about') },
+                { num: '03', label: 'GROWTH SYSTEMS & SERVICES', action: () => scrollToSection('services') },
+                { num: '04', label: 'GROWTH ENGINE', action: () => scrollToSection('systems') },
+                {
+                  num: '05',
+                  label: 'CASE STUDIES',
+                  action: () => {
+                    setMenuOpen(false);
+                    navigateTo('case-studies');
+                  }
+                },
+                { num: '06', label: 'FREE LOCAL GROWTH AUDIT', action: () => scrollToSection('audit') }
               ].map((item) => (
                 <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  key={item.num}
+                  onClick={item.action}
                   className="group flex items-baseline space-x-3 sm:space-x-4 text-left focus:outline-none py-0.5"
                 >
                   <span className="text-[11px] sm:text-xs font-mono text-[#FF6B1A] tracking-widest flex-shrink-0">
@@ -4044,9 +4050,8 @@ export default function App() {
 
                     {auditForm.bottleneck === 'Custom Service Requirement' && (
                       <div className="pt-1">
-                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                          <span>Describe Your Custom Service Requirement</span>
-                          <span className="text-[10px] text-[#FF6B1A] font-mono font-normal">Custom Scope</span>
+                        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          Describe Your Custom Service Requirement
                         </label>
                         <textarea
                           ref={customMessageInputRef}

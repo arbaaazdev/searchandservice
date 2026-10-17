@@ -219,7 +219,11 @@ function SocialShareDropdown({ post, isDark }) {
               onClick={handleShareX}
               title="Post on X"
               aria-label="Post on X"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-neutral-500/15 text-neutral-800 dark:text-neutral-200 active:scale-90 transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black flex-shrink-0"
+              className={`w-9 h-9 rounded-full flex items-center justify-center bg-neutral-500/15 active:scale-90 transition-all flex-shrink-0 ${
+                isDark
+                  ? 'text-neutral-200 hover:bg-white hover:text-black'
+                  : 'text-neutral-800 hover:bg-black hover:text-white'
+              }`}
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -316,7 +320,9 @@ function SocialShareDropdown({ post, isDark }) {
               onClick={handleShareX}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left hover:bg-[#FF6B1A]/10 hover:text-[#FF6B1A] transition-colors group"
             >
-              <div className="w-8 h-8 rounded-lg bg-neutral-500/15 text-neutral-800 dark:text-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:bg-[#FF6B1A] group-hover:text-white transition-colors">
+              <div className={`w-8 h-8 rounded-lg bg-neutral-500/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#FF6B1A] group-hover:text-white transition-colors ${
+                isDark ? 'text-neutral-200' : 'text-neutral-800'
+              }`}>
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
@@ -451,7 +457,9 @@ export default function BlogPostPage({
             <span className="text-[#FF6B1A] font-semibold">{post.heroMetric}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-5xl font-extrabold tracking-tight leading-[1.12]">
+          <h1 className={`text-3xl sm:text-5xl lg:text-5xl font-extrabold tracking-tight leading-[1.12] ${
+            isDark ? 'text-white' : 'text-[#0A0A0A]'
+          }`}>
             {post.title}
           </h1>
 
@@ -518,7 +526,9 @@ export default function BlogPostPage({
               return (
                 <h2
                   key={idx}
-                  className="text-2xl sm:text-3xl font-extrabold tracking-tight pt-6 pb-2 text-[#0A0A0A] dark:text-white flex items-center gap-2"
+                  className={`text-2xl sm:text-3xl font-extrabold tracking-tight pt-6 pb-2 flex items-center gap-2 ${
+                    isDark ? 'text-white' : 'text-[#0A0A0A]'
+                  }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B1A]" />
                   <span>{block.text}</span>
@@ -571,7 +581,7 @@ export default function BlogPostPage({
               <div className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-[#FF6B1A] font-bold mb-1">
                 ABOUT THE AUTHOR
               </div>
-              <h3 className="text-base sm:text-lg font-bold">{post.author.name}</h3>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}>{post.author.name}</h3>
               <p className="text-[11px] sm:text-xs font-mono opacity-60 mb-1 sm:mb-2">{post.author.role}</p>
               <p className="text-xs sm:text-sm opacity-80 leading-relaxed font-normal">
                 {post.author.bio}
@@ -591,7 +601,7 @@ export default function BlogPostPage({
               <div className="text-xs font-mono uppercase tracking-widest text-[#FF6B1A] font-bold">
                 CONTINUE READING
               </div>
-              <h3 className="text-2xl font-extrabold tracking-tight mt-1">
+              <h3 className={`text-2xl font-extrabold tracking-tight mt-1 ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}>
                 More Playbooks from the Growth Desk
               </h3>
             </div>
@@ -629,7 +639,9 @@ export default function BlogPostPage({
                     </span>
                     <span className="opacity-60">{related.readTime}</span>
                   </div>
-                  <h4 className="text-lg font-bold group-hover:text-[#FF6B1A] transition-colors leading-snug">
+                  <h4 className={`text-lg font-bold group-hover:text-[#FF6B1A] transition-colors leading-snug ${
+                    isDark ? 'text-white' : 'text-[#0A0A0A]'
+                  }`}>
                     {related.title}
                   </h4>
                   <p className="mt-2 text-xs opacity-75 line-clamp-2 leading-relaxed">
@@ -667,7 +679,9 @@ export default function BlogPostPage({
             <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#FF6B1A] font-bold block mb-3">
               TERRITORY EXCLUSIVE DEPLOYMENT
             </span>
-            <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+            <h3 className={`text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight ${
+              isDark ? 'text-white' : 'text-[#0A0A0A]'
+            }`}>
               Want These Systems Deployed in Your Service Area?
             </h3>
             <p className="mt-3 text-sm sm:text-base opacity-80 leading-relaxed">

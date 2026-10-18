@@ -97,10 +97,43 @@ describe('Cloudflare Pages Functions API (https://searchandservice.pages.dev)', 
 
   it('handles CSV safety and formula characters as expected', () => {
     expect(sanitizeString('+92 300 1234567')).toBe('+92 300 1234567');
-    expect(sanitizeString('=HYPERLINK("x")')).toBe('=HYPERLINK("x")');
+    expect(sanitizeString('=HYPERLINK("x")')).toBe('=HYPERLINK(&quot;x&quot;)');
     expect(csvSafe('=HYPERLINK("x")')).toBe("'=HYPERLINK(\"x\")");
     expect(csvSafe('+92 300 1234567')).toBe("'+92 300 1234567");
     expect(csvSafe('Normal Business')).toBe('Normal Business');
+  });
+
+  it('rejects non-JSON requests with 415 Unsupported Media Type', async () => {
+    const textReq = new Request('https://searchandservice.pages.dev/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ businessName: 'Apex HVAC' })
+    });
+    const res = await auditPost({ request: textReq, env: { DB: createMockDb() } });
+    expect(res.status).toBe(415);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('Unsupported Content-Type');
+  });
+
+  it('fails closed in production if TURNSTILE_SECRET_KEY is missing', async () => {
+    const req = new Request('https://searchandservice.pages.dev/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessName: 'Apex HVAC',
+        website: 'https://apexhvac.com',
+        city: 'Austin, TX',
+        name: 'Marcus Vance',
+        phone: '(512) 555-0199',
+        workEmail: 'marcus@apexhvac.com'
+      })
+    });
+    const res = await auditPost({ request: req, env: { DB: createMockDb(), ENVIRONMENT: 'production' } });
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.error).toContain('Security verification failed');
   });
 
   it('correctly locks down localhost CORS in production and allows it in development', () => {

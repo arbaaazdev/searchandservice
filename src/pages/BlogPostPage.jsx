@@ -23,9 +23,9 @@ function SocialShareDropdown({ post, isDark }) {
 
   const getShareUrl = () => {
     if (typeof window !== 'undefined') {
-      return window.location.origin + window.location.pathname + '#/blog/' + post.slug;
+      return `${window.location.origin}/blog/${post.slug}`;
     }
-    return 'https://searchandservice.pages.dev/#/blog/' + post.slug;
+    return `https://searchandservice.pages.dev/blog/${post.slug}`;
   };
 
   const updateMobilePosition = () => {

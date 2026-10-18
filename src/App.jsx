@@ -19,12 +19,8 @@ import {
   Mail,
   Phone,
   X,
-  Download,
   Loader2,
-  AlertCircle,
-  Terminal,
-  Copy,
-  Check
+  AlertCircle
 } from 'lucide-react';
 import BlogPage from './pages/BlogPage.jsx';
 import BlogPostPage from './pages/BlogPostPage.jsx';
@@ -32,969 +28,6 @@ import CaseStudiesPage from './pages/CaseStudiesPage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
 import DisclaimerPage from './pages/DisclaimerPage.jsx';
-
-const PROJECT_BUNDLE_FILES = {
-  'package.json': `{
-  "name": "searchandservice-pages",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "pages:dev": "npm run build && wrangler pages dev ./dist --d1=DB",
-    "db:migrate:local": "wrangler d1 execute searchandservice-db --local --file=./migrations/0001_init.sql",
-    "db:migrate:prod": "wrangler d1 execute searchandservice-db --remote --file=./migrations/0001_init.sql",
-    "pages:deploy": "npm run build && wrangler pages deploy ./dist --project-name=searchandservice",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "lucide-react": "^0.454.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14",
-    "vitest": "^2.1.4",
-    "wrangler": "^3.86.0"
-  }
-}`,
-  'wrangler.toml': `name = "searchandservice"
-pages_build_output_dir = "./dist"
-compatibility_date = "2025-02-01"
-
-# Cloudflare D1 Free-Tier SQLite Database Binding
-# Run: npx wrangler d1 create searchandservice-db
-# Then replace database_id below with your generated UUID
-[[d1_databases]]
-binding = "DB"
-database_name = "searchandservice-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
-
-[vars]
-ENVIRONMENT = "production"
-ALLOWED_ORIGIN = "https://searchandservice.pages.dev"
-NOTIFICATION_TO_EMAIL = "searchandservicegrowth@gmail.com"
-`,
-  '.env.example': [
-    '# Local Development Secrets for Cloudflare Pages Functions',
-    '# Copy this file to .dev.vars for local testing with npm run pages:dev',
-    '# NEVER commit .dev.vars or real secrets to GitHub!',
-    '# For production on https://searchandservice.pages.dev, add these in:',
-    '# Cloudflare Dashboard -> Workers & Pages -> searchandservice -> Settings -> Environment variables',
-    '',
-    'ENVIRONMENT=development',
-    'ALLOWED_ORIGIN=http://localhost:8788',
-    'NOTIFICATION_TO_EMAIL=searchandservicegrowth@gmail.com',
-    '',
-    '# Optional: Resend API Key (https://resend.com - free tier 3,000 emails/mo) for instant email alerts & newsletter welcome emails',
-    'RESEND_API_KEY=',
-    '',
-    '# Optional: Outbound Webhook URL (Slack, Discord, Zapier, Make, or n8n) for instant lead notifications',
-    'NOTIFICATION_WEBHOOK_URL=',
-    '',
-    '# Optional: Cloudflare Turnstile Secret Key (free bot protection)',
-    'TURNSTILE_SECRET_KEY='
-  ].join('\n'),
-  '.gitignore': `node_modules/
-dist/
-.wrangler/
-.dev.vars
-.env
-.env.local
-.DS_Store
-*.log
-`,
-  'public/_headers': `/*
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: DENY
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-`,
-  'public/robots.txt': `User-agent: *
-Allow: /
-
-Sitemap: https://searchandservice.pages.dev/sitemap.xml
-`,
-  'public/sitemap.xml': `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://searchandservice.pages.dev/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>
-`,
-  'migrations/0001_init.sql': `-- Cloudflare D1 Schema for SearchandService (https://searchandservice.pages.dev)
-CREATE TABLE IF NOT EXISTS audit_leads (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  business_name TEXT NOT NULL,
-  website TEXT NOT NULL,
-  city TEXT NOT NULL,
-  bottleneck TEXT NOT NULL,
-  name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  work_email TEXT NOT NULL,
-  ip_hash TEXT,
-  user_agent TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_leads_email ON audit_leads(work_email);
-CREATE INDEX IF NOT EXISTS idx_audit_leads_created ON audit_leads(created_at);
-CREATE INDEX IF NOT EXISTS idx_audit_leads_ip_created ON audit_leads(ip_hash, created_at);
-
-CREATE TABLE IF NOT EXISTS newsletter_subscribers (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT NOT NULL UNIQUE,
-  ip_hash TEXT,
-  subscribed_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
-CREATE INDEX IF NOT EXISTS idx_newsletter_ip_subscribed ON newsletter_subscribers(ip_hash, subscribed_at);
-`,
-  'functions/_utils.js': [
-    '/**',
-    ' * Shared validation, security headers, rate-limiting, and notification helpers',
-    ' * for Cloudflare Pages Functions (/functions/api/*)',
-    ' */',
-    '',
-    'export const SECURITY_HEADERS = {',
-    "  'X-Content-Type-Options': 'nosniff',",
-    "  'X-Frame-Options': 'DENY',",
-    "  'Referrer-Policy': 'strict-origin-when-cross-origin',",
-    "  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'",
-    '};',
-    '',
-    'export function resolveCorsOrigin(request, env) {',
-    "  const configured = env?.ALLOWED_ORIGIN || 'https://searchandservice.pages.dev';",
-    "  const reqOrigin = request.headers.get('Origin') || '';",
-    '  if (',
-    '    reqOrigin === configured ||',
-    "    reqOrigin.endsWith('.searchandservice.pages.dev') ||",
-    "    reqOrigin.startsWith('http://localhost:') ||",
-    "    reqOrigin.startsWith('http://127.0.0.1:')",
-    '  ) {',
-    '    return reqOrigin;',
-    '  }',
-    '  return configured;',
-    '}',
-    '',
-    "export function jsonResponse(body, status = 200, origin = 'https://searchandservice.pages.dev') {",
-    '  return new Response(JSON.stringify(body), {',
-    '    status,',
-    '    headers: {',
-    "      'Content-Type': 'application/json;charset=UTF-8',",
-    "      'Access-Control-Allow-Origin': origin,",
-    "      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',",
-    "      'Access-Control-Allow-Headers': 'Content-Type',",
-    '      ...SECURITY_HEADERS',
-    '    }',
-    '  });',
-    '}',
-    '',
-    'export function sanitizeString(value, maxLen = 250) {',
-    "  if (typeof value !== 'string') return '';",
-    "  return value.trim().replace(/[<>]/g, '').slice(0, maxLen);",
-    '}',
-    '',
-    'export function isValidEmail(email) {',
-    '  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && email.length <= 254;',
-    '}',
-    '',
-    'export function isValidUrl(url) {',
-    '  try {',
-    '    const parsed = new URL(url);',
-    "    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && Boolean(parsed.hostname);",
-    '  } catch {',
-    '    return false;',
-    '  }',
-    '}',
-    '',
-    'export async function hashIp(ip) {',
-    "  if (!ip) return 'unknown';",
-    "  const data = new TextEncoder().encode(ip + '-searchandservice-pages-salt');",
-    "  const digest = await crypto.subtle.digest('SHA-256', data);",
-    '  return Array.from(new Uint8Array(digest))',
-    '    .slice(0, 8)',
-    "    .map((b) => b.toString(16).padStart(2, '0'))",
-    "    .join('');",
-    '}',
-    '',
-    'export async function verifyTurnstileToken(token, ip, secretKey) {',
-    '  if (!secretKey) return true;',
-    '  if (!token) return false;',
-    '  try {',
-    "    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {",
-    "      method: 'POST',",
-    "      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },",
-    '      body: new URLSearchParams({',
-    '        secret: secretKey,',
-    '        response: token,',
-    "        remoteip: ip || ''",
-    '      })',
-    '    });',
-    '    const outcome = await res.json();',
-    '    return Boolean(outcome.success);',
-    '  } catch {',
-    '    return false;',
-    '  }',
-    '}',
-    '',
-    'export async function sendResendEmail(env, { subject, html, replyTo }) {',
-    '  if (!env?.RESEND_API_KEY) return false;',
-    "  const toEmail = env.NOTIFICATION_TO_EMAIL || 'searchandservicegrowth@gmail.com';",
-    "  const res = await fetch('https://api.resend.com/emails', {",
-    "    method: 'POST',",
-    '    headers: {',
-    "      Authorization: 'Bearer ' + env.RESEND_API_KEY,",
-    "      'Content-Type': 'application/json'",
-    '    },',
-    '    body: JSON.stringify({',
-    "      from: 'SearchandService Growth Engine <onboarding@resend.dev>',",
-    '      to: [toEmail],',
-    '      reply_to: replyTo || toEmail,',
-    '      subject,',
-    '      html',
-    '    })',
-    '  });',
-    '  return res.ok;',
-    '}'
-  ].join('\n'),
-  'functions/api/health.js': `import { jsonResponse, resolveCorsOrigin } from '../_utils.js';
-
-export async function onRequestOptions(context) {
-  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));
-}
-
-export async function onRequestGet(context) {
-  const { request, env } = context;
-  const origin = resolveCorsOrigin(request, env);
-  const hasD1 = Boolean(env?.DB);
-  const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);
-  const hasResend = Boolean(env?.RESEND_API_KEY);
-
-  return jsonResponse(
-    {
-      ok: true,
-      platform: 'cloudflare-pages-functions',
-      domain: 'https://searchandservice.pages.dev',
-      storageConfigured: hasD1 || hasWebhook || hasResend,
-      bindings: {
-        d1Database: hasD1,
-        webhook: hasWebhook,
-        resendEmail: hasResend
-      },
-      timestamp: new Date().toISOString()
-    },
-    200,
-    origin
-  );
-}
-`,
-  'functions/api/audit.js': [
-    'import {',
-    '  jsonResponse,',
-    '  resolveCorsOrigin,',
-    '  sanitizeString,',
-    '  isValidEmail,',
-    '  isValidUrl,',
-    '  hashIp,',
-    '  verifyTurnstileToken,',
-    '  sendResendEmail',
-    "} from '../_utils.js';",
-    '',
-    'export async function onRequestOptions(context) {',
-    '  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));',
-    '}',
-    '',
-    'export async function onRequestPost(context) {',
-    '  const { request, env, waitUntil } = context;',
-    '  const origin = resolveCorsOrigin(request, env);',
-    '',
-    '  try {',
-    '    const payload = await request.json();',
-    '',
-    '    // 1. Honeypot spam protection',
-    '    if (payload.company_fax_hp) {',
-    "      return jsonResponse({ ok: true, message: 'Audit request processed.' }, 200, origin);",
-    '    }',
-    '',
-    '    // 2. Sanitize & validate fields',
-    '    const businessName = sanitizeString(payload.businessName, 140);',
-    '    const website = sanitizeString(payload.website, 250);',
-    '    const city = sanitizeString(payload.city, 120);',
-    '    const bottleneck =',
-    "      sanitizeString(payload.bottleneck, 180) || 'Need More Calls & #1 Google Maps Ranking';",
-    '    const name = sanitizeString(payload.name, 120);',
-    '    const phone = sanitizeString(payload.phone, 40);',
-    '    const workEmail = sanitizeString(payload.workEmail, 254).toLowerCase();',
-    '',
-    '    if (!businessName || !website || !city || !name || !phone || !workEmail) {',
-    '      return jsonResponse(',
-    "        { ok: false, error: 'Please complete all required fields.' },",
-    '        400,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    '    if (!isValidEmail(workEmail)) {',
-    '      return jsonResponse(',
-    "        { ok: false, error: 'Please enter a valid work email address.' },",
-    '        400,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    '    if (!isValidUrl(website)) {',
-    '      return jsonResponse(',
-    "        { ok: false, error: 'Please enter a valid website URL starting with https:// or http://.' },",
-    '        400,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    "    const clientIp = request.headers.get('CF-Connecting-IP') || '';",
-    '',
-    '    // 3. Optional Cloudflare Turnstile verification if TURNSTILE_SECRET_KEY is set',
-    '    const turnstileOk = await verifyTurnstileToken(',
-    '      payload.turnstileToken,',
-    '      clientIp,',
-    '      env?.TURNSTILE_SECRET_KEY',
-    '    );',
-    '    if (!turnstileOk) {',
-    '      return jsonResponse(',
-    "        { ok: false, error: 'Security verification failed. Please refresh and try again.' },",
-    '        403,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    '    // 4. Verify at least one real backend persistence or notification binding is active',
-    '    const hasD1 = Boolean(env?.DB);',
-    '    const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);',
-    '    const hasResend = Boolean(env?.RESEND_API_KEY);',
-    '',
-    '    if (!hasD1 && !hasWebhook && !hasResend) {',
-    '      return jsonResponse(',
-    '        {',
-    '          ok: false,',
-    '          error:',
-    "            'Backend storage is not yet bound on this Pages deployment. Bind a D1 database (DB) or configure RESEND_API_KEY / NOTIFICATION_WEBHOOK_URL in Cloudflare Pages Settings.'",
-    '        },',
-    '        503,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    '    const ipHash = await hashIp(clientIp);',
-    "    const userAgent = sanitizeString(request.headers.get('User-Agent') || '', 250);",
-    '',
-    '    // 5. Rate-limit check & insert in Cloudflare D1 if bound',
-    '    if (hasD1) {',
-    '      const recentCount = await env.DB.prepare(',
-    "        \"SELECT COUNT(*) AS cnt FROM audit_leads WHERE ip_hash = ?1 AND created_at >= datetime('now', '-10 minutes')\"",
-    '      )',
-    '        .bind(ipHash)',
-    '        .first();',
-    '',
-    '      if (recentCount && Number(recentCount.cnt) >= 5) {',
-    '        return jsonResponse(',
-    "          { ok: false, error: 'Too many requests from your network. Please try again in a few minutes.' },",
-    '          429,',
-    '          origin',
-    '        );',
-    '      }',
-    '',
-    '      await env.DB.prepare(',
-    "        'INSERT INTO audit_leads (business_name, website, city, bottleneck, name, phone, work_email, ip_hash, user_agent) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)'",
-    '      )',
-    '        .bind(businessName, website, city, bottleneck, name, phone, workEmail, ipHash, userAgent)',
-    '        .run();',
-    '    }',
-    '',
-    '    // 6. Optional asynchronous webhook dispatch',
-    '    if (hasWebhook) {',
-    '      const webhookTask = fetch(env.NOTIFICATION_WEBHOOK_URL, {',
-    "        method: 'POST',",
-    "        headers: { 'Content-Type': 'application/json' },",
-    '        body: JSON.stringify({',
-    "          type: 'NEW_GROWTH_AUDIT_LEAD',",
-    "          source: 'https://searchandservice.pages.dev',",
-    '          businessName,',
-    '          website,',
-    '          city,',
-    '          bottleneck,',
-    '          name,',
-    '          phone,',
-    '          workEmail,',
-    '          submittedAt: new Date().toISOString()',
-    '        })',
-    '      }).catch(() => {});',
-    "      if (typeof waitUntil === 'function') waitUntil(webhookTask);",
-    '      else await webhookTask;',
-    '    }',
-    '',
-    '    // 7. Optional Resend transactional email alert',
-    '    if (hasResend) {',
-    '      const emailTask = sendResendEmail(env, {',
-    "        subject: '[New Growth Audit Lead] ' + businessName + ' (' + city + ')',",
-    '        replyTo: workEmail,',
-    '        html:',
-    "          '<h2>New Local Growth Audit Request</h2>' +",
-    "          '<p><strong>Business:</strong> ' + businessName + '</p>' +",
-    "          '<p><strong>Website:</strong> <a href=\"' + website + '\">' + website + '</a></p>' +",
-    "          '<p><strong>City / Territory:</strong> ' + city + '</p>' +",
-    "          '<p><strong>Primary Bottleneck:</strong> ' + bottleneck + '</p>' +",
-    "          '<hr />' +",
-    "          '<p><strong>Contact Name:</strong> ' + name + '</p>' +",
-    "          '<p><strong>Phone:</strong> ' + phone + '</p>' +",
-    "      html: '<p>New subscriber joined the SearchandService newsletter on <strong>searchandservice.pages.dev</strong>: <strong>' + email + '</strong></p>'",
-    '      }).catch(() => {});',
-    "      if (typeof waitUntil === 'function') waitUntil(emailTask);",
-    '      else await emailTask;',
-    '    }',
-    '',
-    '    return jsonResponse(',
-    '      {',
-    '        ok: true,',
-    "        message: 'Growth audit diagnostic request saved.',",
-    '        lead: { businessName, workEmail }',
-    '      },',
-    '      201,',
-    '      origin',
-    '    );',
-    '  } catch (err) {',
-    '    return jsonResponse(',
-    '      {',
-    '        ok: false,',
-    "        error: 'Unable to process your audit request right now. Please try again.'",
-    '      },',
-    '      500,',
-    '      origin',
-    '    );',
-    '  }',
-    '}'
-  ].join('\n'),
-  'functions/api/newsletter.js': [
-    'import {',
-    '  jsonResponse,',
-    '  resolveCorsOrigin,',
-    '  sanitizeString,',
-    '  isValidEmail,',
-    '  hashIp,',
-    '  sendResendEmail',
-    "} from '../_utils.js';",
-    '',
-    'export async function onRequestOptions(context) {',
-    '  return jsonResponse({ ok: true }, 204, resolveCorsOrigin(context.request, context.env));',
-    '}',
-    '',
-    'export async function onRequestPost(context) {',
-    '  const { request, env, waitUntil } = context;',
-    '  const origin = resolveCorsOrigin(request, env);',
-    '',
-    '  try {',
-    '    const payload = await request.json();',
-    '',
-    '    // Honeypot check',
-    '    if (payload.company_fax_hp) {',
-    "      return jsonResponse({ ok: true, message: 'Subscribed.' }, 200, origin);",
-    '    }',
-    '',
-    '    const email = sanitizeString(payload.email, 254).toLowerCase();',
-    '    if (!email || !isValidEmail(email)) {',
-    '      return jsonResponse(',
-    "        { ok: false, error: 'Please provide a valid email address.' },",
-    '        400,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    '    const hasD1 = Boolean(env?.DB);',
-    '    const hasWebhook = Boolean(env?.NOTIFICATION_WEBHOOK_URL);',
-    '    const hasResend = Boolean(env?.RESEND_API_KEY);',
-    '',
-    '    if (!hasD1 && !hasWebhook && !hasResend) {',
-    '      return jsonResponse(',
-    '        {',
-    '          ok: false,',
-    '          error:',
-    "            'Newsletter backend storage is not yet bound on this Pages deployment. Bind a D1 database (DB) or configure RESEND_API_KEY / NOTIFICATION_WEBHOOK_URL.'",
-    '        },',
-    '        503,',
-    '        origin',
-    '      );',
-    '    }',
-    '',
-    "    const clientIp = request.headers.get('CF-Connecting-IP') || '';",
-    '    const ipHash = await hashIp(clientIp);',
-    '',
-    '    if (hasD1) {',
-    '      const recentCount = await env.DB.prepare(',
-    "        \"SELECT COUNT(*) AS cnt FROM newsletter_subscribers WHERE ip_hash = ?1 AND subscribed_at >= datetime('now', '-10 minutes')\"",
-    '      )',
-    '        .bind(ipHash)',
-    '        .first();',
-    '',
-    '      if (recentCount && Number(recentCount.cnt) >= 5) {',
-    '        return jsonResponse(',
-    "          { ok: false, error: 'Too many subscription attempts. Please try again shortly.' },",
-    '          429,',
-    '          origin',
-    '        );',
-    '      }',
-    '',
-    '      await env.DB.prepare(',
-    "        \"INSERT INTO newsletter_subscribers (email, ip_hash) VALUES (?1, ?2) ON CONFLICT(email) DO UPDATE SET subscribed_at = datetime('now')\"",
-    '      )',
-    '        .bind(email, ipHash)',
-    '        .run();',
-    '    }',
-    '',
-    '    if (hasWebhook) {',
-    '      const webhookTask = fetch(env.NOTIFICATION_WEBHOOK_URL, {',
-    "        method: 'POST',",
-    "        headers: { 'Content-Type': 'application/json' },",
-    '        body: JSON.stringify({',
-    "          type: 'NEW_NEWSLETTER_SUBSCRIBER',",
-    "          source: 'https://searchandservice.pages.dev',",
-    '          email,',
-    '          subscribedAt: new Date().toISOString()',
-    '        })',
-    '      }).catch(() => {});',
-    "      if (typeof waitUntil === 'function') waitUntil(webhookTask);",
-    '      else await webhookTask;',
-    '    }',
-    '',
-    '    if (hasResend) {',
-    '      const emailTask = sendResendEmail(env, {',
-    "        subject: '[Newsletter Subscriber] ' + email,",
-    '        replyTo: email,',
-    "        html: '<p>New subscriber joined the SearchandService newsletter on <strong>searchandservice.pages.dev</strong>: <strong>' + email + '</strong></p>'",
-    '      }).catch(() => {});',
-    "      if (typeof waitUntil === 'function') waitUntil(emailTask);",
-    '      else await emailTask;',
-    '    }',
-    '',
-    '    return jsonResponse(',
-    '      {',
-    '        ok: true,',
-    "        message: 'Subscribed to SearchandService local growth briefings.'",
-    '      },',
-    '      201,',
-    '      origin',
-    '    );',
-    '  } catch (err) {',
-    '    return jsonResponse(',
-    '      {',
-    '        ok: false,',
-    "        error: 'Could not complete newsletter subscription. Please try again.'",
-    '      },',
-    '      500,',
-    '      origin',
-    '    );',
-    '  }',
-    '}'
-  ].join('\n'),
-  'index.html': `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Search & Service | Local Business Growth Systems Partner</title>
-    <meta name="description" content="We help local businesses get more customers, more calls, and more sales through high-converting websites, Google Maps #1 SEO, and 24/7 AI automation workflows." />
-    <link rel="canonical" href="https://searchandservice.pages.dev/" />
-    <meta property="og:title" content="Search & Service | Local Business Growth Systems Partner" />
-    <meta property="og:description" content="Google Maps dominance, high-converting web platforms, and automated speed-to-lead systems for local service businesses." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://searchandservice.pages.dev/" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Search & Service | Local Business Growth Systems Partner" />
-    <meta name="twitter:description" content="We help local businesses get more customers, more calls, and more sales." />
-    <meta name="theme-color" content="#FF6B1A" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "ProfessionalService",
-        "name": "SearchandService Agency",
-        "url": "https://searchandservice.pages.dev",
-        "email": "searchandservicegrowth@gmail.com",
-        "telephone": "+1-555-234-5678",
-        "description": "Local business growth systems partner specializing in Google Maps SEO, high-converting websites, and 24/7 lead automation."
-      }
-    </script>
-  </head>
-  <body class="bg-[#F7F6F2] text-[#0A0A0A] antialiased">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
-`,
-  'src/main.jsx': `import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-`,
-  'src/index.css': `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-`,
-  'vite.config.js': `import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    outDir: 'dist',
-    sourcemap: false
-  }
-});
-`,
-  'tailwind.config.js': `/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  theme: {
-    extend: {
-      screens: {
-        xs: '420px'
-      }
-    }
-  },
-  plugins: []
-};
-`,
-  'postcss.config.js': `export default {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {}
-  }
-};
-`,
-  '.github/workflows/ci.yml': `name: CI — Build & Verify Pages Functions
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Pages Functions API & validation tests
-        run: npm test
-
-      - name: Build production frontend bundle (./dist)
-        run: npm run build
-`,
-  'tests/pages-functions.test.js': `import { describe, it, expect } from 'vitest';
-import { onRequestGet as healthGet } from '../functions/api/health.js';
-import { onRequestPost as auditPost } from '../functions/api/audit.js';
-import { onRequestPost as newsletterPost } from '../functions/api/newsletter.js';
-
-function createMockDb() {
-  return {
-    prepare: () => ({
-      bind: () => ({
-        first: async () => ({ cnt: 0 }),
-        run: async () => ({ success: true })
-      })
-    })
-  };
-}
-
-describe('Cloudflare Pages Functions API (https://searchandservice.pages.dev)', () => {
-  it('returns 200 OK and binding status from GET /api/health', async () => {
-    const req = new Request('https://searchandservice.pages.dev/api/health', { method: 'GET' });
-    const res = await healthGet({ request: req, env: { DB: createMockDb() } });
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.ok).toBe(true);
-    expect(body.platform).toBe('cloudflare-pages-functions');
-    expect(body.storageConfigured).toBe(true);
-  });
-
-  it('rejects incomplete payloads on POST /api/audit with 400', async () => {
-    const req = new Request('https://searchandservice.pages.dev/api/audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessName: 'Apex HVAC' })
-    });
-    const res = await auditPost({ request: req, env: { DB: createMockDb() } });
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.ok).toBe(false);
-  });
-
-  it('returns 503 if no storage/notification binding is configured (never fakes success)', async () => {
-    const req = new Request('https://searchandservice.pages.dev/api/audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        businessName: 'Apex HVAC & Plumbing',
-        website: 'https://apexhvac.com',
-        city: 'Austin, TX',
-        bottleneck: 'Need More Calls & #1 Google Maps Ranking',
-        name: 'Marcus Vance',
-        phone: '(512) 555-0199',
-        workEmail: 'marcus@apexhvac.com'
-      })
-    });
-    const res = await auditPost({ request: req, env: {} });
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body.ok).toBe(false);
-  });
-
-  it('persists valid POST /api/audit lead when D1 binding is present', async () => {
-    const req = new Request('https://searchandservice.pages.dev/api/audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        businessName: 'Apex HVAC & Plumbing',
-        website: 'https://apexhvac.com',
-        city: 'Austin, TX',
-        bottleneck: 'Need More Calls & #1 Google Maps Ranking',
-        name: 'Marcus Vance',
-        phone: '(512) 555-0199',
-        workEmail: 'marcus@apexhvac.com'
-      })
-    });
-    const res = await auditPost({ request: req, env: { DB: createMockDb() } });
-    expect(res.status).toBe(201);
-    const body = await res.json();
-    expect(body.ok).toBe(true);
-  });
-
-  it('validates and stores newsletter subscribers on POST /api/newsletter', async () => {
-    const badReq = new Request('https://searchandservice.pages.dev/api/newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'invalid-email' })
-    });
-    const badRes = await newsletterPost({ request: badReq, env: { DB: createMockDb() } });
-    expect(badRes.status).toBe(400);
-      const goodReq = new Request('https://searchandservice.pages.dev/api/newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'owner@localbusiness.com' })
-    });
-    const goodRes = await newsletterPost({ request: goodReq, env: { DB: createMockDb() } });
-    expect(goodRes.status).toBe(201);
-  });
-});
-`,
-  'README.md': [
-    '# SearchandService Agency — Cloudflare Pages + Pages Functions + D1',
-    '',
-    'Production-ready full-stack repository for **SearchandService**, engineered for automatic deployment to **https://searchandservice.pages.dev** via GitHub push using **Cloudflare Pages**, **Pages Functions** (`/functions/api/*`), and **Cloudflare D1** (free-tier SQL database).',
-    '',
-    '---',
-    '',
-    '## Architecture Overview',
-    '',
-    '- **Frontend (`src/App.jsx`, Vite + React + Tailwind CSS)**: Preserves 100% of the SearchandService design, Day/Night themes, interactive 5-Pillar ROI & Growth calculator, portfolio filters, and modals.',
-    '- **Backend API (`functions/api/*`)**: Native Cloudflare Pages Functions that run on the exact same `searchandservice.pages.dev` origin:',
-    '  - `GET /api/health`: Health and binding status check.',
-    '  - `POST /api/audit`: Validates, rate-limits, spam-checks, and stores Free Local Growth Audit leads in Cloudflare D1 (`audit_leads` table), with optional Resend email alerts and webhook notifications.',
-    '  - `POST /api/newsletter`: Validates, rate-limits, and stores newsletter subscribers in Cloudflare D1 (`newsletter_subscribers` table).',
-    '- **Zero Fake Submissions**: If neither D1 (`DB`), `RESEND_API_KEY`, nor `NOTIFICATION_WEBHOOK_URL` is bound, the API returns `503 Service Unavailable` with a clear configuration message rather than faking success.',
-    '',
-    '---',
-    '',
-    '## 1. Local Setup & Testing',
-    '',
-    '```bash',
-    '# 1. Install dependencies',
-    'npm install',
-    '',
-    '# 2. Copy local environment variables template',
-    'cp .env.example .dev.vars',
-    '',
-    '# 3. Create & migrate local D1 SQLite database',
-    'npm run db:migrate:local',
-    '',
-    '# 4. Run unit & API validation tests (Vitest)',
-    'npm test',
-    '',
-    '# 5. Start full-stack local Cloudflare Pages + Functions server (http://localhost:8788)',
-    'npm run pages:dev',
-    '```',
-    '',
-    '---',
-    '',
-    '## 2. Create Your Free Cloudflare D1 Database',
-    '',
-    '1. Log in to Cloudflare via Wrangler:',
-    '   ```bash',
-    '   npx wrangler login',
-    '   ```',
-    '2. Create the D1 database:',
-    '   ```bash',
-    '   npx wrangler d1 create searchandservice-db',
-    '   ```',
-    '3. Copy the `database_id` UUID printed in your terminal and replace `REPLACE_WITH_YOUR_D1_DATABASE_ID` inside `wrangler.toml`.',
-    '4. Apply the SQL schema (`migrations/0001_init.sql`) to your remote production D1 database:',
-    '   ```bash',
-    '   npm run db:migrate:prod',
-    '   ```',
-    '',
-    '---',
-    '',
-    '## 3. Connect GitHub to Cloudflare Pages (https://searchandservice.pages.dev)',
-    '',
-    '1. Push this repository to your GitHub account (`main` branch).',
-    '2. Open the **Cloudflare Dashboard** -> **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**.',
-    '3. Select your GitHub repository.',
-    '4. Configure the build settings:',
-    '   - **Project name**: `searchandservice` *(this reserves https://searchandservice.pages.dev)*',
-    '   - **Production branch**: `main`',
-    '   - **Framework preset**: `Vite`',
-    '   - **Build command**: `npm run build`',
-    '   - **Build output directory**: `dist`',
-    '5. Click **Save and Deploy**.',
-    '',
-    '---',
-    '',
-    '## 4. Bind D1 & Optional Email/Webhook Secrets in Cloudflare Pages',
-    '',
-    'After your initial Pages project is created:',
-    '',
-    '1. Go to **Workers & Pages** -> **searchandservice** -> **Settings** -> **Bindings** (or **Functions** -> **D1 database bindings**):',
-    '   - Click **Add** -> **D1 database**',
-    '   - **Variable name**: `DB`',
-    '   - **D1 database**: `searchandservice-db`',
-    '   - Save for both **Production** and **Preview**.',
-    '2. *(Optional)* Under **Settings** -> **Environment variables**, add any of the following encrypted secrets if you want instant email or Slack/Discord/Zapier notifications:',
-    '   - `RESEND_API_KEY`: Your free Resend.com API key (3,000 free emails/month).',
-    '   - `NOTIFICATION_TO_EMAIL`: `searchandservicegrowth@gmail.com`',
-    '   - `NOTIFICATION_WEBHOOK_URL`: Slack, Discord, or Zapier incoming webhook URL.',
-    '   - `TURNSTILE_SECRET_KEY`: Optional Cloudflare Turnstile secret key.',
-    '3. Push any commit to `main` (or click **Retry deployment** in Cloudflare Pages) so the bindings take effect immediately on `https://searchandservice.pages.dev`.'
-  ].join('\n')
-};
-
-function createZipBlob(filesMap) {
-  const encoder = new TextEncoder();
-  const entries = Object.entries(filesMap).map(([name, content]) => ({
-    nameBytes: encoder.encode(name),
-    dataBytes: encoder.encode(content)
-  }));
-
-  const crcTable = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    crcTable[n] = c >>> 0;
-  }
-
-  const crc32 = (bytes) => {
-    let c = 0xffffffff;
-    for (let i = 0; i < bytes.length; i++) {
-      c = crcTable[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
-    }
-    return (c ^ 0xffffffff) >>> 0;
-  };
-
-  let localTotalSize = 0;
-  let centralTotalSize = 0;
-
-  entries.forEach((e) => {
-    e.crc = crc32(e.dataBytes);
-    e.offset = localTotalSize;
-    localTotalSize += 30 + e.nameBytes.length + e.dataBytes.length;
-    centralTotalSize += 46 + e.nameBytes.length;
-  });
-
-  const totalSize = localTotalSize + centralTotalSize + 22;
-  const buffer = new ArrayBuffer(totalSize);
-  const view = new DataView(buffer);
-  const out = new Uint8Array(buffer);
-
-  let pos = 0;
-  entries.forEach((e) => {
-    view.setUint32(pos, 0x04034b50, true); // Local file header signature
-    view.setUint16(pos + 4, 20, true); // Version needed
-    view.setUint16(pos + 6, 0, true); // Flags
-    view.setUint16(pos + 8, 0, true); // Compression (0 = store)
-    view.setUint16(pos + 10, 0, true); // Mod time
-    view.setUint16(pos + 12, 0, true); // Mod date
-    view.setUint32(pos + 14, e.crc, true); // CRC-32
-    view.setUint32(pos + 18, e.dataBytes.length, true); // Compressed size
-    view.setUint32(pos + 22, e.dataBytes.length, true); // Uncompressed size
-    view.setUint16(pos + 26, e.nameBytes.length, true); // Filename length
-    view.setUint16(pos + 28, 0, true); // Extra field length
-    out.set(e.nameBytes, pos + 30);
-    out.set(e.dataBytes, pos + 30 + e.nameBytes.length);
-    pos += 30 + e.nameBytes.length + e.dataBytes.length;
-  });
-
-  const centralDirOffset = pos;
-  entries.forEach((e) => {
-    view.setUint32(pos, 0x02014b50, true); // Central directory signature
-    view.setUint16(pos + 4, 20, true); // Version made by
-    view.setUint16(pos + 6, 20, true); // Version needed
-    view.setUint16(pos + 8, 0, true); // Flags
-    view.setUint16(pos + 10, 0, true); // Compression
-    view.setUint16(pos + 12, 0, true); // Mod time
-    view.setUint16(pos + 14, 0, true); // Mod date
-    view.setUint32(pos + 16, e.crc, true); // CRC-32
-    view.setUint32(pos + 20, e.dataBytes.length, true); // Compressed size
-    view.setUint32(pos + 24, e.dataBytes.length, true); // Uncompressed size
-    view.setUint16(pos + 28, e.nameBytes.length, true); // Filename length
-    view.setUint16(pos + 30, 0, true); // Extra field length
-    view.setUint16(pos + 32, 0, true); // Comment length
-    view.setUint16(pos + 34, 0, true); // Disk number
-    view.setUint16(pos + 36, 0, true); // Internal attrs
-    view.setUint32(pos + 38, 0, true); // External attrs
-    view.setUint32(pos + 42, e.offset, true); // Relative offset
-    out.set(e.nameBytes, pos + 46);
-    pos += 46 + e.nameBytes.length;
-  });
-
-  // End of central directory record
-  view.setUint32(pos, 0x06054b50, true);
-  view.setUint16(pos + 4, 0, true);
-  view.setUint16(pos + 6, 0, true);
-  view.setUint16(pos + 8, entries.length, true);
-  view.setUint16(pos + 10, entries.length, true);
-  view.setUint32(pos + 12, centralTotalSize, true);
-  view.setUint32(pos + 16, centralDirOffset, true);
-  view.setUint16(pos + 20, 0, true);
-
-  return new Blob([buffer], { type: 'application/zip' });
-}
 
 const HERO_GOOGLE_REVIEWS = [
   {
@@ -1428,11 +461,24 @@ function TurnstileWidget({ sitekey, onVerify, isDark, widgetRef }) {
     </div>
   );
 }
-
 export default function App() {
-  const getPageInfoFromHash = () => {
+  const getPageInfo = () => {
     if (typeof window === 'undefined') return { page: 'home', slug: null };
+    const pathname = (window.location.pathname || '').toLowerCase();
     const hash = (window.location.hash || '').toLowerCase();
+
+    // 1. Clean Pathname Routing (Direct SEO & Sitemap URLs)
+    if (pathname.startsWith('/blog/') && pathname.length > 6) {
+      const slug = pathname.replace(/^\/blog\//, '').split('?')[0].split('#')[0];
+      return { page: 'blog-post', slug };
+    }
+    if (pathname === '/blog' || pathname === '/blog/') return { page: 'blog', slug: null };
+    if (pathname === '/case-studies' || pathname === '/case-studies/') return { page: 'case-studies', slug: null };
+    if (pathname === '/privacy' || pathname === '/privacy/') return { page: 'privacy', slug: null };
+    if (pathname === '/terms' || pathname === '/terms/') return { page: 'terms', slug: null };
+    if (pathname === '/disclaimer' || pathname === '/disclaimer/') return { page: 'disclaimer', slug: null };
+
+    // 2. Hash Route Fallback (Backwards compatibility for existing bookmarks/links)
     if (hash.startsWith('#/blog/') || hash.startsWith('#blog/')) {
       const slug = hash.replace(/^#\/?blog\//, '').split('?')[0];
       return { page: 'blog-post', slug };
@@ -1445,8 +491,8 @@ export default function App() {
     return { page: 'home', slug: null };
   };
 
-  const [currentPage, setCurrentPage] = useState(() => getPageInfoFromHash().page);
-  const [currentArticleSlug, setCurrentArticleSlug] = useState(() => getPageInfoFromHash().slug);
+  const [currentPage, setCurrentPage] = useState(() => getPageInfo().page);
+  const [currentArticleSlug, setCurrentArticleSlug] = useState(() => getPageInfo().slug);
   const [turnstileToken, setTurnstileToken] = useState(null);
   const [auditTurnstileToken, setAuditTurnstileToken] = useState(null);
   const [newsletterTurnstileToken, setNewsletterTurnstileToken] = useState(null);
@@ -1459,16 +505,20 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const info = getPageInfoFromHash();
+    const handleRouteChange = () => {
+      const info = getPageInfo();
       setCurrentPage(info.page);
       setCurrentArticleSlug(info.slug);
       if (info.page !== 'home') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleRouteChange);
+    window.addEventListener('popstate', handleRouteChange);
+    return () => {
+      window.removeEventListener('hashchange', handleRouteChange);
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
 
   const [activeReviewIdx, setActiveReviewIdx] = useState(0);
@@ -1529,10 +579,6 @@ export default function App() {
   const [newsletterError, setNewsletterError] = useState('');
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
-  const [deployKitOpen, setDeployKitOpen] = useState(false);
-  const [activeBundleFile, setActiveBundleFile] = useState('README.md');
-  const [copiedFile, setCopiedFile] = useState(false);
-  const [copiedAppJsx, setCopiedAppJsx] = useState(false);
 
   useEffect(() => {
     window.onTurnstileSuccess = (token) => {
@@ -1544,7 +590,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (menuOpen || videoModalOpen || selectedService || deployKitOpen) {
+    if (menuOpen || videoModalOpen || selectedService) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -1552,7 +598,7 @@ export default function App() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [menuOpen, videoModalOpen, selectedService, deployKitOpen]);
+  }, [menuOpen, videoModalOpen, selectedService]);
 
   useEffect(() => {
     let start = null;
@@ -1607,8 +653,9 @@ export default function App() {
     if (page === 'home') {
       setCurrentPage('home');
       setCurrentArticleSlug(null);
-      if (window.location.hash && window.location.hash !== '#/' && !window.location.hash.startsWith('#hero')) {
-        window.location.hash = targetSection ? `#${targetSection}` : '#/';
+      const targetUrl = targetSection ? `/#${targetSection}` : '/';
+      if (typeof window !== 'undefined' && window.history && typeof window.history.pushState === 'function') {
+        window.history.pushState(null, '', targetUrl);
       }
       if (targetSection) {
         setTimeout(() => {
@@ -1619,12 +666,16 @@ export default function App() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else if (page === 'blog-post' && slug) {
-      window.location.hash = `#/blog/${slug}`;
+      if (typeof window !== 'undefined' && window.history && typeof window.history.pushState === 'function') {
+        window.history.pushState(null, '', `/blog/${slug}`);
+      }
       setCurrentPage('blog-post');
       setCurrentArticleSlug(slug);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      window.location.hash = `#/${page}`;
+      if (typeof window !== 'undefined' && window.history && typeof window.history.pushState === 'function') {
+        window.history.pushState(null, '', `/${page}`);
+      }
       setCurrentPage(page);
       setCurrentArticleSlug(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1901,7 +952,6 @@ export default function App() {
     const tokenToUse = auditTurnstileToken || turnstileToken;
     if (!tokenToUse) {
       setAuditError('Please complete the security check.');
-      alert('Please complete the security check.');
       return;
     }
 
@@ -1972,7 +1022,6 @@ export default function App() {
     const tokenToUse = newsletterTurnstileToken || turnstileToken;
     if (!tokenToUse) {
       setNewsletterError('Please complete the security check.');
-      alert('Please complete the security check.');
       return;
     }
 
@@ -2030,80 +1079,7 @@ export default function App() {
     }
   };
 
-  const [isPackagingZip, setIsPackagingZip] = useState(false);
 
-  const handleCopyFullAppJsx = () => {
-    const scripts = document.querySelectorAll('script');
-    let foundSource = '';
-    scripts.forEach((s) => {
-      if (s.textContent && s.textContent.includes('HERO_GOOGLE_REVIEWS')) {
-        foundSource = s.textContent;
-      }
-    });
-    const instructions =
-      '// IMPORTANT: Copy the full code directly from the right-hand code editor panel ("App.jsx") and paste it into src/App.jsx in Antigravity.';
-    const textarea = document.createElement('textarea');
-    textarea.value = foundSource || instructions;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
-      setCopiedAppJsx(true);
-      setTimeout(() => setCopiedAppJsx(false), 2500);
-    } finally {
-      document.body.removeChild(textarea);
-    }
-  };
-
-  const handleDownloadZip = async () => {
-    setIsPackagingZip(true);
-    try {
-      const filesToZip = { ...PROJECT_BUNDLE_FILES };
-      // Attempt to automatically include the current App.jsx source file in src/App.jsx
-      try {
-        const selfRes = await fetch(import.meta.url);
-        if (selfRes.ok) {
-          const selfCode = await selfRes.text();
-          if (selfCode && selfCode.includes('export default function App')) {
-            filesToZip['src/App.jsx'] = selfCode;
-          }
-        }
-      } catch {
-        // Fallback note if runtime bundler transforms import.meta.url
-      }
-
-      const zipBlob = createZipBlob(filesToZip);
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'searchandservice-cloudflare-pages-repo.zip';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } finally {
-      setIsPackagingZip(false);
-    }
-  };
-
-  const handleCopyFileContent = () => {
-    const content = PROJECT_BUNDLE_FILES[activeBundleFile] || '';
-    const textarea = document.createElement('textarea');
-    textarea.value = content;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
-      setCopiedFile(true);
-      setTimeout(() => setCopiedFile(false), 1800);
-    } finally {
-      document.body.removeChild(textarea);
-    }
-  };
 
   const filteredPortfolio =
     portfolioFilter === 'all'
@@ -4431,79 +3407,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Cloudflare Pages + Functions + D1 Production Repository & ZIP Exporter Modal */}
-      {deployKitOpen && (
-        <div className="fixed inset-0 z-[98] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div
-            className={`max-w-4xl w-full max-h-[90vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-[#0D0D0D] border-white/15 text-white' : 'bg-white border-black/15 text-[#0A0A0A]'
-              }`}
-          >
-            <div className="px-6 py-4 border-b border-current/10 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <Terminal className="w-4 h-4 text-[#FF6B1A]" />
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF6B1A] font-bold">
-                  CLOUDFLARE PAGES (SEARCHANDSERVICE.PAGES.DEV) + FUNCTIONS + D1 KIT
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleDownloadZip}
-                  disabled={isPackagingZip}
-                  className="px-4 py-2 bg-[#FF6B1A] hover:bg-[#ff5500] disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md shadow-[#FF6B1A]/20"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isPackagingZip ? 'Packaging ZIP...' : 'Download Cloudflare Pages .ZIP'}</span>
-                </button>
-                <button
-                  onClick={() => setDeployKitOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-current/10"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 flex-1 min-h-0 overflow-hidden">
-              <div className={`md:col-span-4 border-r border-current/10 p-4 overflow-y-auto space-y-1.5 ${isDark ? 'bg-[#080808]' : 'bg-[#F7F6F2]'}`}>
-                <div className="text-[10px] font-mono uppercase tracking-widest opacity-60 mb-2">
-                  CLOUDFLARE PAGES REPO FILES
-                </div>
-                {Object.keys(PROJECT_BUNDLE_FILES).map((filename) => (
-                  <button
-                    key={filename}
-                    onClick={() => setActiveBundleFile(filename)}
-                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono truncate transition-colors ${activeBundleFile === filename
-                        ? 'bg-[#FF6B1A] text-white font-bold'
-                        : 'hover:bg-current/5'
-                      }`}
-                  >
-                    {filename}
-                  </button>
-                ))}
-                <div className="pt-3 mt-3 border-t border-current/10 text-[11px] leading-relaxed opacity-75">
-                  Click <strong>Download Cloudflare Pages .ZIP</strong> above to export the complete project configured for <code>https://searchandservice.pages.dev</code> (including <code>/functions/api/*</code> Pages Functions, D1 schema, security headers, Vitest test suite, and <code>README.md</code>). If your browser sandbox strips <code>src/App.jsx</code> during export, copy this editor file into <code>src/App.jsx</code>.
-                </div>
-              </div>
-
-              <div className="md:col-span-8 flex flex-col min-h-0">
-                <div className="px-4 py-2.5 border-b border-current/10 flex items-center justify-between text-xs font-mono">
-                  <span className="text-[#FF6B1A] font-semibold">{activeBundleFile}</span>
-                  <button
-                    onClick={handleCopyFileContent}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-current/15 hover:border-[#FF6B1A] text-[11px]"
-                  >
-                    {copiedFile ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedFile ? 'Copied' : 'Copy File'}</span>
-                  </button>
-                </div>
-                <pre className="p-4 text-xs font-mono overflow-auto flex-1 leading-relaxed select-all bg-black/95 text-neutral-200">
-                  <code>{PROJECT_BUNDLE_FILES[activeBundleFile]}</code>
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       { }
       {selectedService && (

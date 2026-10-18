@@ -17,6 +17,12 @@ export async function onRequestPost(context) {
   const { request, env, waitUntil } = context;
   const origin = resolveCorsOrigin(request, env);
 
+  // Reject non-JSON requests (blocks simple cross-origin form/text spam)
+  const contentType = request.headers.get('Content-Type') || '';
+  if (!contentType.includes('application/json')) {
+    return jsonResponse({ ok: false, error: 'Unsupported Content-Type' }, 415, origin);
+  }
+
   try {
     const payload = await request.json();
 
@@ -83,7 +89,8 @@ export async function onRequestPost(context) {
     const turnstileOk = await verifyTurnstileToken(
       payload.turnstileToken || payload['cf-turnstile-response'],
       clientIp,
-      env?.TURNSTILE_SECRET_KEY
+      env?.TURNSTILE_SECRET_KEY,
+      env
     );
     if (!turnstileOk) {
       return jsonResponse(
@@ -166,7 +173,7 @@ export async function onRequestPost(context) {
         html:
           '<h2>New Local Growth Audit Request</h2>' +
           '<p><strong>Business:</strong> ' + businessName + '</p>' +
-          '<p><strong>Website:</strong> <a href="' + website + '">' + website + '</a></p>' +
+          '<p><strong>Website:</strong> ' + website + '</p>' +
           '<p><strong>City / Territory:</strong> ' + city + '</p>' +
           '<p><strong>Primary Bottleneck:</strong> ' + bottleneck + '</p>' +
           (customMessage ? '<p><strong>Custom Service Scope:</strong> ' + customMessage + '</p>' : '') +

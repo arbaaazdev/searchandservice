@@ -38,7 +38,12 @@ export function jsonResponse(body, status = 200, origin = 'https://searchandserv
 
 export function sanitizeString(value, maxLen = 250) {
   if (typeof value !== 'string') return '';
-  return value.trim().replace(/[<>]/g, '').slice(0, maxLen);
+  return value
+    .trim()
+    .slice(0, maxLen)
+    .replace(/[<>]/g, '')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function csvSafe(value) {
@@ -74,8 +79,14 @@ export async function hashIp(ip) {
     .join('');
 }
 
-export async function verifyTurnstileToken(token, ip, secretKey) {
-  if (!secretKey) return true;
+export async function verifyTurnstileToken(token, ip, secretKey, env) {
+  if (!secretKey) {
+    if (env?.ENVIRONMENT === 'production') {
+      console.error('CRITICAL: TURNSTILE_SECRET_KEY is not set in production!');
+      return false;
+    }
+    return true;
+  }
   if (!token) return false;
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {

@@ -16,6 +16,12 @@ export async function onRequestPost(context) {
   const { request, env, waitUntil } = context;
   const origin = resolveCorsOrigin(request, env);
 
+  // Reject non-JSON requests (blocks simple cross-origin form/text spam)
+  const contentType = request.headers.get('Content-Type') || '';
+  if (!contentType.includes('application/json')) {
+    return jsonResponse({ ok: false, error: 'Unsupported Content-Type' }, 415, origin);
+  }
+
   try {
     const payload = await request.json();
 
@@ -39,7 +45,8 @@ export async function onRequestPost(context) {
     const turnstileOk = await verifyTurnstileToken(
       payload.turnstileToken || payload['cf-turnstile-response'],
       clientIp,
-      env?.TURNSTILE_SECRET_KEY
+      env?.TURNSTILE_SECRET_KEY,
+      env
     );
     if (!turnstileOk) {
       return jsonResponse(

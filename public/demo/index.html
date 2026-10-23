@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive 3-in-1 Restaurant System Demo | searchandservice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+        }
+
+        .phone-frame {
+            width: 340px;
+            height: 670px;
+            border: 10px solid #1e293b;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .kds-pulse {
+            animation: pulseBorder 1.5s infinite;
+        }
+
+        @keyframes pulseBorder {
+
+            0%,
+            100% {
+                border-color: #22c55e;
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            50% {
+                border-color: #86efac;
+                box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <!-- TOP AGENCY COMMAND BAR -->
+    <header
+        class="bg-slate-900/90 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50 backdrop-blur">
+        <div class="flex items-center gap-3">
+            <span
+                class="bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded text-xs tracking-wider uppercase">Live
+                Interactive Sandbox</span>
+            <h1 class="text-sm md:text-base font-bold text-white">
+                Prepared for <span id="headerBrandName" class="text-amber-400 underline decoration-amber-500/40">Austin
+                    Smokehouse</span>
+                <span class="text-slate-400 font-normal text-xs ml-1">(<span id="headerCityName">Austin</span>)</span>
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="simulateFriendAdd()"
+                class="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                + Simulate Guest #2 at Table
+            </button>
+            <button onclick="resetDemo()"
+                class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                Reset Demo
+            </button>
+            <button onclick="toggleLinkBuilder()"
+                class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
+                Customize Link
+            </button>
+        </div>
+    </header>
+
+    <!-- GUIDED TOUR BANNER -->
+    <div class="bg-indigo-950/60 border-b border-indigo-800/40 px-6 py-2 text-center text-xs text-indigo-200">
+        <span id="guidedStepText" class="font-semibold">
+            👉 STEP 1: Add an item on the Customer Phone (Left) or click "+ Simulate Guest #2 at Table" to see live
+            shared table ordering!
+        </span>
+    </div>
+
+    <!-- MAIN 3-SCREEN PLAYGROUND -->
+    <main class="flex-1 max-w-[1440px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- SCREEN 1: CUSTOMER QR PORTAL (4 COLS) -->
+        <section class="lg:col-span-4 flex flex-col items-center">
+            <div class="mb-2 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">1. Customer Table QR WebApp</h2>
+            </div>
+
+            <div class="phone-frame flex flex-col">
+                <!-- Phone Status Bar -->
+                <div class="bg-slate-900 text-white px-5 py-2 text-[11px] flex justify-between items-center">
+                    <span class="font-semibold">Table #04 • Live Session</span>
+                    <span class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-medium">3
+                        Guests Connected</span>
+                </div>
+
+                <!-- Restaurant Hero -->
+                <div class="bg-gradient-to-r from-amber-600 to-orange-600 text-white p-4">
+                    <h3 id="phoneBrandName" class="font-extrabold text-lg leading-tight">Austin Smokehouse</h3>
+                    <p class="text-xs text-amber-100 mt-0.5">Instant Table Ordering • No App Required</p>
+                </div>
+
+                <!-- Live Order Status Banner (Hidden until order placed) -->
+                <div id="customerOrderStatus"
+                    class="hidden bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Live Kitchen Tracker
+                        </p>
+                        <p id="customerStatusText" class="text-xs font-bold text-slate-900">🔥 Firing in Kitchen (Est. 8
+                            mins)</p>
+                    </div>
+                    <button onclick="requestWaiter('Water Refill')"
+                        class="bg-white border border-emerald-300 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded shadow-sm hover:bg-emerald-100">
+                        💧 Need Water
+                    </button>
+                </div>
+
+                <!-- Scrollable Menu -->
+                <div id="menuContainer" class="flex-1 overflow-y-auto p-3.5 space-y-2.5 bg-slate-50">
+                    <!-- Dynamically populated by JS -->
+                </div>
+
+                <!-- Smart Upsell Modal (Overlay inside phone) -->
+                <div id="upsellModal"
+                    class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-30 flex items-end">
+                    <div
+                        class="bg-white w-full rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 animate-bounce-once">
+                        <span
+                            class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">Smart
+                            Table Deal • Save 25%</span>
+                        <h4 class="text-base font-extrabold text-slate-900 mt-1.5">Make it a Feast Before Sending?</h4>
+                        <p class="text-xs text-slate-600 mt-1">92% of tables ordering <span id="upsellTriggerDish"
+                                class="font-semibold">this dish</span> add our <span
+                                class="font-bold text-slate-900">Loaded Truffle Fries + 2 Craft Drinks</span> for just
+                            <span class="text-emerald-600 font-bold">+$8.50</span> (Reg. $13).
+                        </p>
+                        <div class="mt-4 space-y-2">
+                            <button onclick="confirmOrder(true)"
+                                class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs py-3 rounded-xl shadow">
+                                Yes! Add Combo Upgrade (+$8.50)
+                            </button>
+                            <button onclick="confirmOrder(false)"
+                                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs py-2.5 rounded-xl">
+                                No thanks, fire order as-is
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Maps SEO Review Booster Modal (Overlay inside phone) -->
+                <div id="seoReviewModal"
+                    class="hidden absolute inset-0 bg-white z-40 flex flex-col p-5 overflow-y-auto">
+                    <div class="text-center mt-2">
+                        <span
+                            class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase">Meal
+                            Complete • Thank You!</span>
+                        <h4 class="text-base font-extrabold text-slate-900 mt-2">How was <span
+                                id="reviewBrandName">Austin Smokehouse</span>?</h4>
+                        <p class="text-xs text-slate-500 mt-1">Tap a keyword tag below to auto-write your Google review
+                            in 3 seconds:</p>
+                        <div class="flex justify-center gap-1 text-2xl my-2 text-amber-400">★★★★★</div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 my-2" id="seoKeywordPills">
+                        <!-- Populated dynamically with city & dish keywords -->
+                    </div>
+
+                    <textarea id="generatedReviewBox" rows="4"
+                        class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 font-medium mt-2 focus:outline-none focus:border-amber-500"></textarea>
+
+                    <button onclick="copyAndPostReview()" id="postReviewBtn"
+                        class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 rounded-xl shadow-md">
+                        Copy & Open Google Maps (1-Tap)
+                    </button>
+                    <p id="reviewCopiedNotice" class="hidden text-[11px] text-center text-emerald-600 font-bold mt-2">
+                        ✓ Review copied with Local SEO keywords! Ranking boosted.
+                    </p>
+                </div>
+
+                <!-- Bottom Cart Bar -->
+                <div class="bg-white border-t border-slate-200 p-3.5 shadow-lg">
+                    <div class="flex justify-between items-center mb-2 text-xs">
+                        <span class="text-slate-500 font-medium">Table #04 Shared Cart (<span id="cartCount">0</span>
+                            items)</span>
+                        <span class="font-extrabold text-slate-900 text-sm">$<span id="cartTotal">0.00</span></span>
+                    </div>
+                    <button id="checkoutBtn" onclick="openUpsellModal()" disabled
+                        class="w-full bg-slate-900 disabled:bg-slate-300 disabled:text-slate-500 hover:bg-slate-800 text-white font-bold text-xs py-3 rounded-xl transition">
+                        Send Order to Kitchen →
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: KITCHEN DISPLAY SYSTEM - KDS (4 COLS) -->
+        <section class="lg:col-span-4 flex flex-col">
+            <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">2. Smart Kitchen Display (KDS)
+                </h2>
+                <span class="text-[11px] text-emerald-400 font-semibold">🔊 Sound Alert Active</span>
+            </div>
+
+            <div
+                class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-4 min-h-[670px] flex flex-col justify-between shadow-2xl">
+                <div>
+                    <!-- KDS Header -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-white">KITCHEN STATION: ALL</h3>
+                            <p class="text-[11px] text-slate-400">Zero paper tickets • Real-time SLA timers</p>
+                        </div>
+                        <div class="bg-slate-800 px-2.5 py-1 rounded text-xs font-mono text-amber-400" id="kdsClock">
+                            00:00</div>
+                    </div>
+
+                    <!-- Active Tickets Area -->
+                    <div id="kdsTicketsContainer" class="space-y-3">
+                        <div
+                            class="border border-dashed border-slate-700 rounded-xl p-8 text-center text-slate-500 text-xs">
+                            Waiting for Table #04 to fire order from QR Menu...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instant "86" (Out of Stock) Control -->
+                <div class="border-t border-slate-800 pt-4 mt-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-rose-400 uppercase tracking-wider">⚡ Instant "86"
+                            (Out-of-Stock) Toggle</span>
+                        <span class="text-[10px] text-slate-400">Tap to disable on QR Menu</span>
+                    </div>
+                    <div id="kds86Container" class="grid grid-cols-2 gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: ADMIN COMMAND & 10X ROI TRACKER (4 COLS) -->
+        <section class="lg:col-span-4 flex flex-col">
+            <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">3. Owner Command & 10x ROI Live
+                    Math</h2>
+                <span class="text-[11px] text-amber-400 font-semibold">Live Profit Telemetry</span>
+            </div>
+
+            <div
+                class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-4 min-h-[670px] flex flex-col justify-between shadow-2xl space-y-4">
+                <div class="space-y-4">
+                    <!-- Live Floor Map -->
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Live Floor Table
+                            Map</h3>
+                        <div class="grid grid-cols-3 gap-2.5 text-center">
+                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 opacity-60">
+                                <p class="text-[10px] text-slate-400">Table #01</p>
+                                <p class="text-xs font-bold text-emerald-400 mt-0.5">Eating ($64)</p>
+                            </div>
+                            <div id="adminTable4Card"
+                                class="bg-indigo-950/60 border-2 border-indigo-500 rounded-lg p-2.5">
+                                <p class="text-[10px] text-indigo-300 font-bold">Table #04 (DEMO)</p>
+                                <p id="adminTable4Status" class="text-xs font-extrabold text-white mt-0.5">Browsing QR
+                                </p>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 opacity-60">
+                                <p class="text-[10px] text-slate-400">Table #07</p>
+                                <p class="text-xs font-bold text-amber-400 mt-0.5">Check Paid</p>
+                            </div>
+                        </div>
+                        <div id="waiterAlertBox"
+                            class="hidden mt-2.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold flex justify-between items-center">
+                            <span id="waiterAlertText">🔔 Table #04 requested Water Refill</span>
+                            <button onclick="this.parentElement.classList.add('hidden')"
+                                class="text-[10px] underline">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Session Value Added -->
+                    <div
+                        class="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-700/40 rounded-xl p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Extra Value
+                                Created (This Table Alone)</span>
+                            <span
+                                class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded">Live
+                                Counter</span>
+                        </div>
+                        <p class="text-3xl font-extrabold text-white mt-1">+$<span id="liveExtraValue">0.00</span></p>
+                        <ul id="valueBreakdownList" class="mt-2.5 space-y-1 text-xs text-slate-300">
+                            <li class="text-slate-500 italic">Place an order on the phone to see live profit impact...
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Monthly Projected ROI Calculator -->
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">Projected Monthly
+                            Impact for <span id="roiBrandName">Your Restaurant</span></h3>
+                        <p class="text-[11px] text-slate-400 mb-3">Conservative estimate based on just 25 tables/day:
+                        </p>
+
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between py-1 border-b border-slate-800/80">
+                                <span class="text-slate-300">Smart Checkout Upsells (6 tables/day @ $8.50)</span>
+                                <span class="font-bold text-emerald-400">+$1,530 / mo</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-800/80">
+                                <span class="text-slate-300">12-Min Faster Table Turns (Weekend Peak)</span>
+                                <span class="font-bold text-emerald-400">+$1,200 / mo</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-800/80">
+                                <span class="text-slate-300">Server Labor Saved (150 hrs/mo automated)</span>
+                                <span class="font-bold text-emerald-400">+$1,800 / mo</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span class="text-slate-300">Google Maps Top-3 Keyword Walk-Ins</span>
+                                <span class="font-bold text-amber-400">Compounding SEO</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Total Monthly Value Added:</span>
+                            <span class="text-lg font-extrabold text-emerald-400">+$4,530 / mo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agency CTA Footer -->
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-center">
+                    <p class="text-xs font-semibold text-amber-200">Built & Managed by <span
+                            class="font-extrabold text-white">searchandservice</span></p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Zero hardware lock-in • Deployed in 7 days</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- AGENCY CUSTOM LINK BUILDER MODAL -->
+    <div id="linkBuilderModal"
+        class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-extrabold text-base text-white">⚡ Prospect Custom Link Generator</h3>
+                <button onclick="toggleLinkBuilder()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">Enter a US prospect's details below to generate a personalized demo
+                URL for your cold outreach or Zoom call:</p>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Restaurant Name</label>
+                    <input id="inputRestName" type="text" placeholder="e.g. Rusty Taco"
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">US City / Neighborhood</label>
+                    <input id="inputCityName" type="text" placeholder="e.g. Tampa"
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Signature Dish (Hero Item & SEO
+                        Keyword)</label>
+                    <input id="inputHeroDish" type="text" placeholder="e.g. Birria Street Tacos"
+                        class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+                <button onclick="generateCustomUrl()"
+                    class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg mt-2">
+                    Apply & Copy Custom Prospect Link
+                </button>
+                <input id="generatedUrlOutput" type="text" readonly
+                    class="hidden w-full bg-slate-950 border border-emerald-600 rounded-lg px-3 py-2 text-emerald-400 font-mono text-[11px] mt-2" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Parse URL Parameters for Instant Prospect Personalization
+        const params = new URLSearchParams(window.location.search);
+        const config = {
+            restaurant: params.get('r') || 'Austin Smokehouse',
+            city: params.get('c') || 'Austin',
+            heroDish: params.get('k') || 'Smoked Brisket Platter'
+        };
+
+        // Apply Branding Across UI
+        document.getElementById('headerBrandName').textContent = config.restaurant;
+        document.getElementById('headerCityName').textContent = config.city;
+        document.getElementById('phoneBrandName').textContent = config.restaurant;
+        document.getElementById('reviewBrandName').textContent = config.restaurant;
+        document.getElementById('roiBrandName').textContent = config.restaurant;
+        document.getElementById('upsellTriggerDish').textContent = config.heroDish;
+
+        // 2. Initial Menu State
+        const menuItems = [
+            { id: 1, name: config.heroDish, desc: `Our #1 signature favorite in ${config.city}, served fresh.`, price: 18.50, tag: '🔥 Local Favorite', soldOut: false },
+            { id: 2, name: 'Double Smash Burger', desc: 'Aged cheddar, house sauce, brioche bun.', price: 14.00, tag: 'Chef Special', soldOut: false },
+            { id: 3, name: 'Crispy Buffalo Wings (8pc)', desc: 'House ranch, celery, artisan hot glaze.', price: 12.50, tag: 'Shareable', soldOut: false },
+            { id: 4, name: 'House Craft Lemonade', desc: 'Freshly squeezed daily with mint.', price: 4.50, tag: 'Beverage', soldOut: false }
+        ];
+
+        let cart = [];
+        let extraValueCreated = 0;
+        let valueReasons = [];
+        let activeOrder = null;
+
+        // 3. Web Audio API Kitchen Bell Synthesizer (Zero External Files Needed)
+        function playKitchenBell() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const playTone = (freq, start, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+                    gain.gain.setValueAtTime(0.35, ctx.currentTime + start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + start);
+                    osc.stop(ctx.currentTime + start + duration);
+                };
+                playTone(987.77, 0, 0.4);   // B5
+                playTone(1318.51, 0.14, 0.7); // E6 (Classic Ding-Dong Bell)
+            } catch (e) { }
+        }
+
+        // 4. Render Customer Menu & Kitchen 86 Controls
+        function renderAll() {
+            const menuEl = document.getElementById('menuContainer');
+            menuEl.innerHTML = menuItems.map(item => `
+        <div class="bg-white border ${item.soldOut ? 'border-rose-200 opacity-60' : 'border-slate-200'} rounded-xl p-3 shadow-xs flex justify-between items-center">
+          <div class="pr-2">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${item.soldOut ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}">
+                ${item.soldOut ? '86 • SOLD OUT IN KITCHEN' : item.tag}
+              </span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-900 mt-1">${item.name}</h4>
+            <p class="text-[11px] text-slate-500 leading-snug">${item.desc}</p>
+            <p class="text-xs font-extrabold text-slate-900 mt-1">$${item.price.toFixed(2)}</p>
+          </div>
+          <button onclick="addToCart(${item.id}, 'You')" ${item.soldOut ? 'disabled' : ''}
+            class="shrink-0 ${item.soldOut ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-white'} font-bold text-xs px-3 py-2 rounded-lg transition">
+            ${item.soldOut ? 'Sold Out' : '+ Add'}
+          </button>
+        </div>
+      `).join('');
+
+            // Render 86 Buttons in KDS
+            const kds86El = document.getElementById('kds86Container');
+            kds86El.innerHTML = menuItems.map(item => `
+        <button onclick="toggle86(${item.id})" class="text-left p-2 rounded-lg border text-xs transition flex items-center justify-between ${item.soldOut ? 'bg-rose-950/60 border-rose-500 text-rose-200' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'}">
+          <span class="truncate pr-1 font-medium">${item.name}</span>
+          <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded ${item.soldOut ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300'}">${item.soldOut ? '86d' : 'Live'}</span>
+        </button>
+      `).join('');
+
+            // Update Cart Footer
+            const total = cart.reduce((sum, i) => sum + i.price, 0);
+            document.getElementById('cartCount').textContent = cart.length;
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
+            document.getElementById('checkoutBtn').disabled = cart.length === 0;
+        }
+
+        function addToCart(id, addedBy = 'You') {
+            const item = menuItems.find(m => m.id === id);
+            if (!item || item.soldOut) return;
+            cart.push({ ...item, addedBy });
+            renderAll();
+            document.getElementById('adminTable4Status').textContent = `Cart ($${cart.reduce((s, i) => s + i.price, 0).toFixed(2)})`;
+            document.getElementById('guidedStepText').textContent = `👉 STEP 2: Click "Send Order to Kitchen →" at the bottom of the phone to trigger the Smart Checkout Upsell!`;
+        }
+
+        function simulateFriendAdd() {
+            addToCart(3, 'Guest #2 (Sarah)');
+            addExtraValue(4.50, 'Shared Table Cart: Guest #2 added Wings without waiting for a server');
+        }
+
+        function toggle86(id) {
+            const item = menuItems.find(m => m.id === id);
+            if (item) {
+                item.soldOut = !item.soldOut;
+                renderAll();
+            }
+        }
+
+        function openUpsellModal() {
+            document.getElementById('upsellModal').classList.remove('hidden');
+            document.getElementById('guidedStepText').textContent = `👉 STEP 3: Accept the Smart Upsell on the phone to watch the Kitchen KDS chime and chime in real time!`;
+        }
+
+        function confirmOrder(acceptedUpsell) {
+            document.getElementById('upsellModal').classList.add('hidden');
+            if (acceptedUpsell) {
+                cart.push({ id: 99, name: '⚡ Combo: Truffle Fries + 2 Drinks', price: 8.50, addedBy: 'Smart AI Upsell' });
+                addExtraValue(8.50, 'Automated Checkout Upsell accepted (+$8.50 pure high-margin add-on)');
+            }
+            addExtraValue(3.25, 'Server labor saved (Zero wait time to take order)');
+
+            activeOrder = {
+                id: Math.floor(100 + Math.random() * 900),
+                table: 'Table #04',
+                items: [...cart],
+                status: 'NEW ORDER',
+                seconds: 0
+            };
+            cart = [];
+            renderAll();
+            playKitchenBell();
+
+            document.getElementById('customerOrderStatus').classList.remove('hidden');
+            document.getElementById('adminTable4Status').textContent = '🔥 Cooking in KDS';
+            document.getElementById('guidedStepText').textContent = `👉 STEP 4: Look at the Center Kitchen Screen! Click "Bump: Order Ready & Served" to trigger the Google Maps SEO Review Booster!`;
+            renderKDS();
+        }
+
+        function renderKDS() {
+            const container = document.getElementById('kdsTicketsContainer');
+            if (!activeOrder) {
+                container.innerHTML = `<div class="border border-dashed border-slate-700 rounded-xl p-8 text-center text-slate-500 text-xs">Waiting for Table #04 to fire order from QR Menu...</div>`;
+                return;
+            }
+            container.innerHTML = `
+        <div class="bg-slate-950 border-2 border-emerald-500 kds-pulse rounded-xl p-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2.5">
+            <div>
+              <span class="bg-emerald-500 text-slate-950 font-extrabold text-[10px] px-2 py-0.5 rounded uppercase">${activeOrder.status}</span>
+              <h4 class="font-extrabold text-white text-sm mt-1">${activeOrder.table} • Ticket #${activeOrder.id}</h4>
+            </div>
+            <span class="font-mono text-xs bg-slate-900 text-emerald-400 px-2 py-1 rounded border border-slate-800">SLA: 00:12</span>
+          </div>
+          <ul class="space-y-1.5 text-xs mb-4">
+            ${activeOrder.items.map(i => `
+              <li class="flex justify-between text-slate-200">
+                <span class="font-semibold">1x ${i.name}</span>
+                <span class="text-[10px] text-slate-400">${i.addedBy}</span>
+              </li>
+            `).join('')}
+          </ul>
+          <button onclick="completeOrderAndTriggerSEO()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs py-2.5 rounded-lg shadow transition">
+            ✓ Bump: Order Ready & Served (Trigger SEO Booster)
+          </button>
+        </div>
+      `;
+        }
+
+        function completeOrderAndTriggerSEO() {
+            activeOrder = null;
+            renderKDS();
+            document.getElementById('customerStatusText').textContent = '✅ Served! Enjoy your meal.';
+            document.getElementById('adminTable4Status').textContent = '⭐ Leaving SEO Review';
+            addExtraValue(15.00, `Keyword-Rich 5★ Google Review generated for "${config.heroDish} in ${config.city}"`);
+            document.getElementById('guidedStepText').textContent = `🎉 FINALE: Look at the Customer Phone! Tap the SEO Keyword pills to see how it ranks ${config.restaurant} #1 on Google Maps.`;
+
+            // Populate SEO Keyword Pills
+            const keywords = [
+                `Best ${config.heroDish} in ${config.city}`,
+                `Fast QR table service`,
+                `Great atmosphere at ${config.restaurant}`,
+                `Must-visit spot in ${config.city}`
+            ];
+            const pillsEl = document.getElementById('seoKeywordPills');
+            pillsEl.innerHTML = keywords.map(kw => `
+        <button onclick="appendKeyword('${kw.replace(/'/g, "\\'")}')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-bold px-2 py-1 rounded-full transition">
+          + "${kw}"
+        </button>
+      `).join('');
+
+            document.getElementById('generatedReviewBox').value = `Incredible meal at ${config.restaurant}! Easily the best ${config.heroDish} in ${config.city}. We ordered right from the table QR code and the food came out hot and fast. Highly recommend!`;
+            document.getElementById('seoReviewModal').classList.remove('hidden');
+        }
+
+        function appendKeyword(kw) {
+            const box = document.getElementById('generatedReviewBox');
+            if (!box.value.includes(kw)) {
+                box.value += ` Definitely known for ${kw.toLowerCase()}!`;
+            }
+        }
+
+        function copyAndPostReview() {
+            const box = document.getElementById('generatedReviewBox');
+            navigator.clipboard?.writeText(box.value);
+            document.getElementById('reviewCopiedNotice').classList.remove('hidden');
+        }
+
+        function requestWaiter(type) {
+            playKitchenBell();
+            const box = document.getElementById('waiterAlertBox');
+            document.getElementById('waiterAlertText').textContent = `🔔 Table #04 requested: ${type}`;
+            box.classList.remove('hidden');
+        }
+
+        function addExtraValue(amount, reason) {
+            extraValueCreated += amount;
+            valueReasons.unshift(`+$${amount.toFixed(2)}: ${reason}`);
+            document.getElementById('liveExtraValue').textContent = extraValueCreated.toFixed(2);
+            document.getElementById('valueBreakdownList').innerHTML = valueReasons.map(r => `<li class="text-emerald-300">✓ ${r}</li>`).join('');
+        }
+
+        function toggleLinkBuilder() {
+            document.getElementById('linkBuilderModal').classList.toggle('hidden');
+        }
+
+        function generateCustomUrl() {
+            const r = encodeURIComponent(document.getElementById('inputRestName').value || config.restaurant);
+            const c = encodeURIComponent(document.getElementById('inputCityName').value || config.city);
+            const k = encodeURIComponent(document.getElementById('inputHeroDish').value || config.heroDish);
+            const newUrl = `${window.location.origin}${window.location.pathname}?r=${r}&c=${c}&k=${k}`;
+            const out = document.getElementById('generatedUrlOutput');
+            out.value = newUrl;
+            out.classList.remove('hidden');
+            navigator.clipboard?.writeText(newUrl);
+            window.location.href = newUrl;
+        }
+
+        function resetDemo() {
+            window.location.reload();
+        }
+
+        // Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('kdsClock').textContent = now.toTimeString().slice(0, 8);
+        }, 1000);
+
+        renderAll();
+    </script>
+</body>
+
+</html>

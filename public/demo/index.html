@@ -3,148 +3,77 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Restaurant Management System Prototype Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#EA580C" />
+    <title>Table #04 • Dine-In Digital Menu | Search & Service</title>
 
-    <!-- FAVICON CONFIGURATION: Uses instant zero-404 SVG data URI by default, with optional external probing -->
     <link id="siteFavicon" rel="icon"
         href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23EA580C%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2254%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2234%22%20fill%3D%22%23FFFFFF%22%3ER%3C%2Ftext%3E%3C%2Fsvg%3E" />
-    <script>
-        (function resolveFavicon() {
-            const link = document.getElementById('siteFavicon');
-            const fallbackSvg = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#EA580C"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="34" fill="#FFFFFF">R</text></svg>');
-            if (link) link.href = fallbackSvg;
-            if (!window.RMS_PROBE_EXTERNAL_FAVICON) return;
-            const candidates = ['/favicon.ico', '/favicon.png', '/favicon.svg', './favicon.ico', './favicon.png'];
-            let idx = 0;
-            function tryNext() {
-                if (idx >= candidates.length) return;
-                const testUrl = candidates[idx++];
-                const img = new Image();
-                img.onload = function () { if (link) link.href = testUrl; };
-                img.onerror = tryNext;
-                img.src = testUrl;
-            }
-            tryNext();
-        })();
-    </script>
 
-    <!-- Preconnect & Assets -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://images.unsplash.com" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Righteous&display=swap"
-        rel="stylesheet">
+    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Righteous&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #FFFFFF;
-            color: #1E293B;
+        html, body {
+            height: 100%;
             margin: 0;
-            overflow-x: hidden;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FFF7ED;
+            color: #1E293B;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .orange-scroll::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-
-        .orange-scroll::-webkit-scrollbar-track {
-            background: #FFF7ED;
-        }
-
-        .orange-scroll::-webkit-scrollbar-thumb {
-            background: #FDBA74;
-            border-radius: 9999px;
-        }
-
-        .phone-frame {
+        .customer-app-shell {
             width: 100%;
-            max-width: 365px;
-            height: 760px;
+            height: 100dvh;
             background-color: #FFFFFF;
-            border-radius: 42px;
-            border: 8px solid #1E293B;
-            box-shadow: 0 20px 45px -15px rgba(234, 88, 12, 0.18);
-            overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
+            overflow: hidden;
         }
 
-        .portal-frame {
-            height: 760px;
-            background-color: #FFFFFF;
-            border-radius: 28px;
-            border: 2px solid #FED7AA;
-            box-shadow: 0 16px 36px -12px rgba(234, 88, 12, 0.12);
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+        @media (min-width: 640px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 12px;
+                background: radial-gradient(circle at top, #FFF7ED 0%, #FFEDD5 100%);
+            }
+            .customer-app-shell {
+                max-width: 440px;
+                height: calc(100dvh - 24px);
+                max-height: 880px;
+                border-radius: 32px;
+                border: 2px solid #FED7AA;
+                box-shadow: 0 24px 60px -15px rgba(234, 88, 12, 0.22);
+            }
         }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .orange-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .orange-scroll::-webkit-scrollbar-track { background: #FFF7ED; }
+        .orange-scroll::-webkit-scrollbar-thumb { background: #FDBA74; border-radius: 9999px; }
 
         @keyframes popIn {
-            from {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
-
-        .animate-pop {
-            animation: popIn 0.18s ease-out forwards;
-        }
+        .animate-pop { animation: popIn 0.18s ease-out forwards; }
     </style>
+    <script>window.RMS_PORTAL_ROLE = 'customer';</script>
 </head>
 
-<body class="min-h-screen flex flex-col bg-white text-slate-800">
-    <svg class="hidden" aria-hidden="true">
-        <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6m0 0v6m0-6l-7 7M9 21H3m0 0v-6m0 6l7-7" />
-        </symbol>
-        <symbol id="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 14h6m0 0v6m0-6l-7 7M20 10h-6m0 0V4m0 6l7-7" />
-        </symbol>
-    </svg>
-    <header class="bg-orange-600 text-white px-4 md:px-6 py-4 border-b-2 border-orange-700 sticky top-0 z-50">
-        <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
-            <div class="flex items-center gap-2 shrink-0">
-                <button onclick="resetFullDemo(false)" title="Reset Session"
-                    class="bg-white text-orange-600 hover:bg-orange-50  font-semibold text-xs md:text-sm px-4 py-2 rounded-xl border-2 border-white shadow-sm transition cursor-pointer shrink-0">↺
-                    Reset Table Session</button><button onclick="resetFullDemo(true)" title="Factory Reset"
-                    class="bg-orange-700 hover:bg-orange-800  text-orange-100 font-medium text-[11px] px-3 py-2 rounded-xl border border-orange-400 transition cursor-pointer shrink-0 hidden sm:inline-block">Full
-                    Wipe</button>
-            </div>
-            <h1 class="text-sm sm:text-base md:text-xl font-semibold tracking-tight text-center flex-1 truncate">
-                Restaurant Management System</h1>
-            <div
-                class="hidden md:flex items-center gap-2 bg-orange-700/80 border border-orange-300 px-3 py-1.5 rounded-xl text-[11px] font-medium">
-                <span class="w-2 h-2 rounded-full bg-green-400 "></span><span>Browser Auto-Save</span>
-            </div>
-        </div>
-    </header>
-    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 md:px-6 py-6 flex flex-col justify-center">
-        <div id="screensGrid"
-            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start justify-items-center">
-            <div id="window-customer" class="phone-frame">
+<body>
+    <div id="window-customer" class="customer-app-shell">
                 <div class="px-4 pt-4 pb-3 bg-white flex items-center justify-between gap-2 shrink-0">
                     <div class="min-w-0">
                         <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Table #04
@@ -164,13 +93,11 @@
                             <p id="headerLoyaltyPts" class="text-[9px] font-medium text-orange-600 leading-none mt-1">
                                 650 Pts ($6.50)</p>
                         </div>
-                    </button><button onclick="toggleFocusWindow('customer')" title="Enlarge / Restore Customer Screen"
-                        class="w-8 h-8 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-300 flex items-center justify-center transition cursor-pointer shrink-0">
-                        <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                <use href="#icon-expand" />
-                            </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                <use href="#icon-collapse" />
-                            </svg></span></button>
+                    </button><button id="customerSyncPill" onclick="openCustomerPairModal()" title="Live Sync Status / Pair Room"
+                        class="h-8 px-2.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 border border-slate-300 flex items-center gap-1.5 transition cursor-pointer shrink-0 text-[10px] font-semibold">
+                        <span id="customerSyncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span id="customerSyncLabel">Pair</span>
+                    </button>
                 </div>
                 <div id="customerWaiterBanner"
                     class="hidden mx-4 mb-2 bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-medium flex items-center justify-between shadow-sm">
@@ -663,345 +590,36 @@
                                     id="customizeUnitPrice"
                                     class="block text-[9px] font-semibold text-slate-400"></span></div><button
                                 onclick="addCustomizedDishToOrder()"
-                                class="bg-orange-600 hover:from-orange-700  text-white font-semibold text-[11px] px-4 py-3 rounded-xl shadow-md transition whitespace-nowrap">Add
+                                class="bg-orange-600 hover:bg-orange-700  text-white font-semibold text-[11px] px-4 py-3 rounded-xl shadow-md transition whitespace-nowrap">Add
                                 to Order →</button>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div id="window-kds" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">2.
-                            KDS</span>
-                        <h2 class="text-base font-semibold tracking-tight">KDS — Live KDS</h2>
-                    </div><button onclick="toggleFocusWindow('kds')" title="Enlarge / Restore KDS Screen"
-                        class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                        <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                <use href="#icon-expand" />
-                            </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                <use href="#icon-collapse" />
-                            </svg></span></button>
-                </div>
-                <div
-                    class="bg-orange-50 px-4 py-3 border-b border-orange-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button onclick="setKdsFilter('all')" id="kdsTab-all"
-                            class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-orange-600 text-white cursor-pointer">
-                            All (<span id="kdsCountAll">0</span>) </button><button onclick="setKdsFilter('placed')"
-                            id="kdsTab-placed"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            New (<span id="kdsCountPlaced">0</span>) </button><button onclick="setKdsFilter('cooking')"
-                            id="kdsTab-cooking"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            Cooking (<span id="kdsCountCooking">0</span>) </button><button
-                            onclick="setKdsFilter('ready')" id="kdsTab-ready"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            Ready (<span id="kdsCountReady">0</span>) </button>
-                    </div><span id="kdsAvgPrepMetric" class="text-[11px] font-semibold text-orange-700">Avg Prep:
-                        11m</span>
-                </div>
-                <div id="kdsTicketsContainer" class="flex-1 overflow-y-auto orange-scroll p-4 space-y-3.5 bg-white">
-                </div>
-                <div class="bg-orange-50 border-t-2 border-orange-200 p-4 shrink-0 text-center">
-                    <button onclick="openKdsAvailabilityModal()"
-                        class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 px-4 rounded-xl shadow-sm transition cursor-pointer uppercase tracking-wider">AVAILABILITY
-                        STATUS</button>
-                </div>
-                <div id="kdsAvailabilityModal"
-                    class="hidden absolute inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4">
-                    <div
-                        class="bg-white w-full max-h-[88%] rounded-xl p-5 border border-orange-300 shadow-md relative  flex flex-col">
-                        <div class="flex items-center justify-between border-b border-orange-100 pb-3 mb-3 shrink-0">
+            
+                <div id="customerPairModal"
+                    class="hidden absolute inset-0 bg-slate-900/65 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-w-[340px] rounded-2xl p-5 border border-orange-300 shadow-xl animate-pop">
+                        <div class="flex items-center justify-between border-b border-orange-100 pb-3 mb-3">
                             <div>
-                                <span
-                                    class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Kitchen
-                                    Stock Control</span>
-                                <h3 class="text-base font-semibold text-slate-900 leading-tight">Dishes Availability
-                                    Status</h3>
-                            </div><button onclick="closeKdsAvailabilityModal()" title="Close Availability Modal"
-                                class="w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-sm flex items-center justify-center border border-orange-300 transition cursor-pointer">✕</button>
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Live Demo Pairing</span>
+                                <h3 class="text-base font-semibold text-slate-900 leading-tight">Sync with Staff Laptop</h3>
+                            </div>
+                            <button onclick="closeCustomerPairModal()" class="w-7 h-7 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer">✕</button>
                         </div>
-                        <p class="text-[11px] text-slate-500 font-medium mb-3 shrink-0">
-                            Tap any dish ribbon below to toggle its live availability status (Available vs Not
-                            Available):
-                        </p>
-                        <div id="kds86ButtonsGrid"
-                            class="flex-1 overflow-y-auto orange-scroll flex flex-wrap gap-2 content-start pr-1"></div>
-                        <div class="mt-4 pt-3 border-t border-orange-100 shrink-0">
-                            <button onclick="closeKdsAvailabilityModal()"
-                                class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 rounded-xl transition cursor-pointer">Done</button>
+                        <p id="customerPairStatus" class="text-[11px] text-slate-600 font-medium bg-orange-50 border border-orange-200 rounded-xl p-3 mb-3">Enter the 4-digit Room Code shown on your Staff Laptop.</p>
+                        <label for="customerRoomCodeInput" class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">4-Digit Room Code</label>
+                        <div class="flex items-center gap-2">
+                            <input id="customerRoomCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="e.g. 4829"
+                                class="flex-1 bg-orange-50/70 border-2 border-orange-200 focus:border-orange-500 rounded-xl px-3 py-2.5 text-base font-bold tracking-widest text-center text-slate-900 focus:outline-none uppercase" />
+                            <button onclick="submitCustomerRoomCode()"
+                                class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-4 py-3 rounded-xl shadow-sm transition cursor-pointer shrink-0">Connect</button>
                         </div>
+                        <p class="text-[10px] text-slate-400 mt-3 text-center">Tip: Scan the QR code on <b class="text-slate-600">/staff</b> to pair automatically.</p>
                     </div>
                 </div>
             </div>
-            <div id="window-waiter" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">3. Floor
-                            Staff Portal</span>
-                        <h2 class="text-base font-semibold tracking-tight">Waiter Portal</h2>
-                    </div><button onclick="toggleFocusWindow('waiter')" title="Enlarge / Restore Waiter Screen"
-                        class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                        <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                <use href="#icon-expand" />
-                            </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                <use href="#icon-collapse" />
-                            </svg></span></button>
-                </div>
-                <div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-white">
-                    <div id="waiterGuestLoyaltyBanner"
-                        class="bg-orange-50 rounded-2xl p-4 border border-orange-200 flex items-center justify-between">
-                    </div>
-                    <div class="bg-orange-50 rounded-2xl p-4.5 border border-orange-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-800">🔔 Customer
-                                Table Calls</span><span id="waiterCallCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
-                        </div>
-                        <div id="waiterCallsList" class="space-y-2"></div>
-                    </div>
-                    <div class="bg-orange-50 rounded-2xl p-4.5 border border-orange-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-800">🍲 Ready Orders
-                                from Kitchen</span><span id="waiterReadyCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
-                        </div>
-                        <div id="waiterReadyOrdersList" class="space-y-2"></div>
-                    </div>
-                    <div class="bg-white rounded-2xl p-4.5 border border-orange-300">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">📋 Selected
-                                Order & Table Details</span><span
-                                class="text-[10px] font-medium text-orange-600">Waiter: Alex</span>
-                        </div>
-                        <div id="waiterSelectedOrderBox"></div>
-                    </div>
-                </div>
-                <div
-                    class="bg-orange-50 border-t border-orange-200 px-4 py-3 flex items-center justify-between text-xs shrink-0">
-                    <span class="font-medium text-slate-600">Assigned Zone: <b class="text-orange-700">Tables #01 –
-                            #06</b></span><button onclick="testWaiterSound()"
-                        class="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer">🔊 Test
-                        Beep</button>
-                </div>
-            </div>
-            <div id="window-admin" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">4. Admin
-                            Portal</span>
-                        <h2 class="text-base font-semibold tracking-tight">Admin Center</h2>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button
-                            onclick="switchAdminTab('crm'); if (focusedWindowId !== 'admin') toggleFocusWindow('admin');"
-                            title="Open Fullscreen 9-Column CRM Table"
-                            class="hidden sm:inline-flex items-center gap-2 bg-orange-700/90 hover:bg-orange-800 text-orange-100 border border-orange-300 text-[10px] font-semibold px-3 py-1.5 rounded-xl transition cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg><span>Expand CRM</span></button><button onclick="toggleFocusWindow('admin')"
-                            title="Enlarge / Restore Admin Screen"
-                            class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                            <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                    <use href="#icon-expand" />
-                                </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                    <use href="#icon-collapse" />
-                                </svg></span></button>
-                    </div>
-                </div>
-                <div
-                    class="bg-orange-50 px-4 py-2 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0">
-                    <div class="grid grid-cols-2 gap-2 p-1 bg-white border border-orange-200 rounded-xl w-full">
-                        <button id="adminNav-overview" onclick="switchAdminTab('overview')"
-                            class="py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition cursor-pointer bg-orange-600 text-white shadow-sm flex items-center justify-center gap-2">
-                            <span>📊</span><span>Live Overview</span></button><button id="adminNav-crm"
-                            onclick="switchAdminTab('crm')"
-                            class="py-1.5 px-3 rounded-lg text-xs font-medium text-center transition cursor-pointer text-slate-600 hover:text-orange-600 flex items-center justify-center gap-2">
-                            <span>👥</span><span>Customer CRM</span><span id="adminNavCrmCountBadge"
-                                class="bg-orange-100 text-orange-800 text-[10px] font-medium px-1.5 py-0.5 rounded-full">5</span></button>
-                    </div>
-                </div>
-                <div id="adminOverviewView" class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-white">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Live
-                                Sales</span><span id="adminTotalSalesMetric"
-                                class="text-base font-semibold text-orange-600 mt-1 block">$412.00</span>
-                        </div>
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Active
-                                Orders</span><span id="adminActiveOrdersMetric"
-                                class="text-base font-semibold text-slate-900 mt-1 block">0</span>
-                        </div>
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Avg
-                                Rating</span><span id="adminAvgRatingMetric"
-                                class="text-base font-semibold text-orange-600 mt-1 block">4.9 ★</span>
-                        </div>
-                    </div>
-                    <div class="bg-white border-2 border-orange-200 rounded-2xl p-4.5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">🗺️ Live Dining
-                                Room Floor Map</span><span class="text-[10px] font-medium text-orange-600">Tap Any Table
-                                to Inspect</span>
-                        </div>
-                        <div id="adminFloorGrid" class="grid grid-cols-3 gap-2 text-center"></div>
-                        <div id="adminTableInspectorBox" class="mt-2.5"></div>
-                    </div>
-                    <div class="bg-orange-50/70 border border-orange-200 rounded-2xl p-4.5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-900">🎁 Loyalty &
-                                Repeat CRM</span><button onclick="switchAdminTab('crm')"
-                                class="text-[10px] font-semibold bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-lg transition cursor-pointer shadow-sm">Open
-                                CRM Table →</button>
-                        </div>
-                        <div id="adminLoyaltySummaryBox" class="text-xs space-y-1.5"></div>
-                    </div>
-                    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4.5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-900">⭐ Customer
-                                Reviews & Feedback</span><span id="adminReviewCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">1</span>
-                        </div>
-                        <div id="adminReviewsFeed" class="space-y-2 max-h-36 overflow-y-auto orange-scroll"></div>
-                    </div>
-                    <div class="bg-white border-2 border-orange-200 rounded-2xl p-4.5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">🚫 Dishes
-                                Availability (Unavailable)</span><span id="adminUnavailableCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
-                        </div>
-                        <div id="adminUnavailableDishesList"
-                            class="flex flex-wrap gap-2 max-h-36 overflow-y-auto orange-scroll"></div>
-                    </div>
-                </div>
-                <div id="adminCrmView" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
-                    <div class="p-4.5 bg-orange-50/60 border-b border-orange-200 space-y-2.5 shrink-0">
-                        <div id="adminCrmKpiStrip" class="grid grid-cols-4 gap-2"></div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <div
-                                class="flex-1 min-w-[150px] flex items-center gap-2 bg-white border border-orange-200 rounded-xl px-3 py-1.5">
-                                <svg class="w-3.5 h-3.5 text-orange-500 shrink-0" fill="none" stroke="currentColor"
-                                    stroke-width="2.2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                <input id="crmSearchInput" type="text" oninput="handleCrmSearch(this.value)"
-                                    placeholder="Search guest, phone, dish, tag..."
-                                    class="w-full text-[11px] font-semibold text-slate-800 placeholder-slate-400 focus:outline-none bg-transparent" />
-                            </div>
-                            <select id="crmSortSelect" onchange="handleCrmSortChange(this.value)"
-                                class="bg-white border border-orange-200 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:border-orange-500 cursor-pointer">
-                                <option value="spend_desc">Sort: Lifetime Spend ↓</option>
-                                <option value="aov_desc">Sort: Avg Order Value ↓</option>
-                                <option value="orders_desc">Sort: Total Orders ↓</option>
-                                <option value="points_desc">Sort: Loyalty Points ↓</option>
-                                <option value="recent">Sort: Recent Visit</option>
-                            </select>
-                        </div>
-                        <div id="crmSegmentFilterBar"
-                            class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"></div>
-                    </div>
-                    <div class="flex-1 overflow-auto orange-scroll">
-                        <table class="w-full text-left border-collapse min-w-[920px]">
-                            <thead
-                                class="bg-slate-900 text-white sticky top-0 z-10 text-[10px] font-semibold uppercase tracking-wider">
-                                <tr>
-                                    <th class="py-3 px-3 border-b border-slate-800">Guest Name</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Segment</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-center">Total Orders</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Lifetime Spend</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Avg Order Value</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Last Visit</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Favorite Dish</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Loyalty Points</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-center">Profile and History
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminCrmTableBody" class="divide-y divide-orange-100 text-xs"></tbody>
-                        </table>
-                    </div>
-                    <div
-                        class="bg-orange-50/80 border-t border-orange-200 px-4 py-2 flex items-center justify-between text-[10px] text-slate-600 shrink-0">
-                        <span>💡 <b>Tip:</b> Scroll horizontally or tap the <b>Expand (↗)</b> icon top-right for full
-                            widescreen CRM view.</span><span id="crmShowingCountLabel"
-                            class="font-semibold text-orange-700">Showing 5 Guests</span>
-                    </div>
-                </div>
-                <div class="bg-orange-50 border-t-2 border-orange-200 p-4 shrink-0">
-                    <button onclick="openSalesImpactPopup()"
-                        class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
-                        <span>📊 See how this impacts the sales volumes</span></button>
-                </div>
-                <div id="adminCrmProfileModal"
-                    class="hidden absolute inset-0 bg-slate-900/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 sm:p-4">
-                    <div id="adminCrmProfileModalContent"
-                        class="bg-white w-full max-w-2xl max-h-[94%] rounded-xl border border-orange-300 shadow-md overflow-hidden flex flex-col ">
-                    </div>
-                </div>
-                <div id="adminSalesImpactPopup"
-                    class="hidden absolute inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4">
-                    <div
-                        class="bg-white w-full max-h-[92%] overflow-y-auto orange-scroll rounded-xl p-5 border border-orange-300 shadow-md relative ">
-                        <button onclick="closeSalesImpactPopup()" title="Close Impact Popup"
-                            class="absolute top-4.5 right-3.5 w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-sm flex items-center justify-center border border-orange-300 transition cursor-pointer">✕</button><span
-                            class="bg-orange-100 text-orange-700 text-[10px] font-semibold px-3 py-1 rounded-full uppercase">Sales
-                            Volume & Loyalty ROI Report</span>
-                        <h3 class="text-base font-semibold text-slate-900 mt-2">Revenue & Owner Margin Breakdown</h3>
-                        <div class="mt-3 bg-orange-50 border border-orange-200 rounded-2xl p-4.5">
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-700">Extra Value
-                                Created (Live Demo Session)</span>
-                            <p class="text-2xl font-semibold text-orange-600 mt-1">
-                                +$<span id="popupSessionExtraValue">0.00</span></p>
-                            <ul id="popupSessionValueList"
-                                class="mt-2 space-y-1 text-[11px] text-slate-700 font-medium max-h-24 overflow-y-auto orange-scroll">
-                                <li class="text-slate-400 italic">Place an order or accept upsell deals to see live
-                                    value...</li>
-                            </ul>
-                        </div>
-                        <div class="mt-3 bg-white border-2 border-orange-200 rounded-2xl p-4.5">
-                            <h4 class="text-xs font-semibold text-slate-900 mb-2">Projected Monthly Impact (25
-                                Tables/Day)</h4>
-                            <div class="space-y-1.5 text-xs">
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Smart Discount Pairing Upsells</span><span
-                                        class="font-semibold text-orange-600">+$1,530 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Loyalty Repeat Visits (+7% to 30%
-                                        retention)</span><span class="font-semibold text-orange-600">+$2,150 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">12-Min Faster Table Turnovers</span><span
-                                        class="font-semibold text-orange-600">+$1,200 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Waitstaff Efficiency & Labor Saved</span><span
-                                        class="font-semibold text-orange-600">+$1,800 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1">
-                                    <span class="text-slate-600">Owner Loyalty Reward COGS (~1.5% food cost)</span><span
-                                        class="font-semibold text-slate-500">−$310 / mo</span>
-                                </div>
-                            </div>
-                            <div class="mt-2.5 pt-2 border-t-2 border-orange-200 flex justify-between items-center">
-                                <span class="text-xs font-semibold text-slate-900">Net Monthly Profit Lift:</span><span
-                                    class="text-base font-semibold text-orange-600">+$6,370 / mo</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-    <footer class="py-3 px-4 text-center border-t border-orange-100 bg-white">
-        <p class="text-xs font-medium text-slate-500">
-            Prototype demo developed by <span class="text-orange-600 font-semibold">SearchandService</span></p>
-    </footer>
     <script>
+
         const $ = id => document.getElementById(id);
         const toggleModal = (id, show) => {
             const el = $(id);
@@ -1009,8 +627,9 @@
         };
         const imgUrl = id => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=500&q=80`;
 
-        const STORAGE_KEY_LOYALTY = 'rms_demo_loyalty_v1';
-        const STORAGE_KEY_SESSION = 'rms_demo_session_v1';
+        const PORTAL_ROLE = window.RMS_PORTAL_ROLE || 'customer';
+        const STORAGE_KEY_LOYALTY = `rms_demo_loyalty_v2_${PORTAL_ROLE}`;
+        const STORAGE_KEY_SESSION = `rms_demo_session_v2_${PORTAL_ROLE}`;
 
         // 1. CATEGORIES & COMPACT 88-DISH MENU DEFINITIONS
         const menuCategories = [
@@ -1377,7 +996,7 @@
             { number: '01', status: 'Dining ($68)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Marcus Vance (Party of 2)', server: 'Alex', billAmount: 68.00, notes: 'Ordered BBQ Baby Back Ribs & Craft Beer' },
             { number: '02', status: 'Available', badgeClass: 'bg-white border-slate-200 text-slate-400', guestName: 'Open Table (4-Top Booth)', server: 'Alex', billAmount: 0.00, notes: 'Sanitized & ready for next walk-in' },
             { number: '03', status: 'Paying ($94)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Elena & David R.', server: 'Alex', billAmount: 94.00, notes: 'Reviewing itemized check via QR' },
-            { number: '04', status: 'Browsing Menu', badgeClass: 'bg-orange-600 border-orange-700 text-white', guestName: 'Live Demo Table #04', server: 'Alex', billAmount: 0.00, notes: 'Synced with Customer Phone App (Left Screen)' },
+            { number: '04', status: 'Browsing Menu', badgeClass: 'bg-orange-600 border-orange-700 text-white', guestName: 'Live Demo Table #04', server: 'Alex', billAmount: 0.00, notes: 'Synced live with Customer Mobile App' },
             { number: '05', status: 'Available', badgeClass: 'bg-white border-slate-200 text-slate-400', guestName: 'Open Table (2-Top Window)', server: 'Maya', billAmount: 0.00, notes: 'Reserved for 7:30 PM VIP' },
             { number: '06', status: 'Dining ($52)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Alex Rivera', server: 'Maya', billAmount: 52.00, notes: 'Main course served 14 mins ago' }
         ];
@@ -1462,20 +1081,20 @@
         const testWaiterSound = () => playWaiterCallBeep();
         // 6. FOCUS / ENLARGE WINDOW TOGGLE
         function toggleFocusWindow(windowKey) {
-            const allKeys = ['customer', 'kds', 'waiter', 'admin'];
+            const allKeys = ['kds', 'waiter', 'admin'];
             const grid = $('screensGrid');
+            if (!grid) return;
             const isRestoring = focusedWindowId === windowKey;
             focusedWindowId = isRestoring ? null : windowKey;
-            grid.className = isRestoring ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start justify-items-center' : 'flex justify-center items-start w-full';
+            grid.className = isRestoring ? 'grid grid-cols-1 lg:grid-cols-3 gap-5 items-start' : 'flex justify-center items-start w-full';
             allKeys.forEach(k => {
                 const el = $(`window-${k}`);
+                if (!el) return;
                 const isTarget = !isRestoring && k === windowKey;
                 el.classList.toggle('hidden', !isRestoring && !isTarget);
-                if (k !== 'customer') {
-                    const maxWidthClass = k === 'admin' ? 'max-w-6xl' : 'max-w-3xl';
-                    el.classList.toggle(maxWidthClass, isTarget);
-                    el.classList.toggle('mx-auto', isTarget);
-                }
+                const maxWidthClass = k === 'admin' ? 'max-w-6xl' : 'max-w-3xl';
+                el.classList.toggle(maxWidthClass, isTarget);
+                el.classList.toggle('mx-auto', isTarget);
                 el.querySelectorAll('.focus-icon-expand').forEach(i => i.classList.toggle('hidden', isTarget));
                 el.querySelectorAll('.focus-icon-collapse').forEach(i => i.classList.toggle('hidden', !isTarget));
             });
@@ -1503,6 +1122,13 @@
                 openTable4Order.customerName = newCust.name;
             }
             saveStateToStorage();
+            const switchedGuest = loyaltyProfiles[phoneKey];
+            syncBroadcastState({
+                kind: 'loyalty_switch',
+                title: `👤 Table #04 Guest: ${switchedGuest ? switchedGuest.name : 'Guest'}`,
+                detail: `${switchedGuest ? switchedGuest.points : 0} Pts active at Table #04`,
+                customerBanner: PORTAL_ROLE === 'staff' && switchedGuest ? `👤 Host synced your profile: ${switchedGuest.name} (${switchedGuest.points} Pts)` : null
+            });
             renderAllPortals();
             if (currentCustomerTab === 'rewards') renderCustomerLoyaltyView();
         }
@@ -1511,7 +1137,7 @@
             if (!phoneInput) return;
             const digits = (phoneInput.value || '').replace(/\D/g, '');
             if (digits.length < 7) {
-                $('customerWaiterBannerText').textContent = '⚠️ Please enter at least a 7-to-10 digit phone number.';
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = '⚠️ Please enter at least a 7-to-10 digit phone number.';
                 toggleModal('customerWaiterBanner', true);
                 return;
             }
@@ -1532,7 +1158,7 @@
             if (nameInput) nameInput.value = '';
             const activeCust = getActiveCustomer();
             if (activeCust) {
-                $('customerWaiterBannerText').textContent = `✓ Checked in as ${activeCust.name} (${activeCust.points} Pts available)!`;
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `✓ Checked in as ${activeCust.name} (${activeCust.points} Pts available)!`;
                 toggleModal('customerWaiterBanner', true);
             }
             switchLoyaltyProfile(digits);
@@ -1546,7 +1172,7 @@
             cust.history.unshift({ date: 'Just Now', text: `Redeemed Free ${reward.name}`, delta: `-${reward.pointsCost}` });
             selectedOrderItems.push({
                 lineId: `rew-${Date.now()}-${Math.floor(Math.random() * 1000)}`, id: dish.id, name: `${dish.name} (🎁 Reward)`,
-                qty: 1, basePrice: 0, unitPrice: 0, optionLabel: `Redeemed w/ ${reward.pointsCost} Pts (${reward.retailVal.toFixed(2)} value)`,
+                qty: 1, basePrice: 0, unitPrice: 0, optionLabel: `Redeemed w/ ${reward.pointsCost} Pts ($${reward.retailVal.toFixed(2)} value)`,
                 addons: [], kitchenNote: 'Loyalty Reward Redemption', isRewardRedemption: true, pointsRedeemed: reward.pointsCost, redeemedByPhone: cust.phone
             });
             syncSelectedQuantities();
@@ -1554,7 +1180,7 @@
             saveStateToStorage();
             renderAllPortals();
             renderCustomerLoyaltyView();
-            $('customerWaiterBannerText').textContent = `🎁 Redeemed ${dish.name} for ${reward.pointsCost} Pts! Added to your tray at $0.00.`;
+            if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `🎁 Redeemed ${dish.name} for ${reward.pointsCost} Pts! Added to your tray at $0.00.`;
             toggleModal('customerWaiterBanner', true);
         }
         function toggleApplyBillPointsDiscount(pointsToUse) {
@@ -1650,6 +1276,7 @@ ${(cust.history || []).slice(0, 5).map(h => `<li class="flex items-center justif
         }
         function renderMobileDishCards() {
             const grid = $('mobileDishGrid');
+            if (!grid) return;
             const filtered = menuItems.filter(item => {
                 const matchesCat = selectedCategories.includes('All') || selectedCategories.includes(item.category);
                 const matchesSearch = !searchQuery || item.name.toLowerCase().includes(searchQuery) || item.category.toLowerCase().includes(searchQuery);
@@ -1671,7 +1298,7 @@ ${qty > 0 && !dish.soldOut ? `<span title="Ordered Quantity" class="absolute top
 <h4 class="font-medium text-sm text-slate-900 leading-tight line-clamp-1 group-hover:text-orange-600 transition-colors" title="${dish.name}">${dish.name}</h4><div class="flex items-center gap-2 text-[10px] font-medium text-slate-500 mt-1">
 <span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${dish.prepTime}</span><span>•</span><span class="text-orange-600 font-semibold">+${dishPts} pts</span></div><div class="flex items-center gap-2 mt-1">
 <span class="text-orange-500 text-[10px] tracking-tight leading-none">★★★★★</span><span class="text-[10px] font-semibold text-slate-700 leading-none">${dish.rating}</span></div><div class="mt-1 flex items-baseline gap-0.5"><span class="text-xs font-medium text-orange-600">$</span><span class="font-medium text-base text-slate-900 tracking-tight leading-none">${dish.price.toFixed(2)}</span></div><div class="my-1.5 border-t border-orange-100/90"></div><div>
-${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-400 bg-slate-100 py-1 px-3 rounded-lg uppercase tracking-wider">Unavailable</span>` : `<button onclick="openDishCustomizeModal(${dish.id})" class="bg-orange-600 hover:from-orange-700  text-white font-medium text-[11px] py-1.5 px-4 rounded-xl transition cursor-pointer shadow-sm hover:shadow-md hover:shadow-orange-500/25 inline-flex items-center justify-center whitespace-nowrap">Customize and Add</button>`}</div></div></div>`;
+${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-400 bg-slate-100 py-1 px-3 rounded-lg uppercase tracking-wider">Unavailable</span>` : `<button onclick="openDishCustomizeModal(${dish.id})" class="bg-orange-600 hover:bg-orange-700  text-white font-medium text-[11px] py-1.5 px-4 rounded-xl transition cursor-pointer shadow-sm hover:shadow-md hover:shadow-orange-500/25 inline-flex items-center justify-center whitespace-nowrap">Customize and Add</button>`}</div></div></div>`;
             }).join('');
         }
         function getDishCustomizationProfile(dish) {
@@ -1751,10 +1378,10 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             $('customizeDishImage').src = dish.img;
             $('customizeDishImage').alt = dish.name;
             $('customizeDishDescription').textContent = p.description;
-            $('customizeDishBasePrice').textContent = `${dish.price.toFixed(2)} · Base`;
+            $('customizeDishBasePrice').textContent = `$${dish.price.toFixed(2)} · Base`;
             $('customizeOptionTitle').textContent = p.optionTitle;
-            $('customizeSizeOptions').innerHTML = p.options.map((o, i) => `<button type="button" onclick="selectCustomizeOption(${i})" id="customizeOption-${i}" class="rounded-xl border-2 p-2 text-left transition cursor-pointer ${i === 0 ? 'border-orange-500 bg-orange-50' : 'border-orange-100 bg-white hover:border-orange-300'}"><span class="block text-[10px] font-semibold text-slate-900">${o.label}</span><span class="block text-[8px] text-slate-500 mt-1">${o.detail}</span><span class="block text-[9px] font-medium text-orange-600 mt-1">${o.delta > 0 ? '+' : o.delta < 0 ? '−' : ''}${Math.abs(o.delta).toFixed(2)}</span></button>`).join('');
-            $('customizeAddonOptions').innerHTML = p.addons.map((a, i) => `<label class="flex items-center justify-between gap-2 p-2 rounded-xl border border-orange-100 bg-orange-50/50 cursor-pointer hover:border-orange-300"><span class="flex items-center gap-2 min-w-0"><input type="checkbox" id="customizeAddon-${i}" onchange="toggleCustomizeAddon(${i})" class="w-4 h-4 accent-orange-600 shrink-0"/><span class="text-[10px] font-medium text-slate-700">${a.name}</span></span><span class="text-[10px] font-semibold text-orange-600">+${a.price.toFixed(2)}</span></label>`).join('');
+            $('customizeSizeOptions').innerHTML = p.options.map((o, i) => `<button type="button" onclick="selectCustomizeOption(${i})" id="customizeOption-${i}" class="rounded-xl border-2 p-2 text-left transition cursor-pointer ${i === 0 ? 'border-orange-500 bg-orange-50' : 'border-orange-100 bg-white hover:border-orange-300'}"><span class="block text-[10px] font-semibold text-slate-900">${o.label}</span><span class="block text-[8px] text-slate-500 mt-1">${o.detail}</span><span class="block text-[9px] font-medium text-orange-600 mt-1">${o.delta > 0 ? '+$' : o.delta < 0 ? '−$' : '$'}${Math.abs(o.delta).toFixed(2)}</span></button>`).join('');
+            $('customizeAddonOptions').innerHTML = p.addons.map((a, i) => `<label class="flex items-center justify-between gap-2 p-2 rounded-xl border border-orange-100 bg-orange-50/50 cursor-pointer hover:border-orange-300"><span class="flex items-center gap-2 min-w-0"><input type="checkbox" id="customizeAddon-${i}" onchange="toggleCustomizeAddon(${i})" class="w-4 h-4 accent-orange-600 shrink-0"/><span class="text-[10px] font-medium text-slate-700">${a.name}</span></span><span class="text-[10px] font-semibold text-orange-600">+$${a.price.toFixed(2)}</span></label>`).join('');
             $('customizeQuantityValue').textContent = '1';
             $('customizeKitchenNote').value = p.note;
             $('customizeAllergenText').textContent = p.allergens;
@@ -1903,7 +1530,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!container) return;
             const totalAmt = getTotalSelectedAmount(), totalPts = calculatePointsForAmount(totalAmt);
             if (countBadge) countBadge.textContent = getTotalSelectedCount();
-            if (subtotalEl) subtotalEl.textContent = `${totalAmt.toFixed(2)}`;
+            if (subtotalEl) subtotalEl.textContent = `$${totalAmt.toFixed(2)}`;
             if (pointsPreviewEl) pointsPreviewEl.textContent = `✨ Earn +${totalPts} Loyalty Pts`;
             const selectedEntries = selectedOrderItems.filter(item => item.qty > 0);
             if (!selectedEntries.length) {
@@ -1917,7 +1544,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 if (!dish) return '';
                 const detail = [item.optionLabel, ...(item.addons || []).map(a => a.name)].filter(Boolean).join(' · ');
                 const addQtyBtn = !item.isRewardRedemption ? `<button onclick="changeCartLineQuantity('${item.lineId}',1)" class="w-6 h-6 rounded-full bg-white text-orange-700 font-medium border border-orange-200 cursor-pointer">+</button>` : '';
-                return `<div class="bg-orange-50/70 border ${item.isRewardRedemption ? 'border-green-400 bg-green-50/40' : 'border-orange-200'} rounded-2xl p-4 flex items-center justify-between gap-2 "><div class="flex items-center gap-4 min-w-0"><img src="${dish.img}" alt="${dish.name}" class="w-12 h-12 rounded-xl object-cover shrink-0 border border-orange-200"/><div class="min-w-0"><h5 class="text-xs font-semibold text-slate-900 truncate">${item.name}</h5><span class="block text-[9px] text-slate-500 mt-1 truncate">${detail}</span><span class="text-[11px] font-medium ${item.isRewardRedemption ? 'text-green-700' : 'text-orange-600'} mt-1 block">${item.isRewardRedemption ? 'FREE (Points Reward)' : `${(item.unitPrice * item.qty).toFixed(2)}`}</span></div></div><div class="flex items-center gap-2 shrink-0"><button onclick="changeCartLineQuantity('${item.lineId}',-1)" class="w-6 h-6 rounded-full bg-white text-orange-700 font-medium border border-orange-200 cursor-pointer">−</button><span class="w-4 text-center text-xs font-medium">${item.qty}</span>${addQtyBtn}<button onclick="removeCustomizedCartLine('${item.lineId}')" class="w-6 h-6 rounded-full bg-white text-slate-500 font-medium border border-orange-200 cursor-pointer">✕</button></div></div>`;
+                return `<div class="bg-orange-50/70 border ${item.isRewardRedemption ? 'border-green-400 bg-green-50/40' : 'border-orange-200'} rounded-2xl p-4 flex items-center justify-between gap-2 "><div class="flex items-center gap-4 min-w-0"><img src="${dish.img}" alt="${dish.name}" class="w-12 h-12 rounded-xl object-cover shrink-0 border border-orange-200"/><div class="min-w-0"><h5 class="text-xs font-semibold text-slate-900 truncate">${item.name}</h5><span class="block text-[9px] text-slate-500 mt-1 truncate">${detail}</span><span class="text-[11px] font-medium ${item.isRewardRedemption ? 'text-green-700' : 'text-orange-600'} mt-1 block">${item.isRewardRedemption ? 'FREE (Points Reward)' : `$${(item.unitPrice * item.qty).toFixed(2)}`}</span></div></div><div class="flex items-center gap-2 shrink-0"><button onclick="changeCartLineQuantity('${item.lineId}',-1)" class="w-6 h-6 rounded-full bg-white text-orange-700 font-medium border border-orange-200 cursor-pointer">−</button><span class="w-4 text-center text-xs font-medium">${item.qty}</span>${addQtyBtn}<button onclick="removeCustomizedCartLine('${item.lineId}')" class="w-6 h-6 rounded-full bg-white text-slate-500 font-medium border border-orange-200 cursor-pointer">✕</button></div></div>`;
             }).join('');
         }
         const openKdsAvailabilityModal = () => { renderKds86Grid(); toggleModal('kdsAvailabilityModal', true); };
@@ -1934,6 +1561,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!order) return;
             order.elapsedSeconds = (order.estWaitSeconds || 600) + 5;
             saveStateToStorage();
+            syncBroadcastState({ kind: 'kds_timer' });
             renderKdsPortal();
         }
         // 9. DISCOUNT UPSELL POPUP & ORDER PLACEMENT (WITH ADD-ON BATCH TRACKING)
@@ -1988,7 +1616,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 if (waiterSelectedOrder && waiterSelectedOrder.id === existingOrder.id) { waiterSelectedOrder = null; }
                 customerOrderDelivered = false;
                 updateFloatingBillBannerState();
-                $('customerWaiterBannerText').textContent = `🔥 Fired Batch #${nextBatchNum} (+${itemsArray.length} add-on item${itemsArray.length > 1 ? 's' : ''}) to Kitchen Order #${existingOrder.id}!`;
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `🔥 Fired Batch #${nextBatchNum} (+${itemsArray.length} add-on item${itemsArray.length > 1 ? 's' : ''}) to Kitchen Order #${existingOrder.id}!`;
                 toggleModal('customerWaiterBanner', true);
             } else {
                 const newOrderId = Math.floor(101 + Math.random() * 890), estMins = computeOrderEstMinutes(itemsArray);
@@ -2015,6 +1643,12 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 notes: `Order #${currentCustomerOrderId} in kitchen (${updatedOrder ? updatedOrder.items.length : itemsArray.length} line items)`
             });
             saveStateToStorage();
+            syncBroadcastState({
+                kind: existingOrder ? 'addon_order' : 'new_order',
+                sound: 'call',
+                title: existingOrder ? `🔥 Add-On Batch #${nextBatchNum} — Table #04` : `🍽️ New Order #${currentCustomerOrderId} — Table #04`,
+                detail: `${cust ? cust.name : 'Guest'} ordered ${itemsArray.reduce((s, i) => s + i.qty, 0)} item(s) ($${orderSubtotal.toFixed(2)})`
+            });
             switchCustomerTab('timeline');
             renderAllPortals();
         }
@@ -2068,7 +1702,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (emptyState) emptyState.classList.add('hidden');
             if (orderCard) orderCard.classList.remove('hidden');
             $('timelineOrderNumber').textContent = order.id;
-            $('timelineOrderTotal').textContent = `${order.total.toFixed(2)}`;
+            $('timelineOrderTotal').textContent = `$${order.total.toFixed(2)}`;
             const orderCust = getOrderCustomer(order);
             const pendingPts = calculatePointsForAmount(order.total, orderCust) + (order.bonusPoints || 0);
             if ($('timelinePendingPointsBadge')) { $('timelinePendingPointsBadge').textContent = `+${pendingPts} Pts`; }
@@ -2105,7 +1739,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 const circleClass = isCompleted ? 'bg-orange-600 text-white border-orange-600' : isCurrent ? 'bg-white text-orange-600 border-2 border-orange-600' : 'bg-orange-50 text-slate-400 border border-orange-200';
                 return `<div class="flex items-start gap-4"><div class="w-7 h-7 rounded-full ${circleClass} flex items-center justify-center font-semibold text-xs shrink-0 mt-1">${isCompleted ? '✓' : idx + 1}</div><div class="flex-1"><div class="flex items-center justify-between"><p class="text-xs font-semibold ${isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'}">${stage.title}</p><span class="text-[10px] font-medium ${isCurrent ? 'text-orange-600' : 'text-slate-400'}">${stage.est}</span></div><p class="text-[10px] text-slate-500 mt-1">${stage.desc}</p></div></div>`;
             }).join('');
-            $('timelineItemsList').innerHTML = order.items.map(i => `<li class="flex justify-between items-start gap-2 bg-orange-50/60 p-2 rounded-xl border ${i.isAddonBatch ? 'border-orange-400 bg-orange-100/50' : 'border-orange-100'}"><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-slate-900">${i.qty}x ${i.name}</span>${i.isAddonBatch ? `<span class="text-[9px] font-medium uppercase bg-orange-600 text-white px-1.5 py-0.5 rounded-md">+ NEW ADD-ON (Batch #${i.batchNum})</span>` : ''}${i.done ? `<span class="text-[9px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-md">✓ Prepped</span>` : ''}</div><small class="block text-[9px] text-slate-500 mt-1">${[i.optionLabel, ...(i.addons || []).map(a => a.name)].filter(Boolean).join(' · ')}${i.kitchenNote ? ` · Note: ${i.kitchenNote}` : ''}</small></div><span class="font-medium text-slate-900 shrink-0">${i.isRewardRedemption ? 'FREE' : `${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('');
+            $('timelineItemsList').innerHTML = order.items.map(i => `<li class="flex justify-between items-start gap-2 bg-orange-50/60 p-2 rounded-xl border ${i.isAddonBatch ? 'border-orange-400 bg-orange-100/50' : 'border-orange-100'}"><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-slate-900">${i.qty}x ${i.name}</span>${i.isAddonBatch ? `<span class="text-[9px] font-medium uppercase bg-orange-600 text-white px-1.5 py-0.5 rounded-md">+ NEW ADD-ON (Batch #${i.batchNum})</span>` : ''}${i.done ? `<span class="text-[9px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-md">✓ Prepped</span>` : ''}</div><small class="block text-[9px] text-slate-500 mt-1">${[i.optionLabel, ...(i.addons || []).map(a => a.name)].filter(Boolean).join(' · ')}${i.kitchenNote ? ` · Note: ${i.kitchenNote}` : ''}</small></div><span class="font-medium text-slate-900 shrink-0">${i.isRewardRedemption ? 'FREE' : `$${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('');
         }
         function renderCustomerServiceView() {
             const container = $('serviceBillContent');
@@ -2134,7 +1768,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                     ? `Split Active (${splitCount} Paid)`
                     : (order.status === 'delivered' ? 'Ready to Pay' : 'Order in Progress');
             }
-            container.innerHTML = `<div class="space-y-3"><div class="bg-orange-50/70 rounded-xl p-4 border border-orange-200"><div class="flex justify-between items-center text-xs text-slate-600 pb-1.5 border-b border-orange-200"><span class="font-medium">Active Order #${order.id} (${cust ? cust.name.split(' ')[0] : 'Guest'})</span><span class="font-medium text-orange-600">${itemCount} Items • +${earnPts} Pts</span></div><div class="pt-2 space-y-1 text-xs"><div class="flex justify-between text-slate-500"><span>Total Order Subtotal</span><span class="font-medium text-slate-700">${order.total.toFixed(2)}</span></div>${paidSoFar > 0 ? `<div class="flex justify-between text-emerald-700 font-medium"><span>Paid via Split (${splitCount} share${splitCount > 1 ? 's' : ''})</span><span>−${paidSoFar.toFixed(2)}</span></div>` : ''}${discountDollar > 0 ? `<div class="flex justify-between text-green-700 font-medium"><span>Loyalty Discount (${maxDiscountPts} Pts)</span><span>−${discountDollar.toFixed(2)}</span></div>` : ''}<div class="flex justify-between text-slate-500"><span>Est. Tax on Remaining (8.25%)</span><span class="font-medium text-slate-700">${tax.toFixed(2)}</span></div><div class="flex justify-between text-sm font-medium text-slate-900 pt-1.5 border-t border-orange-200"><span>Remaining Due (Pre-Tip)</span><span class="text-orange-600 font-semibold">${grandTotal.toFixed(2)}</span></div></div></div><button onclick="openTotalBillPageModal('✓ Split Check Calculator — Split Equally, By Item, or By Seat'); setBillSplitMode('equal');" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-300 font-semibold text-[11px] py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2"><span>➗</span><span>Split Bill (Equal Ways, By Item, or By Seat)</span></button><div class="grid grid-cols-2 gap-2 pt-0.5"><button onclick="openBillReviewModal(true)" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[11px] py-3 px-3 rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2"><span>⭐</span><span>${(order.reviewPromptedBatch || 0) >= (order.batchCount || 1) || order.reviewed ? 'Edit / Add Review' : 'Rate & Bill'}</span></button><button onclick="openTotalBillPageModal()" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[11px] py-3 px-3 rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2"><span>💳</span><span>Pay / Split Tab</span></button></div></div>`;
+            container.innerHTML = `<div class="space-y-3"><div class="bg-orange-50/70 rounded-xl p-4 border border-orange-200"><div class="flex justify-between items-center text-xs text-slate-600 pb-1.5 border-b border-orange-200"><span class="font-medium">Active Order #${order.id} (${cust ? cust.name.split(' ')[0] : 'Guest'})</span><span class="font-medium text-orange-600">${itemCount} Items • +${earnPts} Pts</span></div><div class="pt-2 space-y-1 text-xs"><div class="flex justify-between text-slate-500"><span>Total Order Subtotal</span><span class="font-medium text-slate-700">$${order.total.toFixed(2)}</span></div>${paidSoFar > 0 ? `<div class="flex justify-between text-emerald-700 font-medium"><span>Paid via Split (${splitCount} share${splitCount > 1 ? 's' : ''})</span><span>−$${paidSoFar.toFixed(2)}</span></div>` : ''}${discountDollar > 0 ? `<div class="flex justify-between text-green-700 font-medium"><span>Loyalty Discount (${maxDiscountPts} Pts)</span><span>−$${discountDollar.toFixed(2)}</span></div>` : ''}<div class="flex justify-between text-slate-500"><span>Est. Tax on Remaining (8.25%)</span><span class="font-medium text-slate-700">$${tax.toFixed(2)}</span></div><div class="flex justify-between text-sm font-medium text-slate-900 pt-1.5 border-t border-orange-200"><span>Remaining Due (Pre-Tip)</span><span class="text-orange-600 font-semibold">$${grandTotal.toFixed(2)}</span></div></div></div><button onclick="openTotalBillPageModal('✓ Split Check Calculator — Split Equally, By Item, or By Seat'); setBillSplitMode('equal');" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-300 font-semibold text-[11px] py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2"><span>➗</span><span>Split Bill (Equal Ways, By Item, or By Seat)</span></button><div class="grid grid-cols-2 gap-2 pt-0.5"><button onclick="openBillReviewModal(true)" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[11px] py-3 px-3 rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2"><span>⭐</span><span>${(order.reviewPromptedBatch || 0) >= (order.batchCount || 1) || order.reviewed ? 'Edit / Add Review' : 'Rate & Bill'}</span></button><button onclick="openTotalBillPageModal()" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[11px] py-3 px-3 rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2"><span>💳</span><span>Pay / Split Tab</span></button></div></div>`;
         }
         function customerRequestService(requestType, tableNum = '04') {
             playWaiterCallBeep();
@@ -2155,11 +1789,18 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 });
             }
             if (tableNum === '04') {
-                $('customerWaiterBannerText').textContent = `🔔 Sent "${requestType}" to Waiter's Portal!`;
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `🔔 Sent "${requestType}" to Waiter's Portal!`;
                 toggleModal('customerWaiterBanner', true);
             }
             updateFloorTableStatus(tableNum, `Call: ${requestType}`, 'bg-orange-600 border-orange-700 text-white');
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'service_call',
+                sound: 'call',
+                title: `🔔 Table #${tableNum}: ${requestType}`,
+                detail: `${guestLabel} requested ${requestType}`,
+                customerBanner: PORTAL_ROLE === 'staff' && tableNum === '04' ? `🔔 Manager pinged Waiter Alex to check on Table #04` : null
+            });
             renderAllPortals();
         }
         // 11. KITCHEN DISPLAY SYSTEM (KDS) PORTAL LOGIC (WITH AUDIT FIX #5 & #8)
@@ -2192,6 +1833,16 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 });
             }
             saveStateToStorage();
+            const kdsBannerMap = {
+                cooking: `🔥 Kitchen started cooking your Order #${order.id}!`,
+                ready: `🍽️ Your Order #${order.id} is plated & ready at the kitchen pass!`,
+                dispatched: `🏃 Waiter Alex is bringing Order #${order.id} to Table #${order.table}!`
+            };
+            syncBroadcastState({
+                kind: 'kds_status',
+                title: `Order #${order.id} → ${nextStatus.toUpperCase()}`,
+                customerBanner: order.table === '04' ? (kdsBannerMap[nextStatus] || null) : null
+            });
             renderAllPortals();
         }
         function toggleKdsItemCheck(orderId, itemIdx) {
@@ -2199,6 +1850,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!order || !order.items[itemIdx]) return;
             order.items[itemIdx].done = !order.items[itemIdx].done;
             saveStateToStorage();
+            syncBroadcastState({ kind: 'kds_item_check' });
             renderKdsPortal();
             if (currentCustomerTab === 'timeline') renderCustomerTimeline();
         }
@@ -2218,6 +1870,10 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 updateMobileSelectionBadges();
             }
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'dish_86',
+                customerBanner: dish.soldOut ? `⚠️ Kitchen just marked "${dish.name}" as Sold Out (86)` : `✅ "${dish.name}" is back on the menu!`
+            });
             renderAllPortals();
             renderKds86Grid();
         }
@@ -2239,8 +1895,9 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             }
             const filteredOrders = activeKdsOrders.filter(o => kdsFilter === 'all' ? true : (kdsFilter === 'ready' ? (o.status === 'ready' || o.status === 'dispatched') : o.status === kdsFilter));
             const container = $('kdsTicketsContainer');
+            if (!container) return;
             if (!filteredOrders.length) {
-                container.innerHTML = `<div class="border-2 border-dashed border-orange-200 rounded-2xl p-8 text-center bg-orange-50/50"><p class="text-xs font-semibold text-slate-700">No Active Tickets in This View</p><p class="text-[11px] text-slate-500 mt-1">Select items on the Customer Phone App and press Order to fire a live ticket.</p></div>`;
+                container.innerHTML = `<div class="border-2 border-dashed border-orange-200 rounded-2xl p-8 text-center bg-orange-50/50"><p class="text-xs font-semibold text-slate-700">No Active Tickets in This View</p><p class="text-[11px] text-slate-500 mt-1">When the guest places an order on their phone (/demo), live tickets appear here instantly.</p></div>`;
                 return;
             }
             container.innerHTML = filteredOrders.map(order => {
@@ -2270,13 +1927,20 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!callObj) return;
             waiterCalls = waiterCalls.filter(c => c.id !== callId);
             if (callObj.table === '04') {
-                $('customerWaiterBannerText').textContent = callObj.type.toLowerCase().includes('waiter')
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = callObj.type.toLowerCase().includes('waiter')
                     ? `🏃 Waiter Alex is on the way to Table #${callObj.table}!`
                     : `🏃 ${callObj.type} is on the way to Table #${callObj.table}!`;
                 toggleModal('customerWaiterBanner', true);
             }
             updateFloorTableStatus(callObj.table, 'Server Assisting', 'bg-orange-50 border-orange-300 text-orange-900');
             saveStateToStorage();
+            const comingMsg = callObj.type.toLowerCase().includes('waiter')
+                ? `🏃 Waiter Alex is on the way to Table #${callObj.table}!`
+                : `🏃 ${callObj.type} is on the way to Table #${callObj.table}!`;
+            syncBroadcastState({
+                kind: 'waiter_coming',
+                customerBanner: callObj.table === '04' ? comingMsg : null
+            });
             renderWaiterPortal();
             renderAdminPortal();
         }
@@ -2289,6 +1953,10 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 notes: `Waiter Alex running Order #${order.id} to Table #${order.table}`
             });
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'waiter_pickup',
+                customerBanner: order.table === '04' ? `🏃 Waiter Alex picked up Order #${order.id} and is heading to Table #04!` : null
+            });
             renderAllPortals();
         }
         function waiterConfirmOrderDelivered(orderId) {
@@ -2301,7 +1969,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 customerOrderDelivered = true;
                 switchCustomerScreen('menu');
                 updateFloatingBillBannerState();
-                $('customerWaiterBannerText').textContent = `✅ Order #${order.id} Delivered! Enjoy your meal or tap "Request Bill" below.`;
+                if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `✅ Order #${order.id} Delivered! Enjoy your meal or tap "Request Bill" below.`;
                 toggleModal('customerWaiterBanner', true);
             }
             updateFloorTableStatus(order.table, `Served ($${order.total.toFixed(0)})`, 'bg-orange-100 border-orange-300 text-orange-900', {
@@ -2309,6 +1977,10 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 notes: `Order #${order.id} delivered • Enjoying meal`
             });
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'order_delivered',
+                customerBanner: order.table === '04' ? `✅ Order #${order.id} Delivered! Enjoy your meal or tap "Request Bill" below.` : null
+            });
             renderAllPortals();
         }
         function renderWaiterPortal() {
@@ -2318,9 +1990,10 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 const dietarySpan = cust.dietaryNotes && cust.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold bg-white text-orange-800 border border-orange-300 px-1.5 py-0.5 rounded">📋 ${cust.dietaryNotes}${cust.serverNotes ? ` — ${cust.serverNotes}` : ''}</span>` : '';
                 guestBanner.innerHTML = `<div class="flex items-start gap-4 min-w-0"><span class="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center text-sm shrink-0 mt-1">${tier.icon}</span><div class="min-w-0"><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Table #04 Recognized Guest • ${seg.shortLabel}</span><h4 class="text-xs font-medium text-slate-900 truncate">${cust.name} • ${tier.name}</h4><p class="text-[10px] text-slate-600 font-semibold">Visit #${cust.visits + 1} • ${cust.points} Pts • Fav: <b class="text-orange-700">${cust.favoriteDish || 'Ribeye'}</b></p>${dietarySpan}</div></div><button onclick="openAdminCrmProfileModal('${cust.phone}')" class="text-[9px] font-semibold bg-white hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-300 px-2 py-1 rounded-lg shrink-0 transition cursor-pointer">CRM 360°</button>`;
             }
+            if (!$('waiterCallCountBadge')) return;
             $('waiterCallCountBadge').textContent = waiterCalls.length;
             $('waiterCallsList').innerHTML = !waiterCalls.length
-                ? `<p class="text-[11px] text-slate-400 italic py-2 text-center">No pending customer calls. Tap "Call Waiter" or "Bottle of Water" on the phone to test!</p>`
+                ? `<p class="text-[11px] text-slate-400 italic py-2 text-center">No pending customer calls. When the guest taps "Call Waiter" or "Bottle of Water" on their phone, alerts pop up here!</p>`
                 : waiterCalls.map(call => `<div class="bg-white rounded-xl p-4 border border-orange-300 flex items-center justify-between gap-2 "><div><span class="bg-orange-600 text-white text-[9px] font-semibold px-2 py-0.5 rounded uppercase">Table #${call.table} • ${call.guestName || 'Guest'}</span><p class="text-xs font-semibold text-slate-900 mt-1">${call.type}</p><span class="text-[10px] text-slate-400 font-semibold">${call.time}</span></div><button onclick="waiterRespondJustComing(${call.id})" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[11px] px-3 py-2 rounded-xl shadow-sm transition cursor-pointer shrink-0">🏃 Just Coming</button></div>`).join('');
             const readyOrders = activeOrders.filter(o => o.status === 'ready' && !o.paid);
             $('waiterReadyCountBadge').textContent = readyOrders.length;
@@ -2331,7 +2004,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             const activeDeliveryOrder = validSelected || activeOrders.find(o => o.status === 'dispatched' && !o.paid);
             $('waiterSelectedOrderBox').innerHTML = !activeDeliveryOrder
                 ? `<div class="bg-orange-50/60 border border-dashed border-orange-200 rounded-xl p-4 text-center"><p class="text-xs font-medium text-slate-500">No Order Currently Selected</p><p class="text-[10px] text-slate-400 mt-1">Select a Ready Order above to view its Table Number, items, and confirm delivery.</p></div>`
-                : `<div class="bg-orange-50 rounded-xl p-4 border border-orange-300 "><div class="flex items-center justify-between border-b border-orange-200 pb-2 mb-2"><div><span class="text-[10px] font-semibold uppercase text-orange-700 block">Active Delivery Ticket</span><h4 class="text-sm font-semibold text-slate-900">Table #${activeDeliveryOrder.table} • Order #${activeDeliveryOrder.id}</h4></div><span class="bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">${activeDeliveryOrder.total.toFixed(2)}</span></div><p class="text-[10px] font-semibold uppercase text-slate-500 mb-1">Order Details for Table #${activeDeliveryOrder.table}:</p><ul class="space-y-1 text-xs font-semibold text-slate-800 mb-3">${activeDeliveryOrder.items.map(i => `<li class="flex justify-between bg-white px-3 py-1 rounded-lg border border-orange-100"><span>${i.qty}x ${i.name}</span><span class="text-orange-600 font-medium">${i.isRewardRedemption ? 'FREE' : `${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('')}</ul><button onclick="waiterConfirmOrderDelivered(${activeDeliveryOrder.id})" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-3 rounded-xl shadow-sm transition cursor-pointer">✓ Confirm Order Delivered to Table #${activeDeliveryOrder.table}</button></div>`;
+                : `<div class="bg-orange-50 rounded-xl p-4 border border-orange-300 "><div class="flex items-center justify-between border-b border-orange-200 pb-2 mb-2"><div><span class="text-[10px] font-semibold uppercase text-orange-700 block">Active Delivery Ticket</span><h4 class="text-sm font-semibold text-slate-900">Table #${activeDeliveryOrder.table} • Order #${activeDeliveryOrder.id}</h4></div><span class="bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">$${activeDeliveryOrder.total.toFixed(2)}</span></div><p class="text-[10px] font-semibold uppercase text-slate-500 mb-1">Order Details for Table #${activeDeliveryOrder.table}:</p><ul class="space-y-1 text-xs font-semibold text-slate-800 mb-3">${activeDeliveryOrder.items.map(i => `<li class="flex justify-between bg-white px-3 py-1 rounded-lg border border-orange-100"><span>${i.qty}x ${i.name}</span><span class="text-orange-600 font-medium">${i.isRewardRedemption ? 'FREE' : `$${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('')}</ul><button onclick="waiterConfirmOrderDelivered(${activeDeliveryOrder.id})" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-3 rounded-xl shadow-sm transition cursor-pointer">✓ Confirm Order Delivered to Table #${activeDeliveryOrder.table}</button></div>`;
         }
         // 13. DYNAMIC SLANG REVIEW ENGINE & SMART "GET BILL" ROUTING
         function getOrderedDishNames() {
@@ -2497,6 +2170,12 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             feedbackBanner.textContent = confirmationNotice;
             toggleModal('reviewFeedbackBanner', true);
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'review',
+                sound: 'ready',
+                title: `⭐ New ${currentReviewStars}★ Review — Table #04`,
+                detail: `${selectedReviewDish} • ${currentReviewStars <= 3 ? 'Routed Privately to Owner' : 'Published to Google Maps'}`
+            });
             updateFloatingBillBannerState();
             renderAllPortals();
             closeBillReviewModal();
@@ -2664,9 +2343,9 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (lastSettledReceipt) {
                 const splitHistory = lastSettledReceipt.splitPayments || [];
                 bodyEl.innerHTML = `<div class="bg-green-600 text-white rounded-xl p-4 text-center shadow-sm ">
-<div class="w-11 h-11 rounded-full bg-white/20 mx-auto flex items-center justify-center text-2xl mb-2">🎉</div><span class="text-[10px] font-semibold uppercase tracking-wider text-green-100">${splitHistory.length > 1 ? `All ${splitHistory.length} Split Shares Settled` : `Tab Paid via ${lastSettledReceipt.paymentMethod}`}</span><h4 class="text-base font-medium mt-1">+${lastSettledReceipt.grandTotal.toFixed(2)} Settled</h4><div class="mt-3 bg-white/15 rounded-2xl p-4 border border-white/20"><p class="text-xs font-semibold text-amber-200">✨ ${lastSettledReceipt.customerName} Earned +${lastSettledReceipt.pointsEarned} Loyalty Points!</p><p class="text-[10px] text-green-50 mt-1">Updated Wallet Balance: <b>${lastSettledReceipt.newPointBalance} Pts (${(lastSettledReceipt.newPointBalance / 100).toFixed(2)})</b></p></div></div>
-${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 rounded-2xl p-4 text-xs space-y-1.5"><span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Split Check Breakdown (${splitHistory.length} Payers)</span>${splitHistory.map((sp, i) => `<div class="flex items-center justify-between py-1 border-b border-orange-50 text-[11px]"><div><span class="font-semibold text-slate-900">${i + 1}. ${sp.payerName}</span><span class="text-[10px] text-slate-500 block">${sp.label} • ${sp.paymentMethod}</span></div><div class="text-right"><span class="font-medium text-slate-900">${sp.grandTotal.toFixed(2)}</span><span class="text-[10px] font-semibold text-green-700 block">+${sp.pointsEarned} pts</span></div></div>`).join('')}</div>` : ''}
-<div class="bg-orange-50/70 border border-orange-200 rounded-2xl p-4 text-xs space-y-1"><div class="flex justify-between font-medium text-slate-700"><span>Order #${lastSettledReceipt.orderId} • Table #04</span><span class="text-green-700">CLOSED & PAID ✓</span></div><div class="flex justify-between text-slate-500"><span>Final Payment Net Food</span><span>${lastSettledReceipt.netSubtotal.toFixed(2)}</span></div><div class="flex justify-between text-slate-500"><span>Tax (8.25%) + Tip (${lastSettledReceipt.tipPct}%)</span><span>${(lastSettledReceipt.tax + lastSettledReceipt.tipAmount).toFixed(2)}</span></div><div class="flex justify-between font-medium text-slate-900 pt-1 border-t border-orange-200"><span>Charged Now</span><span class="text-orange-600">${lastSettledReceipt.grandTotal.toFixed(2)}</span></div></div>`;
+<div class="w-11 h-11 rounded-full bg-white/20 mx-auto flex items-center justify-center text-2xl mb-2">🎉</div><span class="text-[10px] font-semibold uppercase tracking-wider text-green-100">${splitHistory.length > 1 ? `All ${splitHistory.length} Split Shares Settled` : `Tab Paid via ${lastSettledReceipt.paymentMethod}`}</span><h4 class="text-base font-medium mt-1">$${lastSettledReceipt.grandTotal.toFixed(2)} Settled</h4><div class="mt-3 bg-white/15 rounded-2xl p-4 border border-white/20"><p class="text-xs font-semibold text-amber-200">✨ ${lastSettledReceipt.customerName} Earned +${lastSettledReceipt.pointsEarned} Loyalty Points!</p><p class="text-[10px] text-green-50 mt-1">Updated Wallet Balance: <b>${lastSettledReceipt.newPointBalance} Pts ($${(lastSettledReceipt.newPointBalance / 100).toFixed(2)})</b></p></div></div>
+${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 rounded-2xl p-4 text-xs space-y-1.5"><span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Split Check Breakdown (${splitHistory.length} Payers)</span>${splitHistory.map((sp, i) => `<div class="flex items-center justify-between py-1 border-b border-orange-50 text-[11px]"><div><span class="font-semibold text-slate-900">${i + 1}. ${sp.payerName}</span><span class="text-[10px] text-slate-500 block">${sp.label} • ${sp.paymentMethod}</span></div><div class="text-right"><span class="font-medium text-slate-900">$${sp.grandTotal.toFixed(2)}</span><span class="text-[10px] font-semibold text-green-700 block">+${sp.pointsEarned} pts</span></div></div>`).join('')}</div>` : ''}
+<div class="bg-orange-50/70 border border-orange-200 rounded-2xl p-4 text-xs space-y-1"><div class="flex justify-between font-medium text-slate-700"><span>Order #${lastSettledReceipt.orderId} • Table #04</span><span class="text-green-700">CLOSED & PAID ✓</span></div><div class="flex justify-between text-slate-500"><span>Final Payment Net Food</span><span>$${lastSettledReceipt.netSubtotal.toFixed(2)}</span></div><div class="flex justify-between text-slate-500"><span>Tax (8.25%) + Tip (${lastSettledReceipt.tipPct}%)</span><span>$${(lastSettledReceipt.tax + lastSettledReceipt.tipAmount).toFixed(2)}</span></div><div class="flex justify-between font-medium text-slate-900 pt-1 border-t border-orange-200"><span>Charged Now</span><span class="text-orange-600">$${lastSettledReceipt.grandTotal.toFixed(2)}</span></div></div>`;
                 footerEl.innerHTML = `<button onclick="closeTotalBillPageModal(); switchCustomerTab('rewards');" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-3 rounded-2xl shadow-md transition cursor-pointer">🎁 View Updated Loyalty Wallet (${lastSettledReceipt.newPointBalance} Pts)</button><button onclick="closeTotalBillPageModal(); switchCustomerTab('menu');" class="w-full bg-orange-50 hover:bg-orange-100 text-slate-700 font-semibold text-xs py-3 rounded-2xl transition cursor-pointer">Start New Order at Table #04</button>`;
                 return;
             }
@@ -2680,9 +2359,9 @@ ${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 round
             const ways = order.equalSplitWaysLocked || billEqualWays || 2, equalPaidCount = (order.splitPayments || []).filter(sp => sp.mode === 'equal').length;
             let splitInteractiveHtml = '';
             if (billSplitMode === 'equal') {
-                splitInteractiveHtml = `<div class="bg-orange-50/90 border border-orange-300 rounded-2xl p-4 mb-3 space-y-2.5 "><div class="flex items-center justify-between"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Split Equally Calculator</span><h5 class="text-xs font-medium text-slate-900">Divide Check Equally (2, 3, or 4 Ways)</h5></div><span class="text-[10px] font-semibold bg-white text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">${calc.shareSubtotal.toFixed(2)} / person</span></div><div class="grid grid-cols-3 gap-2">${[2, 3, 4].map(w => {
+                splitInteractiveHtml = `<div class="bg-orange-50/90 border border-orange-300 rounded-2xl p-4 mb-3 space-y-2.5 "><div class="flex items-center justify-between"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Split Equally Calculator</span><h5 class="text-xs font-medium text-slate-900">Divide Check Equally (2, 3, or 4 Ways)</h5></div><span class="text-[10px] font-semibold bg-white text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">$${calc.shareSubtotal.toFixed(2)} / person</span></div><div class="grid grid-cols-3 gap-2">${[2, 3, 4].map(w => {
                     const isLockedOther = order.equalSplitWaysLocked && order.equalSplitWaysLocked !== w, isActive = ways === w, perPersonPreTax = Number((calc.remainingOrderSub / Math.max(1, w - equalPaidCount)).toFixed(2));
-                    return `<button onclick="setBillEqualWays(${w})" ${isLockedOther ? 'disabled' : ''} class="py-2 px-2 rounded-xl border text-center transition ${isActive ? 'bg-orange-600 text-white border-orange-600 shadow-sm cursor-pointer' : (isLockedOther ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed' : 'bg-white hover:bg-orange-100 text-slate-800 border-orange-200 cursor-pointer')}"><span class="block text-xs font-medium">Split ${w} Ways</span><span class="block text-[9px] font-medium opacity-85">${perPersonPreTax.toFixed(2)} ea</span></button>`;
+                    return `<button onclick="setBillEqualWays(${w})" ${isLockedOther ? 'disabled' : ''} class="py-2 px-2 rounded-xl border text-center transition ${isActive ? 'bg-orange-600 text-white border-orange-600 shadow-sm cursor-pointer' : (isLockedOther ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed' : 'bg-white hover:bg-orange-100 text-slate-800 border-orange-200 cursor-pointer')}"><span class="block text-xs font-medium">Split ${w} Ways</span><span class="block text-[9px] font-medium opacity-85">$${perPersonPreTax.toFixed(2)} ea</span></button>`;
                 }).join('')}</div><div class="grid grid-cols-${ways} gap-2 pt-1">${Array.from({ length: ways }).map((_, idx) => {
                     const isPaidShare = idx < equalPaidCount, isCurrentShare = idx === equalPaidCount;
                     return `<div class="rounded-xl p-1.5 text-center border text-[10px] font-semibold ${isPaidShare ? 'bg-green-100 border-green-300 text-green-800' : (isCurrentShare ? 'bg-slate-900 border-slate-900 text-white ring-2 ring-orange-400' : 'bg-white border-orange-200 text-slate-500')}"><span class="block">Friend #${idx + 1}</span><span class="text-[9px] font-medium">${isPaidShare ? 'PAID ✓' : isCurrentShare ? 'PAYING NOW' : 'OPEN'}</span></div>`;
@@ -2690,7 +2369,7 @@ ${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 round
             } else if (billSplitMode === 'items') {
                 splitInteractiveHtml = `<div class="bg-orange-50/90 border border-orange-300 rounded-2xl p-4 mb-3 space-y-2 "><div class="flex items-center justify-between"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Split By Item Calculator</span><h5 class="text-xs font-medium text-slate-900">Tap the Dishes You Ate</h5></div><span class="text-[10px] font-semibold bg-white text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">${calc.shareLabel}</span></div><div class="space-y-1.5 max-h-36 overflow-y-auto orange-scroll pr-1">${order.items.map((it, idx) => {
                     const unpaidQty = Math.max(0, it.qty - (it.paidQty || 0)), claimedQty = Math.max(0, Math.min(unpaidQty, billClaimedItemQtys[idx] || 0)), isFullyPaid = unpaidQty === 0;
-                    return `<div onclick="${!isFullyPaid && unpaidQty === 1 ? `adjustClaimedSplitItemQty(${idx}, 999)` : ''}" class="flex items-center justify-between gap-2 p-2 rounded-xl border transition ${isFullyPaid ? 'bg-green-50/70 border-green-200 opacity-70' : (claimedQty > 0 ? 'bg-white border-orange-500 ring-1 ring-orange-400 shadow-sm cursor-pointer' : 'bg-white border-orange-200 hover:border-orange-400 cursor-pointer')}"><div class="min-w-0 flex-1"><div class="flex items-center gap-2"><span class="text-xs font-semibold text-slate-900 truncate">${it.name}</span>${isFullyPaid ? `<span class="text-[9px] font-medium bg-green-600 text-white px-1.5 py-0.5 rounded">PAID ✓</span>` : ''}</div><span class="text-[10px] text-slate-500 font-semibold block">${it.isRewardRedemption ? 'FREE Reward' : `${it.price.toFixed(2)} each`} • ${unpaidQty} of ${it.qty} unpaid</span></div>${isFullyPaid ? '' : (unpaidQty === 1 ? `<button type="button" class="px-3 py-1 rounded-lg text-[10px] font-semibold ${claimedQty > 0 ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800'}">${claimedQty > 0 ? '✓ My Dish' : '+ Claim'}</button>` : `<div class="flex items-center gap-2 shrink-0" onclick="event.stopPropagation()"><button type="button" onclick="adjustClaimedSplitItemQty(${idx}, -1)" class="w-6 h-6 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 font-medium text-xs cursor-pointer">−</button><span class="w-8 text-center text-[11px] font-medium text-slate-900">${claimedQty}/${unpaidQty}</span><button type="button" onclick="adjustClaimedSplitItemQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium text-xs cursor-pointer">+</button></div>`)}</div>`;
+                    return `<div onclick="${!isFullyPaid && unpaidQty === 1 ? `adjustClaimedSplitItemQty(${idx}, 999)` : ''}" class="flex items-center justify-between gap-2 p-2 rounded-xl border transition ${isFullyPaid ? 'bg-green-50/70 border-green-200 opacity-70' : (claimedQty > 0 ? 'bg-white border-orange-500 ring-1 ring-orange-400 shadow-sm cursor-pointer' : 'bg-white border-orange-200 hover:border-orange-400 cursor-pointer')}"><div class="min-w-0 flex-1"><div class="flex items-center gap-2"><span class="text-xs font-semibold text-slate-900 truncate">${it.name}</span>${isFullyPaid ? `<span class="text-[9px] font-medium bg-green-600 text-white px-1.5 py-0.5 rounded">PAID ✓</span>` : ''}</div><span class="text-[10px] text-slate-500 font-semibold block">${it.isRewardRedemption ? 'FREE Reward' : `$${it.price.toFixed(2)} each`} • ${unpaidQty} of ${it.qty} unpaid</span></div>${isFullyPaid ? '' : (unpaidQty === 1 ? `<button type="button" class="px-3 py-1 rounded-lg text-[10px] font-semibold ${claimedQty > 0 ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800'}">${claimedQty > 0 ? '✓ My Dish' : '+ Claim'}</button>` : `<div class="flex items-center gap-2 shrink-0" onclick="event.stopPropagation()"><button type="button" onclick="adjustClaimedSplitItemQty(${idx}, -1)" class="w-6 h-6 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 font-medium text-xs cursor-pointer">−</button><span class="w-8 text-center text-[11px] font-medium text-slate-900">${claimedQty}/${unpaidQty}</span><button type="button" onclick="adjustClaimedSplitItemQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-medium text-xs cursor-pointer">+</button></div>`)}</div>`;
                 }).join('')}</div></div>`;
             } else if (billSplitMode === 'seat') {
                 splitInteractiveHtml = `<div class="bg-orange-50/90 border border-orange-300 rounded-2xl p-4 mb-3 space-y-2 "><div class="flex items-center justify-between"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Split By Seat Assignment</span><h5 class="text-xs font-medium text-slate-900">Select Seat to Pay (Tap Seat Badge on Any Dish to Move)</h5></div></div><div class="grid grid-cols-4 gap-2">${[1, 2, 3, 4].map(sNum => {
@@ -2698,18 +2377,18 @@ ${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 round
                         const uQty = Math.max(0, it.qty - (it.paidQty || 0));
                         return (it.seatNum || 1) === sNum ? sum + (it.price * uQty) : sum;
                     }, 0), isSel = billSelectedSeat === sNum;
-                    return `<button type="button" onclick="setBillSelectedSeat(${sNum})" class="py-1.5 px-1 rounded-xl border text-center transition cursor-pointer ${isSel ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white hover:bg-orange-100 text-slate-800 border-orange-200'}"><span class="block text-[10px] font-medium">Seat #${sNum}</span><span class="block text-[9px] font-medium opacity-85">${seatSub > 0 ? `${seatSub.toFixed(2)}` : 'Paid/0'}</span></button>`;
+                    return `<button type="button" onclick="setBillSelectedSeat(${sNum})" class="py-1.5 px-1 rounded-xl border text-center transition cursor-pointer ${isSel ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white hover:bg-orange-100 text-slate-800 border-orange-200'}"><span class="block text-[10px] font-medium">Seat #${sNum}</span><span class="block text-[9px] font-medium opacity-85">${seatSub > 0 ? `$${seatSub.toFixed(2)}` : 'Paid/0'}</span></button>`;
                 }).join('')}</div><div class="space-y-1 max-h-32 overflow-y-auto orange-scroll pr-1">${order.items.map((it, idx) => {
                     const unpaidQty = Math.max(0, it.qty - (it.paidQty || 0)), isThisSeat = (it.seatNum || 1) === billSelectedSeat && unpaidQty > 0;
-                    return `<div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border ${unpaidQty === 0 ? 'bg-green-50 border-green-200 opacity-65' : (isThisSeat ? 'bg-white border-orange-500 font-medium' : 'bg-white/70 border-orange-100 opacity-75')}"><span class="text-[11px] font-semibold text-slate-800 truncate">${unpaidQty || it.qty}x ${it.name}</span><div class="flex items-center gap-2 shrink-0"><span class="text-[10px] font-medium text-slate-700">${(it.price * (unpaidQty || it.qty)).toFixed(2)}</span>${unpaidQty > 0 ? `<button type="button" onclick="cycleOrderItemSeat(${idx})" title="Tap to reassign to next seat (Seat 1–4)" class="px-2 py-0.5 rounded-lg text-[9px] font-medium cursor-pointer transition ${isThisSeat ? 'bg-orange-600 text-white' : 'bg-slate-200 text-slate-700 hover:bg-orange-200'}">🪑 Seat #${it.seatNum || 1} ↻</button>` : `<span class="text-[9px] font-medium text-green-700">PAID ✓</span>`}</div></div>`;
+                    return `<div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border ${unpaidQty === 0 ? 'bg-green-50 border-green-200 opacity-65' : (isThisSeat ? 'bg-white border-orange-500 font-medium' : 'bg-white/70 border-orange-100 opacity-75')}"><span class="text-[11px] font-semibold text-slate-800 truncate">${unpaidQty || it.qty}x ${it.name}</span><div class="flex items-center gap-2 shrink-0"><span class="text-[10px] font-medium text-slate-700">$${(it.price * (unpaidQty || it.qty)).toFixed(2)}</span>${unpaidQty > 0 ? `<button type="button" onclick="cycleOrderItemSeat(${idx})" title="Tap to reassign to next seat (Seat 1–4)" class="px-2 py-0.5 rounded-lg text-[9px] font-medium cursor-pointer transition ${isThisSeat ? 'bg-orange-600 text-white' : 'bg-slate-200 text-slate-700 hover:bg-orange-200'}">🪑 Seat #${it.seatNum || 1} ↻</button>` : `<span class="text-[9px] font-medium text-green-700">PAID ✓</span>`}</div></div>`;
                 }).join('')}</div></div>`;
             }
-            bodyEl.innerHTML = `${lastPartialSplitReceipt ? `<div class="bg-green-600 text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-2"><div><p class="text-xs font-medium">✓ ${lastPartialSplitReceipt.payerName} Paid ${lastPartialSplitReceipt.grandTotal.toFixed(2)} (${lastPartialSplitReceipt.label})</p><p class="text-[10px] text-green-100 font-medium mt-1">Earned +${lastPartialSplitReceipt.pointsEarned} Pts • Remaining Table Subtotal: ${calc.remainingOrderSub.toFixed(2)}</p></div><span class="bg-white/20 text-[10px] font-medium px-2 py-1 rounded-lg shrink-0">Next Friend →</span></div>` : ''}
+            bodyEl.innerHTML = `${lastPartialSplitReceipt ? `<div class="bg-green-600 text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-2"><div><p class="text-xs font-medium">✓ ${lastPartialSplitReceipt.payerName} Paid $${lastPartialSplitReceipt.grandTotal.toFixed(2)} (${lastPartialSplitReceipt.label})</p><p class="text-[10px] text-green-100 font-medium mt-1">Earned +${lastPartialSplitReceipt.pointsEarned} Pts • Remaining Table Subtotal: $${calc.remainingOrderSub.toFixed(2)}</p></div><span class="bg-white/20 text-[10px] font-medium px-2 py-1 rounded-lg shrink-0">Next Friend →</span></div>` : ''}
 <div class="bg-orange-50 p-1 rounded-2xl border border-orange-200 grid grid-cols-4 gap-2">${[{ key: 'full', label: 'Full Check', icon: '🧾' }, { key: 'equal', label: 'Equal (2–4x)', icon: '➗' }, { key: 'items', label: 'By Item', icon: '🍽️' }, { key: 'seat', label: 'By Seat', icon: '🪑' }].map(tab => {
                 const active = billSplitMode === tab.key;
                 return `<button type="button" onclick="setBillSplitMode('${tab.key}')" class="py-1.5 px-1 rounded-xl text-[10px] font-semibold text-center transition cursor-pointer ${active ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-700 hover:text-orange-600 hover:bg-white/60'}"><span class="block text-xs leading-none">${tab.icon}</span><span class="block mt-1 leading-tight">${tab.label}</span></button>`;
             }).join('')}</div>
-<div class="bg-white rounded-2xl p-4.5 border-2 border-orange-200 shadow-sm"><div class="flex items-center justify-between border-b border-orange-100 pb-2 mb-2.5"><div><span class="text-xs font-semibold text-slate-800">Order #${order.id} • ${calc.shareLabel}</span>${calc.alreadyPaidSub > 0 ? `<span class="block text-[10px] font-semibold text-emerald-700">✓ ${calc.alreadyPaidSub.toFixed(2)} already paid • ${calc.remainingOrderSub.toFixed(2)} remaining</span>` : ''}</div><span class="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">${tier.icon} ${tier.ptsPerDollar} pts/$1</span></div>
+<div class="bg-white rounded-2xl p-4.5 border-2 border-orange-200 shadow-sm"><div class="flex items-center justify-between border-b border-orange-100 pb-2 mb-2.5"><div><span class="text-xs font-semibold text-slate-800">Order #${order.id} • ${calc.shareLabel}</span>${calc.alreadyPaidSub > 0 ? `<span class="block text-[10px] font-semibold text-emerald-700">✓ $${calc.alreadyPaidSub.toFixed(2)} already paid • $${calc.remainingOrderSub.toFixed(2)} remaining</span>` : ''}</div><span class="text-[10px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">${tier.icon} ${tier.ptsPerDollar} pts/$1</span></div>
 <div class="mb-2.5 bg-slate-50 border border-slate-200 rounded-xl p-2"><div class="flex items-center justify-between mb-1"><span class="text-[9px] font-semibold uppercase tracking-wider text-slate-500">👤 Payer Earning Loyalty Points on This Share:</span><span class="text-[9px] font-medium text-orange-600">${cust ? cust.name : 'Guest'} (${cust ? cust.points : 0}p)</span></div><div class="flex items-center gap-2 overflow-x-auto no-scrollbar">${Object.values(loyaltyProfiles).map(p => {
                 const isPayer = cust && p.phone === cust.phone;
                 return `<button type="button" onclick="selectBillSplitPayer('${p.phone}')" class="px-2 py-1 rounded-lg text-[10px] font-semibold border whitespace-nowrap transition cursor-pointer ${isPayer ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:border-orange-400'}">${p.name.split(' ')[0]} (${p.points}p)</button>`;
@@ -2717,18 +2396,18 @@ ${splitHistory.length > 1 ? `<div class="bg-white border border-orange-200 round
 ${splitInteractiveHtml}
 ${billSplitMode === 'full' ? `<ul class="space-y-1.5 text-xs text-slate-800 font-semibold mb-3 max-h-28 overflow-y-auto orange-scroll pr-1">${order.items.map(i => {
                 const unpaidQty = Math.max(0, i.qty - (i.paidQty || 0));
-                return `<li class="flex justify-between items-center py-0.5 border-b border-orange-50 ${unpaidQty === 0 ? 'line-through text-slate-400' : ''}"><span class="truncate pr-2">${i.qty}x ${i.name} ${unpaidQty < i.qty && unpaidQty > 0 ? `(${unpaidQty} unpaid)` : ''}</span><span class="font-semibold text-slate-900 shrink-0">${i.isRewardRedemption ? 'FREE' : `${(i.price * (unpaidQty || i.qty)).toFixed(2)}`}</span></li>`;
+                return `<li class="flex justify-between items-center py-0.5 border-b border-orange-50 ${unpaidQty === 0 ? 'line-through text-slate-400' : ''}"><span class="truncate pr-2">${i.qty}x ${i.name} ${unpaidQty < i.qty && unpaidQty > 0 ? `(${unpaidQty} unpaid)` : ''}</span><span class="font-semibold text-slate-900 shrink-0">${i.isRewardRedemption ? 'FREE' : `$${(i.price * (unpaidQty || i.qty)).toFixed(2)}`}</span></li>`;
             }).join('')}</ul>` : ''}
 <div class="bg-orange-50/80 border border-orange-200 rounded-xl p-4 mb-3"><div class="flex items-center justify-between mb-2"><span class="text-[10px] font-semibold uppercase text-orange-800">🎁 Redeem ${cust ? cust.name.split(' ')[0] + "'s" : ''} Points (Avail: ${cust ? cust.points : 0}p)</span><span class="text-[9px] font-medium text-slate-500">100 Pts = $1.00</span></div><div class="grid grid-cols-4 gap-2">${[0, 100, 250, 500].map(pts => {
                 const affordable = pts === 0 || ((cust ? cust.points : 0) >= pts && calc.shareSubtotal * 100 >= pts), active = calc.maxDiscountPts === pts;
-                return `<button onclick="toggleApplyBillPointsDiscount(${pts})" ${!affordable ? 'disabled' : ''} class="py-1.5 rounded-lg text-[10px] font-semibold border transition ${active ? 'bg-orange-600 text-white border-orange-600 cursor-pointer' : affordable ? 'bg-white text-slate-700 border-orange-200 hover:bg-orange-100 cursor-pointer' : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'}">${pts === 0 ? 'None' : `-${(pts / 100).toFixed(2)}`}</button>`;
+                return `<button onclick="toggleApplyBillPointsDiscount(${pts})" ${!affordable ? 'disabled' : ''} class="py-1.5 rounded-lg text-[10px] font-semibold border transition ${active ? 'bg-orange-600 text-white border-orange-600 cursor-pointer' : affordable ? 'bg-white text-slate-700 border-orange-200 hover:bg-orange-100 cursor-pointer' : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'}">${pts === 0 ? 'None' : `-$${(pts / 100).toFixed(2)}`}</button>`;
             }).join('')}</div></div>
 <div class="mb-3"><span class="text-[10px] font-semibold uppercase text-slate-400 block mb-1">Add Server Tip on Your Share (For Waiter Alex)</span><div class="grid grid-cols-4 gap-2">${[15, 18, 20, 0].map(pct => `<button onclick="selectBillTip(${pct})" class="py-1.5 rounded-xl text-[10px] font-semibold border transition cursor-pointer ${selectedTipPercent === pct ? 'bg-slate-900 text-white border-slate-900' : 'bg-orange-50/60 text-slate-700 border-orange-200 hover:bg-orange-100'}">${pct === 0 ? 'No Tip' : `${pct}%`}</button>`).join('')}</div></div>
 <div class="mb-3"><span class="text-[10px] font-semibold uppercase text-slate-400 block mb-1">Payment Method (Tokenized Auto-Remember)</span><div class="grid grid-cols-3 gap-2">${['Apple Pay', 'Tap Card', 'Cash'].map(m => `<button onclick="selectBillPaymentMethod('${m}')" class="py-1.5 rounded-xl text-[10px] font-semibold border transition cursor-pointer ${selectedPaymentMethod === m ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-slate-700 border-orange-200 hover:bg-orange-50'}">${m}</button>`).join('')}</div></div>
-<div class="border-t border-orange-100 pt-3 space-y-1 text-xs"><div class="flex justify-between text-slate-500 font-medium"><span>${billSplitMode === 'full' ? 'Remaining Check Subtotal' : `Your Share Subtotal (${calc.shareLabel})`}</span><span>${calc.shareSubtotal.toFixed(2)}</span></div>
-${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 font-semibold"><span>Loyalty Redemption (${calc.maxDiscountPts} Pts)</span><span>−${calc.discountDollar.toFixed(2)}</span></div>` : ''}
-<div class="flex justify-between text-slate-500 font-medium"><span>Tax (8.25%)</span><span>${calc.tax.toFixed(2)}</span></div><div class="flex justify-between text-slate-500 font-medium"><span>Waitstaff Tip (${selectedTipPercent}%)</span><span>${calc.tipAmount.toFixed(2)}</span></div><div class="flex justify-between items-center text-base font-medium text-slate-900 pt-2 border-t-2 border-orange-200"><span>${billSplitMode === 'full' ? 'Total Due Now' : 'Your Share Due Now'}</span><span class="text-orange-600 text-lg">${calc.grandTotal.toFixed(2)}</span></div><div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 mt-2 flex items-center justify-between text-[11px] font-semibold text-amber-900"><span>✨ Points ${cust ? cust.name.split(' ')[0] : 'You'} Will Earn:</span><span class="text-orange-600">+${calc.pointsToEarn} Pts</span></div></div></div>`;
-            footerEl.innerHTML = `<button onclick="settleAndPayCurrentBill()" ${!calc.canPayShare ? 'disabled' : ''} class="w-full ${calc.canPayShare ? 'bg-orange-600 hover:from-orange-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'} text-white font-medium text-xs py-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2"><span>💳 ${calc.isFinalShare ? `Pay ${calc.grandTotal.toFixed(2)} & Close Tab (+${calc.pointsToEarn} Pts)` : `Pay ${calc.shareLabel} (${calc.grandTotal.toFixed(2)}) • +${calc.pointsToEarn} Pts`}</span></button><div class="flex items-center justify-between gap-2 pt-0.5"><button onclick="closeTotalBillPageModal(); openBillReviewModal(true);" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold text-[11px] py-2 rounded-xl transition cursor-pointer">⭐ ${order.reviewed ? 'Edit Review' : 'Leave a Review (+25 Pts)'}</button><button onclick="closeTotalBillPageModal(); callWaiterForTable('Assistance with Checkout');" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold text-[11px] py-2 rounded-xl transition cursor-pointer">🙋 Call Server</button></div>`;
+<div class="border-t border-orange-100 pt-3 space-y-1 text-xs"><div class="flex justify-between text-slate-500 font-medium"><span>${billSplitMode === 'full' ? 'Remaining Check Subtotal' : `Your Share Subtotal (${calc.shareLabel})`}</span><span>$${calc.shareSubtotal.toFixed(2)}</span></div>
+${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 font-semibold"><span>Loyalty Redemption (${calc.maxDiscountPts} Pts)</span><span>−$${calc.discountDollar.toFixed(2)}</span></div>` : ''}
+<div class="flex justify-between text-slate-500 font-medium"><span>Tax (8.25%)</span><span>$${calc.tax.toFixed(2)}</span></div><div class="flex justify-between text-slate-500 font-medium"><span>Waitstaff Tip (${selectedTipPercent}%)</span><span>$${calc.tipAmount.toFixed(2)}</span></div><div class="flex justify-between items-center text-base font-medium text-slate-900 pt-2 border-t-2 border-orange-200"><span>${billSplitMode === 'full' ? 'Total Due Now' : 'Your Share Due Now'}</span><span class="text-orange-600 text-lg">$${calc.grandTotal.toFixed(2)}</span></div><div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 mt-2 flex items-center justify-between text-[11px] font-semibold text-amber-900"><span>✨ Points ${cust ? cust.name.split(' ')[0] : 'You'} Will Earn:</span><span class="text-orange-600">+${calc.pointsToEarn} Pts</span></div></div></div>`;
+            footerEl.innerHTML = `<button onclick="settleAndPayCurrentBill()" ${!calc.canPayShare ? 'disabled' : ''} class="w-full ${calc.canPayShare ? 'bg-orange-600 hover:bg-orange-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'} text-white font-medium text-xs py-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2"><span>💳 ${calc.isFinalShare ? `Pay $${calc.grandTotal.toFixed(2)} & Close Tab (+${calc.pointsToEarn} Pts)` : `Pay ${calc.shareLabel} ($${calc.grandTotal.toFixed(2)}) • +${calc.pointsToEarn} Pts`}</span></button><div class="flex items-center justify-between gap-2 pt-0.5"><button onclick="closeTotalBillPageModal(); openBillReviewModal(true);" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold text-[11px] py-2 rounded-xl transition cursor-pointer">⭐ ${order.reviewed ? 'Edit Review' : 'Leave a Review (+25 Pts)'}</button><button onclick="closeTotalBillPageModal(); customerRequestService('Assistance with Checkout');" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold text-[11px] py-2 rounded-xl transition cursor-pointer">🙋 Call Server</button></div>`;
         }
         function settleAndPayCurrentBill() {
             const order = activeOrders.find(o => o.id === currentCustomerOrderId && !o.paid) || activeOrders.find(o => !o.paid);
@@ -2768,7 +2447,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             if (cust) {
                 if (maxDiscountPts > 0) {
                     cust.points -= maxDiscountPts;
-                    cust.history.unshift({ date: 'Just Now', text: `Redeemed -${discountDollar.toFixed(2)} Bill Discount (Order #${order.id})`, delta: `-${maxDiscountPts}` });
+                    cust.history.unshift({ date: 'Just Now', text: `Redeemed -$${discountDollar.toFixed(2)} Bill Discount (Order #${order.id})`, delta: `-${maxDiscountPts}` });
                 }
                 cust.points += pointsEarned;
                 cust.lifetimePoints += pointsEarned;
@@ -2791,7 +2470,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 if (matchedMenuDish) cust.favoriteDishId = matchedMenuDish.id;
                 if (!Array.isArray(cust.orderHistory)) cust.orderHistory = [];
                 cust.orderHistory.unshift({ orderId: order.id, date: `Just Now (${calc.shareLabel})`, items: settledItemsDescription, total: netSubtotal, pointsDelta: maxDiscountPts > 0 ? `-${maxDiscountPts} / +${pointsEarned}` : `+${pointsEarned}` });
-                cust.history.unshift({ date: 'Just Now', text: `Earned on Order #${order.id} (${calc.shareLabel} • ${netSubtotal.toFixed(2)})`, delta: `+${pointsEarned}` });
+                cust.history.unshift({ date: 'Just Now', text: `Earned on Order #${order.id} (${calc.shareLabel} • $${netSubtotal.toFixed(2)})`, delta: `+${pointsEarned}` });
             }
             appliedBillDiscountPoints = 0;
             const remainingAfterPayment = Math.max(0, Number((order.total - order.paidSubtotal).toFixed(2)));
@@ -2805,12 +2484,18 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                         if (order.items.some(it => (it.seatNum || 1) === s && (it.qty - (it.paidQty || 0)) > 0)) { billSelectedSeat = s; break; }
                     }
                 }
-                updateFloorTableStatus('04', `Split Paying (${remainingAfterPayment.toFixed(0)} left)`, 'bg-amber-100 border-amber-300 text-amber-900', {
+                updateFloorTableStatus('04', `Split Paying ($${remainingAfterPayment.toFixed(0)} left)`, 'bg-amber-100 border-amber-300 text-amber-900', {
                     guestName: `${order.splitPayments.length} Share(s) Paid`, billAmount: remainingAfterPayment,
-                    notes: `${cust ? cust.name : 'Guest'} paid ${grandTotal.toFixed(2)} (${calc.shareLabel}) • ${remainingAfterPayment.toFixed(2)} left`
+                    notes: `${cust ? cust.name : 'Guest'} paid $${grandTotal.toFixed(2)} (${calc.shareLabel}) • $${remainingAfterPayment.toFixed(2)} left`
                 });
                 recordExtraValue(2.50, `Split-the-Bill Share Paid by ${cust ? cust.name : 'Guest'} (${calc.shareLabel})`);
                 saveStateToStorage();
+                syncBroadcastState({
+                    kind: 'split_payment',
+                    sound: 'ready',
+                    title: `💳 Split Payment Received — Table #04`,
+                    detail: `${cust ? cust.name : 'Guest'} paid $${grandTotal.toFixed(2)} (${calc.shareLabel}) • $${remainingAfterPayment.toFixed(2)} left`
+                });
                 renderTotalBillModalContent();
                 renderAllPortals();
                 return;
@@ -2828,10 +2513,16 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             lastSettledReceipt = { orderId: order.id, customerName: cust ? cust.name : 'Guest', paymentMethod: selectedPaymentMethod, netSubtotal, tax, tipPct: selectedTipPercent, tipAmount, grandTotal, pointsEarned, newPointBalance: cust ? cust.points : pointsEarned, splitPayments: order.splitPayments };
             updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-green-50 border-green-300 text-green-800', {
                 guestName: `Settled by ${cust ? cust.name : 'Guest'}`, billAmount: 0.00,
-                notes: `Paid ${grandTotal.toFixed(2)} via ${selectedPaymentMethod} • Table ready`
+                notes: `Paid $${grandTotal.toFixed(2)} via ${selectedPaymentMethod} • Table ready`
             });
             recordExtraValue(5.00, `Fast Mobile Checkout & Loyalty Retention (${cust ? cust.name : 'Guest'})`);
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'bill_paid',
+                sound: 'ready',
+                title: `✅ Table #04 Paid & Closed ($${grandTotal.toFixed(2)})`,
+                detail: `${cust ? cust.name : 'Guest'} settled via ${selectedPaymentMethod} (+${pointsEarned} pts)`
+            });
             renderTotalBillModalContent();
             renderAllPortals();
         }
@@ -2855,11 +2546,62 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             if (actionType === 'seat') {
                 updateFloorTableStatus(tableNum, 'Browsing Menu', 'bg-orange-50 border-orange-300 text-orange-800', { guestName: `Walk-In Party (Table #${tableNum})`, billAmount: 0.00, notes: 'Seated just now by Host • Scanning QR menu' });
             } else if (actionType === 'settle') {
-                if (tableNum === '04' && currentCustomerOrderId) { openTotalBillPageModal(); return; }
+                if (tableNum === '04' && currentCustomerOrderId) {
+                    const openOrder = activeOrders.find(o => o.id === currentCustomerOrderId && !o.paid);
+                    if (openOrder) {
+                        const ordCust = getOrderCustomer(openOrder);
+                        const remSub = Math.max(0, Number((openOrder.total - (openOrder.paidSubtotal || 0)).toFixed(2)));
+                        const pts = calculatePointsForAmount(remSub, ordCust) + (openOrder.bonusPoints || 0);
+                        openOrder.paid = true;
+                        openOrder.status = 'delivered';
+                        openOrder.paidSubtotal = openOrder.total;
+                        openOrder.items.forEach(it => { it.paidQty = it.qty; it.done = true; });
+                        if (ordCust) {
+                            ordCust.points += pts;
+                            ordCust.lifetimePoints += pts;
+                            ordCust.visits += 1;
+                            ordCust.lifetimeSpend = Number(((ordCust.lifetimeSpend || 0) + remSub).toFixed(2));
+                            ordCust.lastVisitDate = 'Today • Settled at Host Stand';
+                            ordCust.lastVisitDaysAgo = 0;
+                            if (!Array.isArray(ordCust.orderHistory)) ordCust.orderHistory = [];
+                            ordCust.orderHistory.unshift({
+                                orderId: openOrder.id,
+                                date: 'Just Now (Host Stand)',
+                                items: openOrder.items.map(i => `${i.qty}x ${i.name}`).join(', '),
+                                total: remSub,
+                                pointsDelta: `+${pts}`
+                            });
+                            ordCust.history.unshift({
+                                date: 'Just Now',
+                                text: `Order #${openOrder.id} Settled at Host Stand ($${remSub.toFixed(2)})`,
+                                delta: `+${pts}`
+                            });
+                        }
+                        if (waiterSelectedOrder && waiterSelectedOrder.id === openOrder.id) waiterSelectedOrder = null;
+                        currentCustomerOrderId = null;
+                        customerOrderDelivered = false;
+                        appliedBillDiscountPoints = 0;
+                        recordExtraValue(4.00, `Table #04 Tab Settled at Host Stand ($${remSub.toFixed(2)})`);
+                        updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-green-50 border-green-300 text-green-800', {
+                            guestName: `Settled by ${ordCust ? ordCust.name : 'Guest'}`,
+                            billAmount: 0.00,
+                            notes: `Settled $${remSub.toFixed(2)} at Host Stand • +${pts} pts awarded`
+                        });
+                        saveStateToStorage();
+                        syncBroadcastState({
+                            kind: 'admin_settled',
+                            title: 'Table #04 Settled',
+                            detail: `Order #${openOrder.id} closed by Admin (+${pts} pts)`,
+                            customerBanner: `✅ Your Table #04 tab ($${remSub.toFixed(2)}) was settled at the host stand! +${pts} Loyalty Pts added.`
+                        });
+                        renderAllPortals();
+                        return;
+                    }
+                }
                 const paidAmt = Number(t.billAmount || 0);
                 if (paidAmt > 0) {
-                    recordExtraValue(4.00, `Table #${tableNum} Quick Tab Settlement (${paidAmt.toFixed(2)})`);
-                    updateFloorTableStatus(tableNum, 'Available', 'bg-white border-slate-200 text-slate-400', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: `Last check (${paidAmt.toFixed(2)}) settled & table bussed` });
+                    recordExtraValue(4.00, `Table #${tableNum} Quick Tab Settlement ($${paidAmt.toFixed(2)})`);
+                    updateFloorTableStatus(tableNum, 'Available', 'bg-white border-slate-200 text-slate-400', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: `Last check ($${paidAmt.toFixed(2)}) settled & table bussed` });
                 } else {
                     updateFloorTableStatus(tableNum, 'Available', 'bg-white border-slate-200 text-slate-400', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: 'Walk-in cleared & table sanitized' });
                 }
@@ -2868,23 +2610,26 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 return;
             }
             saveStateToStorage();
+            syncBroadcastState({ kind: 'floor_update' });
             renderAllPortals();
         }
         function recordExtraValue(amount, description) {
             sessionExtraValue = Number((sessionExtraValue + amount).toFixed(2));
-            sessionValueLogs.unshift(`+${amount.toFixed(2)} — ${description}`);
+            sessionValueLogs.unshift(`+$${amount.toFixed(2)} — ${description}`);
             renderSalesImpactPopupContent();
         }
         const openSalesImpactPopup = () => { renderSalesImpactPopupContent(); toggleModal('adminSalesImpactPopup', true); };
         const closeSalesImpactPopup = () => toggleModal('adminSalesImpactPopup', false);
         function renderSalesImpactPopupContent() {
+            if (!$('popupSessionExtraValue')) return;
             $('popupSessionExtraValue').textContent = sessionExtraValue.toFixed(2);
             $('popupSessionValueList').innerHTML = !sessionValueLogs.length
                 ? `<li class="text-slate-400 italic">Place an order, accept upsell deals, or redeem loyalty points to see live value...</li>`
                 : sessionValueLogs.map(log => `<li class="flex items-center gap-2 text-slate-800"><span class="text-orange-600 font-semibold">✓</span><span>${log}</span></li>`).join('');
         }
         function renderAdminPortal() {
-            $('adminTotalSalesMetric').textContent = `${totalSalesVolume.toFixed(2)}`;
+            if (!$('adminTotalSalesMetric')) return;
+            $('adminTotalSalesMetric').textContent = `$${totalSalesVolume.toFixed(2)}`;
             $('adminActiveOrdersMetric').textContent = activeOrders.filter(o => o.status !== 'delivered' && !o.paid).length;
             const avgStars = customerReviewsList.length ? (customerReviewsList.reduce((s, r) => s + r.stars, 0) / customerReviewsList.length).toFixed(1) : '4.9';
             $('adminAvgRatingMetric').textContent = `${avgStars} ★`;
@@ -2903,12 +2648,12 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             if (inspectorBox && inspectedTable) {
                 const isAvailable = inspectedTable.status.toLowerCase().includes('available');
                 const hasUnpaidBill = Number(inspectedTable.billAmount || 0) > 0;
-                inspectorBox.innerHTML = `<div class="bg-orange-50/80 border border-orange-200 rounded-xl p-4 text-left "><div class="flex items-center justify-between gap-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">Table #${inspectedTable.number} Inspector • Server: ${inspectedTable.server || 'Alex'}</span><h4 class="text-xs font-medium text-slate-900">${inspectedTable.guestName || 'Guest'}</h4></div><span class="text-xs font-medium text-orange-600 bg-white border border-orange-200 px-2 py-0.5 rounded-lg">${Number(inspectedTable.billAmount || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-500 font-medium mt-1">${inspectedTable.notes || inspectedTable.status}</p><div class="flex items-center gap-2 mt-2 pt-2 border-t border-orange-200/70">${isAvailable ? `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'seat')" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🪑 Seat Walk-In</button>` : `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'settle')" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">${hasUnpaidBill ? '💳 Settle & Clear' : '🧹 Clear Walk-In'}</button>`}<button onclick="adminQuickTableAction('${inspectedTable.number}', 'call')" class="flex-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-300 text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🔔 Ping Server</button></div></div>`;
+                inspectorBox.innerHTML = `<div class="bg-orange-50/80 border border-orange-200 rounded-xl p-4 text-left "><div class="flex items-center justify-between gap-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">Table #${inspectedTable.number} Inspector • Server: ${inspectedTable.server || 'Alex'}</span><h4 class="text-xs font-medium text-slate-900">${inspectedTable.guestName || 'Guest'}</h4></div><span class="text-xs font-medium text-orange-600 bg-white border border-orange-200 px-2 py-0.5 rounded-lg">$${Number(inspectedTable.billAmount || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-500 font-medium mt-1">${inspectedTable.notes || inspectedTable.status}</p><div class="flex items-center gap-2 mt-2 pt-2 border-t border-orange-200/70">${isAvailable ? `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'seat')" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🪑 Seat Walk-In</button>` : `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'settle')" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">${hasUnpaidBill ? '💳 Settle & Clear' : '🧹 Clear Walk-In'}</button>`}<button onclick="adminQuickTableAction('${inspectedTable.number}', 'call')" class="flex-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-300 text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🔔 Ping Server</button></div></div>`;
             }
             const crmBox = $('adminLoyaltySummaryBox');
             if (crmBox) {
                 const allMembers = Object.values(loyaltyProfiles), totalPtsLiability = allMembers.reduce((s, m) => s + m.points, 0), totalCrmSpend = allMembers.reduce((s, m) => s + (m.lifetimeSpend || 0), 0);
-                crmBox.innerHTML = `<div class="flex justify-between text-slate-600"><span>Recognized at Table #04:</span><span class="font-semibold text-slate-900">${activeCust ? activeCust.name : 'Guest'} (${activeCust ? activeCust.points : 0}p)</span></div><div class="flex justify-between text-slate-600"><span>Total Enrolled CRM Profiles:</span><span class="font-semibold text-orange-600">${allMembers.length} Guests (${totalCrmSpend.toFixed(2)} LTV • ${totalPtsLiability}p)</span></div>`;
+                crmBox.innerHTML = `<div class="flex justify-between text-slate-600"><span>Recognized at Table #04:</span><span class="font-semibold text-slate-900">${activeCust ? activeCust.name : 'Guest'} (${activeCust ? activeCust.points : 0}p)</span></div><div class="flex justify-between text-slate-600"><span>Total Enrolled CRM Profiles:</span><span class="font-semibold text-orange-600">${allMembers.length} Guests ($${totalCrmSpend.toFixed(2)} LTV • ${totalPtsLiability}p)</span></div>`;
             }
             if ($('adminNavCrmCountBadge')) { $('adminNavCrmCountBadge').textContent = Object.keys(loyaltyProfiles).length; }
             if (currentAdminTab === 'crm') { renderAdminCrmView(); }
@@ -3041,6 +2786,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             if (dietEl) p.dietaryNotes = dietEl.value.trim() || 'None specified';
             if (notesEl) p.serverNotes = notesEl.value.trim() || '';
             saveStateToStorage();
+            syncBroadcastState({ kind: 'crm_notes' });
             renderAllPortals();
             renderAdminCrmProfileModalContent();
             const noticeEl = $('crmModalActionNotice');
@@ -3054,6 +2800,10 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             p.history.unshift({ date: 'Manager Action', text: reasonText, delta: deltaPts >= 0 ? `+${deltaPts}` : `${deltaPts}` });
             if (deltaPts > 0) { recordExtraValue(6.00, `CRM Retention Action for ${p.name} (${reasonText})`); }
             saveStateToStorage();
+            syncBroadcastState({
+                kind: 'crm_points',
+                customerBanner: phoneKey === activeLoyaltyPhone ? `🎁 Manager credited ${deltaPts >= 0 ? '+' + deltaPts : deltaPts} Loyalty Pts (${reasonText})!` : null
+            });
             renderAllPortals();
             renderAdminCrmProfileModalContent();
             const noticeEl = $('crmModalActionNotice');
@@ -3068,17 +2818,17 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             container.innerHTML = `<div class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between shrink-0">
 <div class="flex items-center gap-4 min-w-0"><div class="w-11 h-11 rounded-2xl bg-orange-600 text-white font-medium text-base flex items-center justify-center shrink-0 border border-orange-400">${tier.icon}</div><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h3 class="text-base font-medium tracking-tight truncate">${p.name}</h3><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${seg.badgeClass}">${seg.label}</span></div><p class="text-[11px] text-slate-300 font-semibold mt-1">📱 ${p.displayPhone} • ${tier.name} (${tier.ptsPerDollar} pts/$1) • Joined ${p.joinedDate || 'Jan 2026'}</p></div></div><button onclick="closeAdminCrmProfileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-orange-600 text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer shrink-0">✕</button></div><div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-orange-50/40">
 <div id="crmModalActionNotice" class="hidden bg-green-100 border border-green-400 text-green-900 rounded-xl px-3 py-2 text-xs font-semibold text-center"></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-<div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Total Orders</span><span class="text-base font-medium text-slate-900">${totalOrders} Visits</span><span class="text-[10px] text-slate-500 block">Last: ${p.lastVisitDate}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Lifetime Spend</span><span class="text-base font-medium text-orange-600">${lifetimeSpend.toFixed(2)}</span><span class="text-[10px] text-green-700 font-medium block">AOV: ${aov.toFixed(2)}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Loyalty Wallet</span><span class="text-base font-medium text-slate-900">${p.points} Pts</span><span class="text-[10px] text-orange-600 font-medium block">${(p.points / 100).toFixed(2)} Redeemable</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4 flex items-center gap-2"><img src="${favDishObj.img}" alt="${p.favoriteDish}" class="w-10 h-10 rounded-xl object-cover border border-orange-200 shrink-0" /><div class="min-w-0"><span class="text-[9px] font-semibold uppercase text-orange-600 block">Favorite Dish</span><span class="text-xs font-medium text-slate-900 truncate block" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-slate-500 font-medium">Ordered ${p.favoriteDishCount || 1}x</span></div></div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5 shadow-sm">
+<div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Total Orders</span><span class="text-base font-medium text-slate-900">${totalOrders} Visits</span><span class="text-[10px] text-slate-500 block">Last: ${p.lastVisitDate}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Lifetime Spend</span><span class="text-base font-medium text-orange-600">$${lifetimeSpend.toFixed(2)}</span><span class="text-[10px] text-green-700 font-medium block">AOV: $${aov.toFixed(2)}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Loyalty Wallet</span><span class="text-base font-medium text-slate-900">${p.points} Pts</span><span class="text-[10px] text-orange-600 font-medium block">$${(p.points / 100).toFixed(2)} Redeemable</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4 flex items-center gap-2"><img src="${favDishObj.img}" alt="${p.favoriteDish}" class="w-10 h-10 rounded-xl object-cover border border-orange-200 shrink-0" /><div class="min-w-0"><span class="text-[9px] font-semibold uppercase text-orange-600 block">Favorite Dish</span><span class="text-xs font-medium text-slate-900 truncate block" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-slate-500 font-medium">Ordered ${p.favoriteDishCount || 1}x</span></div></div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5 shadow-sm">
 <div class="flex items-center justify-between mb-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">Waiter & Kitchen Sync</span><h4 class="text-xs font-semibold text-slate-900">Dietary Tags & VIP Server Notes</h4></div><button onclick="saveAdminCrmGuestNotes('${p.phone}')" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[10px] px-3 py-1.5 rounded-xl transition cursor-pointer shadow-sm">💾 Save & Sync to Waiter</button></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div><label class="block text-[10px] font-medium text-slate-500 mb-1">Dietary / Allergy Badge</label><input id="crmModalDietaryInput" type="text" value="${(p.dietaryNotes || '').replace(/"/g, '&quot;')}" placeholder="e.g. Peanut Allergy, Gluten-Free..." class="w-full bg-orange-50/60 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-orange-500" /></div><div><label class="block text-[10px] font-medium text-slate-500 mb-1">Table & Hospitality Notes</label><input id="crmModalServerNotesInput" type="text" value="${(p.serverNotes || '').replace(/"/g, '&quot;')}" placeholder="Seating preference, favorite drink..." class="w-full bg-orange-50/60 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-orange-500" /></div></div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5 shadow-sm">
 <span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">CRM Retention Actions</span><h4 class="text-xs font-semibold text-slate-900 mb-2">Issue Courtesy Points or Win-Back Campaign</h4><div class="flex flex-wrap gap-2">
 <button onclick="adminAdjustGuestPoints('${p.phone}', 100, 'Manager Courtesy Bonus (+100 Pts)')" class="bg-orange-50 hover:bg-orange-600 text-orange-800 hover:text-white border border-orange-300 font-semibold text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">🎁 +100 Courtesy Pts ($1.00)</button><button onclick="adminAdjustGuestPoints('${p.phone}', 200, 'VIP Win-Back SMS Campaign (+200 Pts)')" class="bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 font-semibold text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">📲 Send +200 Pts Win-Back Offer</button><button onclick="adminAdjustGuestPoints('${p.phone}', -100, 'Manual Points Adjustment (-100 Pts)')" class="bg-slate-100 hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-300 font-medium text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">−100 Pts Adjust</button></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div class="bg-white border border-orange-200 rounded-2xl p-4.5"><h4 class="text-xs font-semibold text-slate-900 mb-2">🧾 Itemized Order History (${(p.orderHistory || []).length})</h4><div class="space-y-2 max-h-44 overflow-y-auto orange-scroll pr-1">
-${!(p.orderHistory || []).length ? `<p class="text-[11px] text-slate-400 italic">No settled checks yet. Place & settle an order at Table #04 to log it here!</p>` : (p.orderHistory || []).map(ord => `<div class="bg-orange-50/60 border border-orange-100 rounded-xl p-2 text-[11px]"><div class="flex justify-between font-semibold text-slate-900"><span>Order #${ord.orderId}</span><span class="text-orange-600">${Number(ord.total || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-600 font-medium mt-1">${ord.items}</p><div class="flex justify-between text-[9px] text-slate-400 font-medium mt-1"><span>${ord.date}</span><span class="text-green-700">${ord.pointsDelta} pts</span></div></div>`).join('')}
+${!(p.orderHistory || []).length ? `<p class="text-[11px] text-slate-400 italic">No settled checks yet. Place & settle an order at Table #04 to log it here!</p>` : (p.orderHistory || []).map(ord => `<div class="bg-orange-50/60 border border-orange-100 rounded-xl p-2 text-[11px]"><div class="flex justify-between font-semibold text-slate-900"><span>Order #${ord.orderId}</span><span class="text-orange-600">$${Number(ord.total || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-600 font-medium mt-1">${ord.items}</p><div class="flex justify-between text-[9px] text-slate-400 font-medium mt-1"><span>${ord.date}</span><span class="text-green-700">${ord.pointsDelta} pts</span></div></div>`).join('')}
 </div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5"><h4 class="text-xs font-semibold text-slate-900 mb-2">✨ Loyalty Points Activity Ledger</h4><div class="space-y-1.5 max-h-44 overflow-y-auto orange-scroll pr-1">
 ${(p.history || []).map(h => `<div class="flex items-center justify-between py-1.5 border-b border-orange-50 text-[11px]"><div class="min-w-0 pr-2"><p class="font-medium text-slate-800 truncate">${h.text}</p><span class="text-[9px] text-slate-400 font-semibold">${h.date}</span></div><span class="font-medium shrink-0 ${String(h.delta).startsWith('-') ? 'text-rose-600' : 'text-green-600'}">${h.delta} pts</span></div>`).join('')}
 </div></div></div></div><div class="bg-white border-t border-orange-200 px-6 py-3 flex items-center justify-between gap-2 shrink-0">
-${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-center gap-2"><span>🟢</span><span>Currently Active Guest at Table #04 (Left Screen)</span></span>` : `<button onclick="switchLoyaltyProfile('${p.phone}'); closeAdminCrmProfileModal();" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm">🪑 Seat ${p.name.split(' ')[0]} at Table #04 (Sync to Phone App)</button>`}
+${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-center gap-2"><span>🟢</span><span>Currently Active Guest at Table #04 (Synced to Phone)</span></span>` : `<button onclick="switchLoyaltyProfile('${p.phone}'); closeAdminCrmProfileModal();" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm">🪑 Seat ${p.name.split(' ')[0]} at Table #04 (Sync to Phone App)</button>`}
 <button onclick="closeAdminCrmProfileModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer">Close Profile</button></div>`;
         }
         // 16. HELPERS, SURGICAL TIMER UPDATES & RESET DEMO (WITH AUDIT FIX #2)
@@ -3126,8 +2876,11 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
             ['upsellPopupModal', 'billReviewModal', 'adminSalesImpactPopup', 'categoryFilterModal', 'cartListModal', 'kdsAvailabilityModal', 'totalBillPageModal', 'customerWaiterBanner', 'callForBillFloatingWrap', 'returnToTimelineBanner', 'adminCrmProfileModal'].forEach(id => toggleModal(id, false));
             if (focusedWindowId) toggleFocusWindow(focusedWindowId);
             updateMobileSelectionBadges();
-            switchCustomerTab('menu');
+            if ($('customerMenuView')) switchCustomerTab('menu');
             renderAllPortals();
+            if (!window.__suppressResetBroadcast) {
+                syncBroadcastReset(fullFactoryWipe);
+            }
         }
         // Surgical 1-second timer update: Updates only timer text nodes instead of rebuilding KDS DOM every second
         setInterval(() => {
@@ -3151,9 +2904,585 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
             });
             if (crossedOverdueThreshold) { renderKdsPortal(); }
         }, 1000);
-        // Initialize on load (Restore saved state & render all 4 screens)
+        // Initialize on load (Restore saved state, render portal, and start real-time sync)
         loadStateFromStorage();
         renderAllPortals();
+        initCrossDeviceSync();
+    
+
+        // =========================================================================
+        // 17. CROSS-DEVICE REAL-TIME SYNC ENGINE (DUAL-BROKER MQTT WSS + LOCAL BC)
+        // =========================================================================
+        const SYNC_SENDER_ID = `${PORTAL_ROLE}_${Math.random().toString(36).slice(2, 10)}`;
+        const ROOM_STORAGE_KEY = PORTAL_ROLE === 'staff' ? 'rms_staff_room_code_v2' : 'rms_customer_room_code_v2';
+        const MQTT_BROKERS = [
+            { name: 'EMQX Cloud', url: 'wss://broker.emqx.io:8084/mqtt' },
+            { name: 'HiveMQ Cloud', url: 'wss://broker.hivemq.com:8884/mqtt' }
+        ];
+        let syncRoomCode = '';
+        let syncMqttClient = null;
+        let syncBroadcastChannel = null;
+        let syncBrokerIndex = 0;
+        let syncBrokerConnected = false;
+        let syncPeerLastSeen = 0;
+        let syncStateVersion = 0;
+        let syncSeenMsgIds = new Set();
+        let syncHeartbeatTimer = null;
+        let syncFailoverTimer = null;
+
+        function generateRoomCode() {
+            return String(Math.floor(1000 + Math.random() * 9000));
+        }
+
+        function sanitizeRoomCode(raw) {
+            const digits = String(raw || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8);
+            return digits;
+        }
+
+        function getCustomerDemoUrl(code) {
+            const c = code || syncRoomCode;
+            if (window.location.protocol.startsWith('http')) {
+                const origin = window.location.origin;
+                // If hosted on searchandservice.pages.dev or any Cloudflare Pages preview / local server
+                return `${origin}/demo?session=${encodeURIComponent(c)}`;
+            }
+            return `https://searchandservice.pages.dev/demo?session=${encodeURIComponent(c)}`;
+        }
+
+        function buildSharedStateSnapshot() {
+            return {
+                stateVersion: syncStateVersion,
+                savedAtTimestamp: Date.now(),
+                loyaltyProfiles,
+                activeLoyaltyPhone,
+                soldOutIds: menuItems.filter(m => m.soldOut).map(m => m.id),
+                activeOrders,
+                currentCustomerOrderId,
+                customerOrderDelivered,
+                fallbackReviewSubmitted,
+                fallbackReviewPrompted,
+                waiterCalls,
+                totalSalesVolume,
+                sessionExtraValue,
+                sessionValueLogs,
+                customerReviewsList,
+                floorTables,
+                selectedAdminTableNumber,
+                appliedBillDiscountPoints
+            };
+        }
+
+        function applySharedStateSnapshot(snap, eventMeta = null) {
+            if (!snap || typeof snap !== 'object') return;
+            if (typeof snap.stateVersion === 'number' && snap.stateVersion > syncStateVersion) {
+                syncStateVersion = snap.stateVersion;
+            }
+            if (snap.loyaltyProfiles) {
+                loyaltyProfiles = normalizeLoyaltyProfiles(snap.loyaltyProfiles);
+            }
+            if (snap.activeLoyaltyPhone) {
+                activeLoyaltyPhone = snap.activeLoyaltyPhone;
+            }
+            if (Array.isArray(snap.soldOutIds)) {
+                const soldSet = new Set(snap.soldOutIds);
+                menuItems.forEach(m => { m.soldOut = soldSet.has(m.id); });
+                // On customer device, prune any unplaced items that kitchen just 86'd
+                if (PORTAL_ROLE === 'customer' && selectedOrderItems.length > 0) {
+                    let removedAny = false;
+                    selectedOrderItems.forEach(item => {
+                        if (soldSet.has(item.id)) {
+                            removedAny = true;
+                            if (item.isRewardRedemption && item.pointsRedeemed) {
+                                refundUnplacedRewardLine(item, 'Dish 86 Sold Out Refund');
+                            }
+                        }
+                    });
+                    if (removedAny) {
+                        selectedOrderItems = selectedOrderItems.filter(i => !soldSet.has(i.id));
+                        syncSelectedQuantities();
+                        updateMobileSelectionBadges();
+                    }
+                }
+            }
+            if (Array.isArray(snap.activeOrders)) {
+                activeOrders = snap.activeOrders;
+                if (waiterSelectedOrder) {
+                    const updated = activeOrders.find(o => o.id === waiterSelectedOrder.id && o.status === 'dispatched' && !o.paid);
+                    waiterSelectedOrder = updated || null;
+                }
+            }
+            if (snap.currentCustomerOrderId !== undefined) currentCustomerOrderId = snap.currentCustomerOrderId;
+            if (typeof snap.customerOrderDelivered === 'boolean') customerOrderDelivered = snap.customerOrderDelivered;
+            if (typeof snap.fallbackReviewSubmitted === 'boolean') fallbackReviewSubmitted = snap.fallbackReviewSubmitted;
+            if (typeof snap.fallbackReviewPrompted === 'boolean') fallbackReviewPrompted = snap.fallbackReviewPrompted;
+            if (Array.isArray(snap.waiterCalls)) waiterCalls = snap.waiterCalls;
+            if (typeof snap.totalSalesVolume === 'number') totalSalesVolume = snap.totalSalesVolume;
+            if (typeof snap.sessionExtraValue === 'number') sessionExtraValue = snap.sessionExtraValue;
+            if (Array.isArray(snap.sessionValueLogs)) sessionValueLogs = snap.sessionValueLogs;
+            if (Array.isArray(snap.customerReviewsList)) customerReviewsList = snap.customerReviewsList;
+            if (Array.isArray(snap.floorTables)) {
+                const defaults = getInitialFloorTables();
+                floorTables = snap.floorTables.map((t, idx) => ({ ...(defaults[idx] || {}), ...t }));
+            }
+            if (snap.selectedAdminTableNumber) selectedAdminTableNumber = snap.selectedAdminTableNumber;
+            if (typeof snap.appliedBillDiscountPoints === 'number') appliedBillDiscountPoints = snap.appliedBillDiscountPoints;
+
+            saveStateToStorage();
+            updateFloatingBillBannerState();
+            renderAllPortals();
+
+            // Refresh open modals cleanly
+            if (PORTAL_ROLE === 'customer') {
+                if ($('totalBillPageModal') && !$('totalBillPageModal').classList.contains('hidden')) {
+                    renderTotalBillModalContent();
+                }
+                if ($('cartListModal') && !$('cartListModal').classList.contains('hidden')) {
+                    renderCartListModal();
+                }
+                if (eventMeta && eventMeta.customerBanner) {
+                    if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = eventMeta.customerBanner;
+                    toggleModal('customerWaiterBanner', true);
+                }
+                if (eventMeta && eventMeta.kind === 'order_delivered') {
+                    updateFloatingBillBannerState();
+                }
+                if (eventMeta && eventMeta.kind === 'admin_settled') {
+                    toggleModal('totalBillPageModal', false);
+                    toggleModal('returnToTimelineBanner', false);
+                }
+            } else if (PORTAL_ROLE === 'staff') {
+                if ($('kdsAvailabilityModal') && !$('kdsAvailabilityModal').classList.contains('hidden')) {
+                    renderKds86Grid();
+                }
+                if ($('adminSalesImpactPopup') && !$('adminSalesImpactPopup').classList.contains('hidden')) {
+                    renderSalesImpactPopupContent();
+                }
+                if ($('adminCrmProfileModal') && !$('adminCrmProfileModal').classList.contains('hidden')) {
+                    renderAdminCrmProfileModalContent();
+                }
+                if (eventMeta && !eventMeta.isHydration) {
+                    if (eventMeta.sound === 'call') playWaiterCallBeep();
+                    else if (eventMeta.sound === 'ready') playWaiterReadySound();
+                    if (eventMeta.title) showStaffLiveToast(eventMeta.title, eventMeta.detail || '');
+                }
+            }
+        }
+
+        function publishSyncEnvelope(type, extra = {}) {
+            if (!syncRoomCode) return;
+            const envelope = {
+                msgId: `${SYNC_SENDER_ID}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                senderId: SYNC_SENDER_ID,
+                senderRole: PORTAL_ROLE,
+                room: syncRoomCode,
+                type,
+                ts: Date.now(),
+                ...extra
+            };
+            syncSeenMsgIds.add(envelope.msgId);
+            if (syncSeenMsgIds.size > 200) {
+                const first = syncSeenMsgIds.values().next().value;
+                syncSeenMsgIds.delete(first);
+            }
+            const serialized = JSON.stringify(envelope);
+            // 1. Local same-browser sync (0ms)
+            try {
+                if (syncBroadcastChannel) syncBroadcastChannel.postMessage(envelope);
+            } catch (e) { }
+            // 2. Cross-device MQTT over TLS WebSockets
+            try {
+                if (syncMqttClient && syncMqttClient.connected) {
+                    syncMqttClient.publish(`searchandservice/rms/v2/room-${syncRoomCode}`, serialized, { qos: 0, retain: false });
+                }
+            } catch (e) { }
+        }
+
+        function syncBroadcastState(eventMeta = null) {
+            syncStateVersion = Math.max(syncStateVersion + 1, Date.now());
+            publishSyncEnvelope('FULL_STATE', {
+                state: buildSharedStateSnapshot(),
+                event: eventMeta || null
+            });
+        }
+
+        function syncBroadcastReset(fullFactoryWipe = false) {
+            syncStateVersion = Math.max(syncStateVersion + 1, Date.now());
+            publishSyncEnvelope('DEMO_RESET', {
+                fullFactoryWipe: Boolean(fullFactoryWipe),
+                state: buildSharedStateSnapshot()
+            });
+        }
+
+        function handleIncomingSyncEnvelope(env) {
+            if (!env || typeof env !== 'object') return;
+            if (env.senderId === SYNC_SENDER_ID) return;
+            if (env.room !== syncRoomCode) return;
+            if (env.msgId && syncSeenMsgIds.has(env.msgId)) return;
+            if (env.msgId) {
+                syncSeenMsgIds.add(env.msgId);
+                if (syncSeenMsgIds.size > 200) {
+                    const first = syncSeenMsgIds.values().next().value;
+                    syncSeenMsgIds.delete(first);
+                }
+            }
+
+            // Track live presence of the opposite device
+            if (env.senderRole !== PORTAL_ROLE) {
+                const wasConnected = isPeerOnline();
+                syncPeerLastSeen = Date.now();
+                updateSyncUiIndicators();
+                if (!wasConnected && PORTAL_ROLE === 'staff') {
+                    showStaffLiveToast('📱 Owner Phone Connected!', `Paired live to Room ${syncRoomCode} • Ready for live demo`);
+                    playWaiterReadySound();
+                }
+            }
+
+            if (env.type === 'PING') {
+                publishSyncEnvelope('PONG');
+                return;
+            }
+            if (env.type === 'PONG') {
+                return;
+            }
+            if (env.type === 'REQUEST_STATE') {
+                if (PORTAL_ROLE === 'staff') {
+                    publishSyncEnvelope('FULL_STATE', {
+                        state: buildSharedStateSnapshot(),
+                        event: { isHydration: true }
+                    });
+                } else if (PORTAL_ROLE === 'customer' && (activeOrders.length > 0 || syncStateVersion > 0)) {
+                    publishSyncEnvelope('FULL_STATE', {
+                        state: buildSharedStateSnapshot(),
+                        event: { isHydration: true }
+                    });
+                }
+                return;
+            }
+            if (env.type === 'DEMO_RESET') {
+                window.__suppressResetBroadcast = true;
+                try {
+                    resetFullDemo(Boolean(env.fullFactoryWipe));
+                    if (env.state) applySharedStateSnapshot(env.state, { isHydration: true });
+                } finally {
+                    window.__suppressResetBroadcast = false;
+                }
+                if (PORTAL_ROLE === 'customer') {
+                    if ($('customerWaiterBannerText')) {
+                        $('customerWaiterBannerText').textContent = env.fullFactoryWipe
+                            ? '↺ Demo was freshly reset by host — ready for a new walk-through!'
+                            : '↺ Table #04 session was reset — ready for a new order!';
+                    }
+                    toggleModal('customerWaiterBanner', true);
+                }
+                return;
+            }
+            if (env.type === 'FULL_STATE' && env.state) {
+                applySharedStateSnapshot(env.state, env.event || null);
+            }
+        }
+
+        function isPeerOnline() {
+            return syncPeerLastSeen > 0 && (Date.now() - syncPeerLastSeen) < 22000;
+        }
+
+        function updateSyncUiIndicators() {
+            const peerUp = isPeerOnline();
+            if (PORTAL_ROLE === 'staff') {
+                const dot = $('staffSyncDot');
+                const txt = $('staffSyncText');
+                const modalStatus = $('staffModalSyncStatus');
+                const roomBadge = $('staffModalRoomCode');
+                const urlInput = $('staffModalDemoUrl');
+                if (roomBadge) roomBadge.textContent = syncRoomCode;
+                if (urlInput) urlInput.value = getCustomerDemoUrl(syncRoomCode);
+                if (dot && txt) {
+                    if (peerUp) {
+                        dot.className = 'w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse';
+                        txt.textContent = `Room ${syncRoomCode} • Phone Connected`;
+                    } else if (syncBrokerConnected) {
+                        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-300';
+                        txt.textContent = `Room ${syncRoomCode} • Waiting for Phone`;
+                    } else {
+                        dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-300 animate-pulse';
+                        txt.textContent = `Room ${syncRoomCode} • Connecting...`;
+                    }
+                }
+                if (modalStatus) {
+                    modalStatus.className = peerUp
+                        ? 'mt-3 bg-green-50 border border-green-300 text-green-800 rounded-xl px-3 py-2 text-xs font-semibold text-center'
+                        : 'mt-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl px-3 py-2 text-xs font-medium text-center';
+                    modalStatus.textContent = peerUp
+                        ? `✅ Owner's Phone is Connected Live to Room ${syncRoomCode}!`
+                        : (syncBrokerConnected
+                            ? `📡 Live Relay Ready (${MQTT_BROKERS[syncBrokerIndex].name}) — Scan QR on owner's phone`
+                            : '⏳ Connecting to live sync relay...');
+                }
+            } else {
+                const pill = $('customerSyncPill');
+                const dot = $('customerSyncDot');
+                const label = $('customerSyncLabel');
+                const modalState = $('customerPairStatus');
+                if (pill && dot && label) {
+                    if (peerUp) {
+                        pill.className = 'h-8 px-2.5 rounded-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-300 flex items-center gap-1.5 transition cursor-pointer shrink-0 text-[10px] font-semibold';
+                        dot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
+                        label.textContent = 'Live';
+                    } else if (syncRoomCode && syncBrokerConnected) {
+                        pill.className = 'h-8 px-2.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-300 flex items-center gap-1.5 transition cursor-pointer shrink-0 text-[10px] font-semibold';
+                        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+                        label.textContent = syncRoomCode;
+                    } else {
+                        pill.className = 'h-8 px-2.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 border border-slate-300 flex items-center gap-1.5 transition cursor-pointer shrink-0 text-[10px] font-semibold';
+                        dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                        label.textContent = syncRoomCode ? '...' : 'Pair';
+                    }
+                }
+                if (modalState) {
+                    modalState.textContent = peerUp
+                        ? `✅ Synced live with Staff Laptop (Room ${syncRoomCode})`
+                        : (syncRoomCode
+                            ? `📡 Joined Room ${syncRoomCode} — waiting for Staff Portal (/staff)`
+                            : 'Enter the 4-digit Room Code shown on your Staff Laptop.');
+                }
+            }
+        }
+
+        function teardownSyncConnections() {
+            if (syncFailoverTimer) { clearTimeout(syncFailoverTimer); syncFailoverTimer = null; }
+            if (syncHeartbeatTimer) { clearInterval(syncHeartbeatTimer); syncHeartbeatTimer = null; }
+            if (syncBroadcastChannel) {
+                try { syncBroadcastChannel.close(); } catch (e) { }
+                syncBroadcastChannel = null;
+            }
+            if (syncMqttClient) {
+                try { syncMqttClient.end(true); } catch (e) { }
+                syncMqttClient = null;
+            }
+            syncBrokerConnected = false;
+            syncPeerLastSeen = 0;
+        }
+
+        function connectMqttBroker(brokerIdx) {
+            if (!syncRoomCode) return;
+            if (typeof window.mqtt === 'undefined' || !window.mqtt.connect) {
+                updateSyncUiIndicators();
+                return;
+            }
+            syncBrokerIndex = brokerIdx % MQTT_BROKERS.length;
+            const broker = MQTT_BROKERS[syncBrokerIndex];
+            if (syncMqttClient) {
+                try { syncMqttClient.end(true); } catch (e) { }
+            }
+            try {
+                const client = window.mqtt.connect(broker.url, {
+                    clientId: `sas_${SYNC_SENDER_ID}_${Math.floor(Math.random() * 9999)}`,
+                    clean: true,
+                    connectTimeout: 6000,
+                    reconnectPeriod: 3000,
+                    keepalive: 25
+                });
+                syncMqttClient = client;
+
+                if (syncFailoverTimer) clearTimeout(syncFailoverTimer);
+                syncFailoverTimer = setTimeout(() => {
+                    if (!syncBrokerConnected && syncBrokerIndex < MQTT_BROKERS.length - 1) {
+                        connectMqttBroker(syncBrokerIndex + 1);
+                    }
+                }, 6500);
+
+                client.on('connect', () => {
+                    syncBrokerConnected = true;
+                    if (syncFailoverTimer) { clearTimeout(syncFailoverTimer); syncFailoverTimer = null; }
+                    client.subscribe(`searchandservice/rms/v2/room-${syncRoomCode}`, { qos: 0 }, () => {
+                        publishSyncEnvelope('PING');
+                        publishSyncEnvelope('REQUEST_STATE');
+                    });
+                    updateSyncUiIndicators();
+                });
+
+                client.on('message', (_topic, payload) => {
+                    try {
+                        const parsed = JSON.parse(payload.toString());
+                        handleIncomingSyncEnvelope(parsed);
+                    } catch (e) { }
+                });
+
+                client.on('close', () => {
+                    syncBrokerConnected = false;
+                    updateSyncUiIndicators();
+                });
+
+                client.on('error', () => {
+                    syncBrokerConnected = false;
+                    updateSyncUiIndicators();
+                });
+            } catch (e) {
+                syncBrokerConnected = false;
+                updateSyncUiIndicators();
+            }
+        }
+
+        function connectToSyncRoom(roomCode) {
+            const clean = sanitizeRoomCode(roomCode);
+            teardownSyncConnections();
+            syncRoomCode = clean;
+            if (clean) {
+                try { localStorage.setItem(ROOM_STORAGE_KEY, clean); } catch (e) { }
+            }
+            updateSyncUiIndicators();
+            if (!clean) return;
+
+            // 1. Setup instant same-device BroadcastChannel
+            if (typeof BroadcastChannel !== 'undefined') {
+                try {
+                    syncBroadcastChannel = new BroadcastChannel(`rms_sync_room_${clean}`);
+                    syncBroadcastChannel.onmessage = (ev) => handleIncomingSyncEnvelope(ev.data);
+                } catch (e) { }
+            }
+
+            // 2. Setup cross-device MQTT over WSS
+            connectMqttBroker(0);
+
+            // 3. Initial local ping & state request
+            setTimeout(() => {
+                publishSyncEnvelope('PING');
+                publishSyncEnvelope('REQUEST_STATE');
+            }, 250);
+
+            // 4. Keepalive presence heartbeat
+            syncHeartbeatTimer = setInterval(() => {
+                publishSyncEnvelope('PING');
+                updateSyncUiIndicators();
+            }, 7000);
+        }
+
+        function initCrossDeviceSync() {
+            const params = new URLSearchParams(window.location.search);
+            const urlRoom = sanitizeRoomCode(params.get('session') || params.get('room') || '');
+            let savedRoom = '';
+            try { savedRoom = sanitizeRoomCode(localStorage.getItem(ROOM_STORAGE_KEY) || ''); } catch (e) { }
+
+            if (PORTAL_ROLE === 'staff') {
+                const chosenRoom = urlRoom || savedRoom || generateRoomCode();
+                connectToSyncRoom(chosenRoom);
+                // Unlock Web Audio on first user interaction anywhere on the laptop
+                const unlockAudio = () => {
+                    try {
+                        if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+                    } catch (e) { }
+                };
+                document.addEventListener('pointerdown', unlockAudio, { once: true });
+            } else {
+                const chosenRoom = urlRoom || savedRoom || '';
+                if (chosenRoom) {
+                    connectToSyncRoom(chosenRoom);
+                } else {
+                    updateSyncUiIndicators();
+                }
+            }
+        }
+
+        // Staff QR Pairing Modal & Live Toast Helpers
+        function renderStaffQrCode() {
+            const qrWrap = $('staffQrContainer');
+            if (!qrWrap) return;
+            const demoUrl = getCustomerDemoUrl(syncRoomCode);
+            if ($('staffModalDemoUrl')) $('staffModalDemoUrl').value = demoUrl;
+            if ($('staffModalRoomCode')) $('staffModalRoomCode').textContent = syncRoomCode;
+            qrWrap.innerHTML = '';
+            if (typeof window.QRCode !== 'undefined') {
+                try {
+                    new window.QRCode(qrWrap, {
+                        text: demoUrl,
+                        width: 210,
+                        height: 210,
+                        colorDark: '#0B0B0B',
+                        colorLight: '#FFFFFF',
+                        correctLevel: window.QRCode.CorrectLevel.M
+                    });
+                    return;
+                } catch (e) { }
+            }
+            const img = document.createElement('img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(demoUrl)}`;
+            img.alt = 'Scan to open Customer Demo';
+            img.className = 'w-[210px] h-[210px] rounded-xl';
+            qrWrap.appendChild(img);
+        }
+
+        function openStaffPairModal() {
+            renderStaffQrCode();
+            updateSyncUiIndicators();
+            toggleModal('staffPairModal', true);
+        }
+        function closeStaffPairModal() {
+            toggleModal('staffPairModal', false);
+        }
+        function generateNewStaffRoom() {
+            const nextCode = generateRoomCode();
+            connectToSyncRoom(nextCode);
+            renderStaffQrCode();
+            showStaffLiveToast('↻ New Pairing Room Created', `Room ${nextCode} — scan the new QR on the owner's phone`);
+        }
+        function copyStaffDemoLink() {
+            const demoUrl = getCustomerDemoUrl(syncRoomCode);
+            copyTextWithFallback(demoUrl);
+            const btn = $('staffCopyLinkBtn');
+            if (btn) {
+                const oldText = btn.textContent;
+                btn.textContent = '✓ Link Copied!';
+                setTimeout(() => { btn.textContent = oldText; }, 1800);
+            }
+        }
+        function openCustomerDemoTab() {
+            window.open(getCustomerDemoUrl(syncRoomCode), '_blank', 'noopener,noreferrer');
+        }
+
+        function showStaffLiveToast(title, detail = '') {
+            const stack = $('staffToastContainer');
+            if (!stack) return;
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto bg-slate-900 text-white border-l-4 border-orange-500 rounded-2xl px-4 py-3 shadow-xl max-w-xs animate-pop flex items-start justify-between gap-3';
+            toast.innerHTML = `<div class="min-w-0"><p class="text-xs font-semibold text-orange-400 leading-tight">${title}</p>${detail ? `<p class="text-[11px] text-slate-200 mt-1 leading-snug">${detail}</p>` : ''}</div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-xs font-semibold shrink-0 cursor-pointer">✕</button>`;
+            stack.prepend(toast);
+            while (stack.children.length > 4) stack.lastElementChild.remove();
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.25s ease';
+                setTimeout(() => toast.remove(), 260);
+            }, 5200);
+        }
+
+        // Customer Manual Pairing Modal Helpers
+        function openCustomerPairModal() {
+            if ($('customerRoomCodeInput')) $('customerRoomCodeInput').value = syncRoomCode || '';
+            updateSyncUiIndicators();
+            toggleModal('customerPairModal', true);
+        }
+        function closeCustomerPairModal() {
+            toggleModal('customerPairModal', false);
+        }
+        function submitCustomerRoomCode() {
+            const inp = $('customerRoomCodeInput');
+            if (!inp) return;
+            const code = sanitizeRoomCode(inp.value);
+            if (code.length < 4) {
+                if ($('customerPairStatus')) $('customerPairStatus').textContent = '⚠️ Please enter the 4-digit Room Code shown on the Staff Laptop.';
+                return;
+            }
+            connectToSyncRoom(code);
+            // Update URL cleanly without reloading
+            try {
+                const u = new URL(window.location.href);
+                u.searchParams.set('session', code);
+                window.history.replaceState({}, '', u.toString());
+            } catch (e) { }
+            closeCustomerPairModal();
+            if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `📡 Connected to Live Demo Room ${code}!`;
+            toggleModal('customerWaiterBanner', true);
+        }
+
     </script>
 </body>
 

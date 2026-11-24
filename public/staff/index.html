@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Staff & Operations Portal — KDS, Waiter & Admin | Search & Service</title>
+    <title>SwiftMeal POS — Staff & Operations Portal</title>
 
     <link id="siteFavicon" rel="icon"
-        href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23EA580C%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2254%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2234%22%20fill%3D%22%23FFFFFF%22%3ER%3C%2Ftext%3E%3C%2Fsvg%3E" />
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,13 +15,38 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Righteous&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --primary: #fc8019;
+            --primary-dark: #e56b0a;
+            --primary-light: #fff4e6;
+            --secondary: #60b246;
+            --accent: #ff3d6e;
+            --purple: #7b61ff;
+            --blue: #5d8cff;
+            --teal: #00c9a7;
+            --pink: #ff6b9d;
+            --warning: #ffb800;
+            --bg: #f7f7f7;
+            --card: #ffffff;
+            --text: #3d4152;
+            --text-light: #7e808c;
+            --text-lighter: #93959f;
+            --border: #e8e8e8;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 2px 12px rgba(0,0,0,0.07);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #FFFBF7;
-            color: #1E293B;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
             overflow-x: hidden;
         }
@@ -29,21 +54,62 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .orange-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-        .orange-scroll::-webkit-scrollbar-track { background: #FFF7ED; }
-        .orange-scroll::-webkit-scrollbar-thumb { background: #FDBA74; border-radius: 9999px; }
+        .orange-scroll::-webkit-scrollbar-track { background: #f7f7f7; }
+        .orange-scroll::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 9999px; }
+        .orange-scroll::-webkit-scrollbar-thumb:hover { background: #fc8019; }
+
+        .dark-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .dark-scroll::-webkit-scrollbar-track { background: #0f172a; }
+        .dark-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        .dark-scroll::-webkit-scrollbar-thumb:hover { background: #fc8019; }
 
         .portal-frame {
-            height: calc(100vh - 134px);
+            height: calc(100vh - 122px);
             min-height: 620px;
-            max-height: 860px;
-            background-color: #FFFFFF;
-            border-radius: 26px;
-            border: 2px solid #FED7AA;
-            box-shadow: 0 16px 36px -12px rgba(234, 88, 12, 0.12);
+            max-height: 870px;
+            background-color: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
+        }
+        #window-kds.portal-frame {
+            background-color: #0f172a;
+            border-color: #334155;
+            box-shadow: 0 8px 30px rgba(15,23,42,0.22);
+        }
+
+        .sm-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .sm-btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(252,128,25,0.35);
+            transition: all 0.18s ease;
+        }
+        .sm-btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .sm-input {
+            background: #fafafa;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .sm-input:focus {
+            border-color: #fc8019;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(252,128,25,0.1);
+            outline: none;
         }
 
         @keyframes popIn {
@@ -55,7 +121,7 @@
     <script>window.RMS_PORTAL_ROLE = 'staff';</script>
 </head>
 
-<body class="min-h-screen flex flex-col bg-[#FFFBF7] text-slate-800">
+<body class="min-h-screen flex flex-col bg-[#f7f7f7] text-[#3d4152]">
     <svg class="hidden" aria-hidden="true">
         <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6m0 0v6m0-6l-7 7M9 21H3m0 0v-6m0 6l7-7" />
@@ -65,31 +131,38 @@
         </symbol>
     </svg>
 
-    <header class="bg-orange-600 text-white px-4 md:px-6 py-3.5 border-b-2 border-orange-700 sticky top-0 z-50 shadow-sm">
+    <header class="bg-[#0f172a] text-white px-4 md:px-6 py-2.5 border-b border-[#334155] sticky top-0 z-50 shadow-md">
         <div class="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2 bg-[#1e293b] border border-[#334155] px-2.5 py-1.5 rounded-[10px]">
+                    <span class="w-6 h-6 rounded-md bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] flex items-center justify-center text-xs">🍽️</span>
+                    <span class="text-xs font-bold tracking-tight text-white">SwiftMeal <span class="text-[#fc8019]">POS</span></span>
+                </div>
                 <button onclick="resetFullDemo(false)" title="Reset Table #04 Session on Laptop & Phone"
-                    class="bg-white text-orange-600 hover:bg-orange-50 font-semibold text-xs md:text-sm px-3.5 py-2 rounded-xl border-2 border-white shadow-sm transition cursor-pointer shrink-0">↺
-                    Reset Table Session</button>
+                    class="bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] font-semibold text-[11px] px-3 py-1.5 rounded-[10px] transition cursor-pointer shrink-0">↺ Reset Session</button>
                 <button onclick="resetFullDemo(true)" title="Factory Reset Everything on Laptop & Phone"
-                    class="bg-orange-700 hover:bg-orange-800 text-orange-100 font-medium text-[11px] px-3 py-2 rounded-xl border border-orange-400 transition cursor-pointer shrink-0 hidden sm:inline-block">Full
-                    Wipe</button>
+                    class="bg-[#1e293b] hover:bg-[#ff3d6e] text-slate-300 hover:text-white border border-[#334155] font-medium text-[11px] px-2.5 py-1.5 rounded-[10px] transition cursor-pointer shrink-0 hidden sm:inline-block">Full Wipe</button>
             </div>
 
-            <div class="text-center flex-1 min-w-[180px]">
-                <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight leading-tight truncate">
-                    Restaurant Management System</h1>
-                <p class="text-[10px] font-medium text-orange-100 uppercase tracking-wider">KDS • Waiter • Admin Live Operations</p>
+            <div class="flex items-center gap-1.5 bg-[#1e293b] p-1 rounded-xl border border-[#334155]">
+                <button id="staffViewBtn-all" onclick="selectStaffView(null)"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer bg-[#fc8019] text-white shadow-[0_2px_8px_rgba(252,128,25,0.4)]">All Portals</button>
+                <button id="staffViewBtn-kds" onclick="selectStaffView('kds')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer text-[#94a3b8] hover:text-white">👨‍🍳 Kitchen KOT</button>
+                <button id="staffViewBtn-waiter" onclick="selectStaffView('waiter')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer text-[#94a3b8] hover:text-white">🍽️ Waiter</button>
+                <button id="staffViewBtn-admin" onclick="selectStaffView('admin')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer text-[#94a3b8] hover:text-white">📊 Admin</button>
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
                 <button onclick="openStaffPairModal()" title="View Connection Status & QR Code"
-                    class="hidden md:flex items-center gap-2 bg-orange-700/85 hover:bg-orange-800 border border-orange-300 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition cursor-pointer">
+                    class="hidden md:flex items-center gap-2 bg-[#1e293b] hover:bg-[#334155] border border-[#334155] px-3 py-1.5 rounded-[10px] text-[11px] font-medium text-slate-200 transition cursor-pointer">
                     <span id="staffSyncDot" class="w-2.5 h-2.5 rounded-full bg-amber-300"></span>
                     <span id="staffSyncText">Connecting...</span>
                 </button>
                 <button onclick="openStaffPairModal()"
-                    class="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-700 shadow-sm transition cursor-pointer flex items-center gap-1.5 shrink-0">
+                    class="sm-btn-primary font-semibold text-xs px-3.5 py-1.5 rounded-[10px] cursor-pointer flex items-center gap-1.5 shrink-0">
                     <span>📱</span><span>Connect Phone (QR)</span>
                 </button>
             </div>
@@ -99,227 +172,207 @@
     <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 md:px-6 py-4 flex flex-col justify-center">
         <div id="screensGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             <div id="window-kds" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">1. Kitchen Display</span>
-                        <h2 class="text-base font-semibold tracking-tight">KDS — Live KDS</h2>
-                    </div><button onclick="toggleFocusWindow('kds')" title="Enlarge / Restore KDS Screen"
-                        class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                        <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                <use href="#icon-expand" />
-                            </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                <use href="#icon-collapse" />
-                            </svg></span></button>
-                </div>
-                <div
-                    class="bg-orange-50 px-4 py-3 border-b border-orange-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button onclick="setKdsFilter('all')" id="kdsTab-all"
-                            class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-orange-600 text-white cursor-pointer">
-                            All (<span id="kdsCountAll">0</span>) </button><button onclick="setKdsFilter('placed')"
-                            id="kdsTab-placed"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            New (<span id="kdsCountPlaced">0</span>) </button><button onclick="setKdsFilter('cooking')"
-                            id="kdsTab-cooking"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            Cooking (<span id="kdsCountCooking">0</span>) </button><button
-                            onclick="setKdsFilter('ready')" id="kdsTab-ready"
-                            class="px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer">
-                            Ready (<span id="kdsCountReady">0</span>) </button>
-                    </div><span id="kdsAvgPrepMetric" class="text-[11px] font-semibold text-orange-700">Avg Prep:
-                        11m</span>
-                </div>
-                <div id="kdsTicketsContainer" class="flex-1 overflow-y-auto orange-scroll p-4 space-y-3.5 bg-white">
-                </div>
-                <div class="bg-orange-50 border-t-2 border-orange-200 p-4 shrink-0 text-center">
-                    <button onclick="openKdsAvailabilityModal()"
-                        class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 px-4 rounded-xl shadow-sm transition cursor-pointer uppercase tracking-wider">AVAILABILITY
-                        STATUS</button>
-                </div>
-                <div id="kdsAvailabilityModal"
-                    class="hidden absolute inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4">
-                    <div
-                        class="bg-white w-full max-h-[88%] rounded-xl p-5 border border-orange-300 shadow-md relative  flex flex-col">
-                        <div class="flex items-center justify-between border-b border-orange-100 pb-3 mb-3 shrink-0">
-                            <div>
-                                <span
-                                    class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Kitchen
-                                    Stock Control</span>
-                                <h3 class="text-base font-semibold text-slate-900 leading-tight">Dishes Availability
-                                    Status</h3>
-                            </div><button onclick="closeKdsAvailabilityModal()" title="Close Availability Modal"
-                                class="w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-sm flex items-center justify-center border border-orange-300 transition cursor-pointer">✕</button>
+                <div class="bg-[#0f172a] text-white px-5 py-3.5 border-b border-[#334155] flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-[#1e293b] border border-[#334155] flex items-center justify-center text-base">👨‍🍳</span>
+                        <div>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">1. Kitchen KOT</span>
+                            <h2 class="text-sm font-bold tracking-tight text-white">Live Kitchen Display</h2>
                         </div>
-                        <p class="text-[11px] text-slate-500 font-medium mb-3 shrink-0">
-                            Tap any dish ribbon below to toggle its live availability status (Available vs Not
-                            Available):
-                        </p>
-                        <div id="kds86ButtonsGrid"
-                            class="flex-1 overflow-y-auto orange-scroll flex flex-wrap gap-2 content-start pr-1"></div>
-                        <div class="mt-4 pt-3 border-t border-orange-100 shrink-0">
-                            <button onclick="closeKdsAvailabilityModal()"
-                                class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 rounded-xl transition cursor-pointer">Done</button>
+                    </div>
+                    <button onclick="toggleFocusWindow('kds')" title="Enlarge / Restore KDS Screen"
+                        class="w-8 h-8 rounded-lg bg-[#1e293b] hover:bg-[#fc8019] text-[#94a3b8] hover:text-white border border-[#334155] flex items-center justify-center transition cursor-pointer">
+                        <span class="focus-icon-expand"><svg class="w-4 h-4"><use href="#icon-expand" /></svg></span>
+                        <span class="focus-icon-collapse hidden"><svg class="w-4 h-4"><use href="#icon-collapse" /></svg></span>
+                    </button>
+                </div>
+                <div class="bg-[#1e293b] px-4 py-2.5 border-b border-[#334155] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="setKdsFilter('all')" id="kdsTab-all"
+                            class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#fc8019] text-white cursor-pointer">All (<span id="kdsCountAll">0</span>)</button>
+                        <button onclick="setKdsFilter('placed')" id="kdsTab-placed"
+                            class="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-[#0f172a] text-[#f59e0b] border border-[#334155] cursor-pointer">New (<span id="kdsCountPlaced">0</span>)</button>
+                        <button onclick="setKdsFilter('cooking')" id="kdsTab-cooking"
+                            class="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-[#0f172a] text-[#3b82f6] border border-[#334155] cursor-pointer">Cooking (<span id="kdsCountCooking">0</span>)</button>
+                        <button onclick="setKdsFilter('ready')" id="kdsTab-ready"
+                            class="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-[#0f172a] text-[#10b981] border border-[#334155] cursor-pointer">Ready (<span id="kdsCountReady">0</span>)</button>
+                    </div>
+                    <span id="kdsAvgPrepMetric" class="text-[11px] font-semibold text-[#94a3b8]">Avg Prep: 11m</span>
+                </div>
+                <div id="kdsTicketsContainer" class="flex-1 overflow-y-auto dark-scroll p-4 space-y-3 bg-[#0f172a]"></div>
+                <div class="bg-[#1e293b] border-t border-[#334155] p-3.5 shrink-0 text-center">
+                    <button onclick="openKdsAvailabilityModal()"
+                        class="w-full sm-btn-primary font-semibold text-xs py-2.5 px-4 rounded-[10px] cursor-pointer uppercase tracking-wider">Availability Status (86 Menu)</button>
+                </div>
+                <div id="kdsAvailabilityModal" class="hidden absolute inset-0 bg-[#0f172a]/80 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-h-[88%] rounded-[20px] p-5 border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.3)] relative flex flex-col animate-pop">
+                        <div class="flex items-center justify-between border-b border-[#e8e8e8] pb-3 mb-3 shrink-0">
+                            <div>
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">Kitchen Stock Control</span>
+                                <h3 class="text-base font-bold text-[#3d4152] leading-tight">Dishes Availability Status</h3>
+                            </div>
+                            <button onclick="closeKdsAvailabilityModal()" title="Close Availability Modal"
+                                class="w-8 h-8 rounded-full bg-[#f1f5f9] hover:bg-[#ff3d6e] text-[#64748b] hover:text-white font-semibold text-sm flex items-center justify-center transition cursor-pointer">✕</button>
+                        </div>
+                        <p class="text-[11px] text-[#7e808c] font-medium mb-3 shrink-0">Tap any dish ribbon below to toggle live stock status (Available vs Sold Out):</p>
+                        <div id="kds86ButtonsGrid" class="flex-1 overflow-y-auto orange-scroll flex flex-wrap gap-2 content-start pr-1"></div>
+                        <div class="mt-4 pt-3 border-t border-[#e8e8e8] shrink-0">
+                            <button onclick="closeKdsAvailabilityModal()" class="w-full sm-btn-primary font-semibold text-xs py-3 rounded-[10px] cursor-pointer">Done</button>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div id="window-waiter" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">2. Floor Staff Portal</span>
-                        <h2 class="text-base font-semibold tracking-tight">Waiter Portal</h2>
-                    </div><button onclick="toggleFocusWindow('waiter')" title="Enlarge / Restore Waiter Screen"
-                        class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                        <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                <use href="#icon-expand" />
-                            </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                <use href="#icon-collapse" />
-                            </svg></span></button>
-                </div>
-                <div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-white">
-                    <div id="waiterGuestLoyaltyBanner"
-                        class="bg-orange-50 rounded-2xl p-4 border border-orange-200 flex items-center justify-between">
+                <div class="bg-white px-5 py-3.5 border-b border-[#e8e8e8] flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-[#fff4e6] text-[#fc8019] flex items-center justify-center text-base">🍽️</span>
+                        <div>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">2. Floor Staff Portal</span>
+                            <h2 class="text-sm font-bold tracking-tight text-[#3d4152]">Waiter Operations</h2>
+                        </div>
                     </div>
-                    <div class="bg-orange-50 rounded-2xl p-4.5 border border-orange-200">
+                    <button onclick="toggleFocusWindow('waiter')" title="Enlarge / Restore Waiter Screen"
+                        class="w-8 h-8 rounded-lg bg-[#f7f7f7] hover:bg-[#fc8019] text-[#7e808c] hover:text-white border border-[#e8e8e8] flex items-center justify-center transition cursor-pointer">
+                        <span class="focus-icon-expand"><svg class="w-4 h-4"><use href="#icon-expand" /></svg></span>
+                        <span class="focus-icon-collapse hidden"><svg class="w-4 h-4"><use href="#icon-collapse" /></svg></span>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-3.5 bg-[#f7f7f7]">
+                    <div id="waiterGuestLoyaltyBanner" class="sm-card p-3.5 border-l-[5px] border-l-[#7b61ff] flex items-center justify-between"></div>
+                    <div class="sm-card p-3.5 border-l-[5px] border-l-[#ff3d6e]">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-800">🔔 Customer
-                                Table Calls</span><span id="waiterCallCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🔔 Customer Table Calls</span>
+                            <span id="waiterCallCountBadge" class="bg-[#ff3d6e] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="waiterCallsList" class="space-y-2"></div>
                     </div>
-                    <div class="bg-orange-50 rounded-2xl p-4.5 border border-orange-200">
+                    <div class="sm-card p-3.5 border-l-[5px] border-l-[#10b981]">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-800">🍲 Ready Orders
-                                from Kitchen</span><span id="waiterReadyCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🍲 Ready Orders from Kitchen</span>
+                            <span id="waiterReadyCountBadge" class="bg-[#60b246] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                         </div>
                         <div id="waiterReadyOrdersList" class="space-y-2"></div>
                     </div>
-                    <div class="bg-white rounded-2xl p-4.5 border border-orange-300">
+                    <div class="sm-card p-3.5 border-l-[5px] border-l-[#fc8019]">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">📋 Selected
-                                Order & Table Details</span><span
-                                class="text-[10px] font-medium text-orange-600">Waiter: Alex</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">📋 Selected Order & Table Details</span>
+                            <span class="text-[10px] font-semibold bg-[#fff4e6] text-[#fc8019] px-2 py-0.5 rounded-full">Waiter: Alex</span>
                         </div>
                         <div id="waiterSelectedOrderBox"></div>
                     </div>
                 </div>
-                <div
-                    class="bg-orange-50 border-t border-orange-200 px-4 py-3 flex items-center justify-between text-xs shrink-0">
-                    <span class="font-medium text-slate-600">Assigned Zone: <b class="text-orange-700">Tables #01 –
-                            #06</b></span><button onclick="testWaiterSound()"
-                        class="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer">🔊 Test
-                        Beep</button>
+                <div class="bg-white border-t border-[#e8e8e8] px-4 py-2.5 flex items-center justify-between text-xs shrink-0">
+                    <span class="font-medium text-[#7e808c]">Assigned Zone: <b class="text-[#3d4152]">Tables #01 – #06</b></span>
+                    <button onclick="testWaiterSound()" class="text-[11px] font-semibold text-[#fc8019] hover:underline cursor-pointer">🔊 Test Beep</button>
                 </div>
             </div>
+
             <div id="window-admin" class="portal-frame w-full">
-                <div class="bg-orange-600 text-white px-6 py-4 flex items-center justify-between shrink-0">
-                    <div>
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-100 block">3. Admin Portal</span>
-                        <h2 class="text-base font-semibold tracking-tight">Admin Center</h2>
+                <div class="bg-white px-5 py-3.5 border-b border-[#e8e8e8] flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-[#ede9fe] text-[#7b61ff] flex items-center justify-center text-base">📊</span>
+                        <div>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">3. Admin Portal</span>
+                            <h2 class="text-sm font-bold tracking-tight text-[#3d4152]">Admin & Analytics</h2>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button
-                            onclick="switchAdminTab('crm'); if (focusedWindowId !== 'admin') toggleFocusWindow('admin');"
+                        <button onclick="switchAdminTab('crm'); if (focusedWindowId !== 'admin') toggleFocusWindow('admin');"
                             title="Open Fullscreen 9-Column CRM Table"
-                            class="hidden sm:inline-flex items-center gap-2 bg-orange-700/90 hover:bg-orange-800 text-orange-100 border border-orange-300 text-[10px] font-semibold px-3 py-1.5 rounded-xl transition cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg><span>Expand CRM</span></button><button onclick="toggleFocusWindow('admin')"
-                            title="Enlarge / Restore Admin Screen"
-                            class="w-9 h-9 rounded-full bg-white text-orange-600 hover:bg-orange-50 flex items-center justify-center transition cursor-pointer shadow-sm">
-                            <span class="focus-icon-expand"><svg class="w-4 h-4">
-                                    <use href="#icon-expand" />
-                                </svg></span><span class="focus-icon-collapse hidden"><svg class="w-4 h-4">
-                                    <use href="#icon-collapse" />
-                                </svg></span></button>
+                            class="hidden sm:inline-flex items-center gap-1.5 bg-[#fff4e6] hover:bg-[#fc8019] text-[#fc8019] hover:text-white border border-[#fc8019]/30 text-[10px] font-semibold px-2.5 py-1.5 rounded-[10px] transition cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg><span>Expand CRM</span>
+                        </button>
+                        <button onclick="toggleFocusWindow('admin')" title="Enlarge / Restore Admin Screen"
+                            class="w-8 h-8 rounded-lg bg-[#f7f7f7] hover:bg-[#fc8019] text-[#7e808c] hover:text-white border border-[#e8e8e8] flex items-center justify-center transition cursor-pointer">
+                            <span class="focus-icon-expand"><svg class="w-4 h-4"><use href="#icon-expand" /></svg></span>
+                            <span class="focus-icon-collapse hidden"><svg class="w-4 h-4"><use href="#icon-collapse" /></svg></span>
+                        </button>
                     </div>
                 </div>
-                <div
-                    class="bg-orange-50 px-4 py-2 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0">
-                    <div class="grid grid-cols-2 gap-2 p-1 bg-white border border-orange-200 rounded-xl w-full">
+                <div class="bg-white px-4 py-2 border-b border-[#e8e8e8] flex items-center justify-between gap-2 shrink-0">
+                    <div class="grid grid-cols-2 gap-1.5 p-1 bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl w-full">
                         <button id="adminNav-overview" onclick="switchAdminTab('overview')"
-                            class="py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition cursor-pointer bg-orange-600 text-white shadow-sm flex items-center justify-center gap-2">
-                            <span>📊</span><span>Live Overview</span></button><button id="adminNav-crm"
-                            onclick="switchAdminTab('crm')"
-                            class="py-1.5 px-3 rounded-lg text-xs font-medium text-center transition cursor-pointer text-slate-600 hover:text-orange-600 flex items-center justify-center gap-2">
-                            <span>👥</span><span>Customer CRM</span><span id="adminNavCrmCountBadge"
-                                class="bg-orange-100 text-orange-800 text-[10px] font-medium px-1.5 py-0.5 rounded-full">5</span></button>
+                            class="py-1.5 px-3 rounded-[10px] text-xs font-semibold text-center transition cursor-pointer bg-[#fc8019] text-white shadow-[0_3px_10px_rgba(252,128,25,0.3)] flex items-center justify-center gap-2">
+                            <span>📊</span><span>Dashboard</span>
+                        </button>
+                        <button id="adminNav-crm" onclick="switchAdminTab('crm')"
+                            class="py-1.5 px-3 rounded-[10px] text-xs font-medium text-center transition cursor-pointer text-[#7e808c] hover:text-[#fc8019] flex items-center justify-center gap-2">
+                            <span>👥</span><span>Customer CRM</span>
+                            <span id="adminNavCrmCountBadge" class="bg-[#fff4e6] text-[#fc8019] text-[10px] font-semibold px-1.5 py-0.5 rounded-full">5</span>
+                        </button>
                     </div>
                 </div>
-                <div id="adminOverviewView" class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-white">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Live
-                                Sales</span><span id="adminTotalSalesMetric"
-                                class="text-base font-semibold text-orange-600 mt-1 block">$412.00</span>
+                <div id="adminOverviewView" class="flex-1 overflow-y-auto orange-scroll p-4 space-y-3.5 bg-[#f7f7f7]">
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <div class="sm-card p-3 text-center border-t-[3px] border-t-[#fc8019]">
+                            <span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Today's Sales</span>
+                            <span id="adminTotalSalesMetric" class="text-sm font-bold text-[#fc8019] mt-1 block">$412.00</span>
                         </div>
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Active
-                                Orders</span><span id="adminActiveOrdersMetric"
-                                class="text-base font-semibold text-slate-900 mt-1 block">0</span>
+                        <div class="sm-card p-3 text-center border-t-[3px] border-t-[#5d8cff]">
+                            <span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Active Orders</span>
+                            <span id="adminActiveOrdersMetric" class="text-sm font-bold text-[#3d4152] mt-1 block">0</span>
                         </div>
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
-                            <span class="text-[10px] font-semibold uppercase text-slate-500 block">Avg
-                                Rating</span><span id="adminAvgRatingMetric"
-                                class="text-base font-semibold text-orange-600 mt-1 block">4.9 ★</span>
+                        <div class="sm-card p-3 text-center border-t-[3px] border-t-[#60b246]">
+                            <span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Avg Rating</span>
+                            <span id="adminAvgRatingMetric" class="text-sm font-bold text-[#60b246] mt-1 block">4.9 ★</span>
                         </div>
                     </div>
-                    <div class="bg-white border-2 border-orange-200 rounded-2xl p-4.5">
+
+                    <div id="adminOrderPipeline" class="sm-card p-3.5"></div>
+                    <div id="adminSalesPredictionWidget" class="sm-card p-3.5"></div>
+
+                    <div class="sm-card p-3.5">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">🗺️ Live Dining
-                                Room Floor Map</span><span class="text-[10px] font-medium text-orange-600">Tap Any Table
-                                to Inspect</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🗺️ Live Floor Map</span>
+                            <span class="text-[10px] font-semibold text-[#fc8019]">Tap Table to Inspect</span>
                         </div>
                         <div id="adminFloorGrid" class="grid grid-cols-3 gap-2 text-center"></div>
                         <div id="adminTableInspectorBox" class="mt-2.5"></div>
                     </div>
-                    <div class="bg-orange-50/70 border border-orange-200 rounded-2xl p-4.5">
+
+                    <div id="adminTopSellersBox" class="sm-card p-3.5"></div>
+
+                    <div class="sm-card p-3.5">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-900">🎁 Loyalty &
-                                Repeat CRM</span><button onclick="switchAdminTab('crm')"
-                                class="text-[10px] font-semibold bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-lg transition cursor-pointer shadow-sm">Open
-                                CRM Table →</button>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🎁 Loyalty & Repeat CRM</span>
+                            <button onclick="switchAdminTab('crm')" class="text-[10px] font-semibold bg-[#fc8019] hover:bg-[#e56b0a] text-white px-2.5 py-1 rounded-lg transition cursor-pointer">CRM Table →</button>
                         </div>
                         <div id="adminLoyaltySummaryBox" class="text-xs space-y-1.5"></div>
                     </div>
-                    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4.5">
+
+                    <div class="sm-card p-3.5">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-orange-900">⭐ Customer
-                                Reviews & Feedback</span><span id="adminReviewCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">1</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">⭐ Reviews & Feedback</span>
+                            <span id="adminReviewCountBadge" class="bg-[#ffb800] text-[#3d2e00] text-[10px] font-bold px-2 py-0.5 rounded-full">1</span>
                         </div>
                         <div id="adminReviewsFeed" class="space-y-2 max-h-36 overflow-y-auto orange-scroll"></div>
                     </div>
-                    <div class="bg-white border-2 border-orange-200 rounded-2xl p-4.5">
+
+                    <div class="sm-card p-3.5">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-800">🚫 Dishes
-                                Availability (Unavailable)</span><span id="adminUnavailableCountBadge"
-                                class="bg-orange-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">⚠️ Dishes Stock / 86 Alert</span>
+                            <span id="adminUnavailableCountBadge" class="bg-[#ef4444] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                         </div>
-                        <div id="adminUnavailableDishesList"
-                            class="flex flex-wrap gap-2 max-h-36 overflow-y-auto orange-scroll"></div>
+                        <div id="adminUnavailableDishesList" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto orange-scroll"></div>
                     </div>
                 </div>
+
                 <div id="adminCrmView" class="hidden flex-1 flex flex-col overflow-hidden bg-white">
-                    <div class="p-4.5 bg-orange-50/60 border-b border-orange-200 space-y-2.5 shrink-0">
+                    <div class="p-4 bg-[#f7f7f7] border-b border-[#e8e8e8] space-y-2.5 shrink-0">
                         <div id="adminCrmKpiStrip" class="grid grid-cols-4 gap-2"></div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <div
-                                class="flex-1 min-w-[150px] flex items-center gap-2 bg-white border border-orange-200 rounded-xl px-3 py-1.5">
-                                <svg class="w-3.5 h-3.5 text-orange-500 shrink-0" fill="none" stroke="currentColor"
-                                    stroke-width="2.2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            <div class="flex-1 min-w-[150px] flex items-center gap-2 bg-[#fafafa] border-2 border-[#e8e8e8] focus-within:border-[#fc8019] focus-within:bg-white rounded-[10px] px-3 py-1.5">
+                                <svg class="w-3.5 h-3.5 text-[#7e808c] shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input id="crmSearchInput" type="text" oninput="handleCrmSearch(this.value)"
-                                    placeholder="Search guest, phone, dish, tag..."
-                                    class="w-full text-[11px] font-semibold text-slate-800 placeholder-slate-400 focus:outline-none bg-transparent" />
+                                <input id="crmSearchInput" type="text" oninput="handleCrmSearch(this.value)" placeholder="Search guest, phone, dish, tag..."
+                                    class="w-full text-[11px] font-medium text-[#3d4152] placeholder-[#93959f] focus:outline-none bg-transparent" />
                             </div>
                             <select id="crmSortSelect" onchange="handleCrmSortChange(this.value)"
-                                class="bg-white border border-orange-200 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:border-orange-500 cursor-pointer">
+                                class="sm-input px-3 py-1.5 text-[11px] font-semibold text-[#3d4152] cursor-pointer">
                                 <option value="spend_desc">Sort: Lifetime Spend ↓</option>
                                 <option value="aov_desc">Sort: Avg Order Value ↓</option>
                                 <option value="orders_desc">Sort: Total Orders ↓</option>
@@ -327,95 +380,68 @@
                                 <option value="recent">Sort: Recent Visit</option>
                             </select>
                         </div>
-                        <div id="crmSegmentFilterBar"
-                            class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"></div>
+                        <div id="crmSegmentFilterBar" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"></div>
                     </div>
                     <div class="flex-1 overflow-auto orange-scroll">
                         <table class="w-full text-left border-collapse min-w-[920px]">
-                            <thead
-                                class="bg-slate-900 text-white sticky top-0 z-10 text-[10px] font-semibold uppercase tracking-wider">
+                            <thead class="bg-[#0f172a] text-white sticky top-0 z-10 text-[10px] font-semibold uppercase tracking-wider">
                                 <tr>
-                                    <th class="py-3 px-3 border-b border-slate-800">Guest Name</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Segment</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-center">Total Orders</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Lifetime Spend</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Avg Order Value</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Last Visit</th>
-                                    <th class="py-3 px-3 border-b border-slate-800">Favorite Dish</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-right">Loyalty Points</th>
-                                    <th class="py-3 px-3 border-b border-slate-800 text-center">Profile and History
-                                    </th>
+                                    <th class="py-3 px-3 border-b border-[#334155]">Guest Name</th>
+                                    <th class="py-3 px-3 border-b border-[#334155]">Segment</th>
+                                    <th class="py-3 px-3 border-b border-[#334155] text-center">Total Orders</th>
+                                    <th class="py-3 px-3 border-b border-[#334155] text-right">Lifetime Spend</th>
+                                    <th class="py-3 px-3 border-b border-[#334155] text-right">Avg Order Value</th>
+                                    <th class="py-3 px-3 border-b border-[#334155]">Last Visit</th>
+                                    <th class="py-3 px-3 border-b border-[#334155]">Favorite Dish</th>
+                                    <th class="py-3 px-3 border-b border-[#334155] text-right">Loyalty Points</th>
+                                    <th class="py-3 px-3 border-b border-[#334155] text-center">Profile & Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="adminCrmTableBody" class="divide-y divide-orange-100 text-xs"></tbody>
+                            <tbody id="adminCrmTableBody" class="divide-y divide-[#e8e8e8] text-xs"></tbody>
                         </table>
                     </div>
-                    <div
-                        class="bg-orange-50/80 border-t border-orange-200 px-4 py-2 flex items-center justify-between text-[10px] text-slate-600 shrink-0">
-                        <span>💡 <b>Tip:</b> Scroll horizontally or tap the <b>Expand (↗)</b> icon top-right for full
-                            widescreen CRM view.</span><span id="crmShowingCountLabel"
-                            class="font-semibold text-orange-700">Showing 5 Guests</span>
+                    <div class="bg-[#f7f7f7] border-t border-[#e8e8e8] px-4 py-2 flex items-center justify-between text-[10px] text-[#7e808c] shrink-0">
+                        <span>💡 <b>Tip:</b> Scroll horizontally or tap <b>Expand CRM</b> top-right for full widescreen CRM view.</span>
+                        <span id="crmShowingCountLabel" class="font-semibold text-[#fc8019]">Showing 5 Guests</span>
                     </div>
                 </div>
-                <div class="bg-orange-50 border-t-2 border-orange-200 p-4 shrink-0">
+
+                <div class="bg-white border-t border-[#e8e8e8] p-3.5 shrink-0">
                     <button onclick="openSalesImpactPopup()"
-                        class="w-full bg-orange-600 hover:bg-orange-700  text-white font-semibold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
-                        <span>📊 See how this impacts the sales volumes</span></button>
+                        class="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-semibold text-xs py-2.5 px-4 rounded-[10px] shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
+                        <span>📈</span><span>View Sales Impact & Owner ROI Report</span>
+                    </button>
                 </div>
-                <div id="adminCrmProfileModal"
-                    class="hidden absolute inset-0 bg-slate-900/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 sm:p-4">
-                    <div id="adminCrmProfileModalContent"
-                        class="bg-white w-full max-w-2xl max-h-[94%] rounded-xl border border-orange-300 shadow-md overflow-hidden flex flex-col ">
-                    </div>
+
+                <div id="adminCrmProfileModal" class="hidden absolute inset-0 bg-[#0f172a]/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+                    <div id="adminCrmProfileModalContent" class="bg-white w-full max-w-2xl max-h-[94%] rounded-[20px] border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col animate-pop"></div>
                 </div>
-                <div id="adminSalesImpactPopup"
-                    class="hidden absolute inset-0 bg-slate-900/65 z-50 flex items-center justify-center p-4">
-                    <div
-                        class="bg-white w-full max-h-[92%] overflow-y-auto orange-scroll rounded-xl p-5 border border-orange-300 shadow-md relative ">
+
+                <div id="adminSalesImpactPopup" class="hidden absolute inset-0 bg-[#0f172a]/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+                    <div class="bg-white w-full max-h-[92%] overflow-y-auto orange-scroll rounded-[20px] p-5 border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.25)] relative animate-pop">
                         <button onclick="closeSalesImpactPopup()" title="Close Impact Popup"
-                            class="absolute top-4.5 right-3.5 w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-sm flex items-center justify-center border border-orange-300 transition cursor-pointer">✕</button><span
-                            class="bg-orange-100 text-orange-700 text-[10px] font-semibold px-3 py-1 rounded-full uppercase">Sales
-                            Volume & Loyalty ROI Report</span>
-                        <h3 class="text-base font-semibold text-slate-900 mt-2">Revenue & Owner Margin Breakdown</h3>
-                        <div class="mt-3 bg-orange-50 border border-orange-200 rounded-2xl p-4.5">
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-700">Extra Value
-                                Created (Live Demo Session)</span>
-                            <p class="text-2xl font-semibold text-orange-600 mt-1">
-                                +$<span id="popupSessionExtraValue">0.00</span></p>
-                            <ul id="popupSessionValueList"
-                                class="mt-2 space-y-1 text-[11px] text-slate-700 font-medium max-h-24 overflow-y-auto orange-scroll">
-                                <li class="text-slate-400 italic">Place an order or accept upsell deals to see live
-                                    value...</li>
+                            class="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#f1f5f9] hover:bg-[#ff3d6e] text-[#64748b] hover:text-white font-semibold text-sm flex items-center justify-center transition cursor-pointer">✕</button>
+                        <span class="bg-[#fff4e6] text-[#fc8019] text-[10px] font-semibold px-3 py-1 rounded-full uppercase">Sales Volume & Loyalty ROI Report</span>
+                        <h3 class="text-base font-bold text-[#3d4152] mt-2">Revenue & Owner Margin Breakdown</h3>
+                        <div class="mt-3 bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl p-4">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019]">Extra Value Created (Live Demo Session)</span>
+                            <p class="text-2xl font-bold text-[#60b246] mt-1">+$<span id="popupSessionExtraValue">0.00</span></p>
+                            <ul id="popupSessionValueList" class="mt-2 space-y-1 text-[11px] text-[#3d4152] font-medium max-h-24 overflow-y-auto orange-scroll">
+                                <li class="text-[#93959f] italic">Place an order or accept upsell deals to see live value...</li>
                             </ul>
                         </div>
-                        <div class="mt-3 bg-white border-2 border-orange-200 rounded-2xl p-4.5">
-                            <h4 class="text-xs font-semibold text-slate-900 mb-2">Projected Monthly Impact (25
-                                Tables/Day)</h4>
+                        <div class="mt-3 sm-card p-4">
+                            <h4 class="text-xs font-semibold text-[#3d4152] mb-2">Projected Monthly Impact (25 Tables/Day)</h4>
                             <div class="space-y-1.5 text-xs">
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Smart Discount Pairing Upsells</span><span
-                                        class="font-semibold text-orange-600">+$1,530 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Loyalty Repeat Visits (+7% to 30%
-                                        retention)</span><span class="font-semibold text-orange-600">+$2,150 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">12-Min Faster Table Turnovers</span><span
-                                        class="font-semibold text-orange-600">+$1,200 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1 border-b border-orange-100">
-                                    <span class="text-slate-600">Waitstaff Efficiency & Labor Saved</span><span
-                                        class="font-semibold text-orange-600">+$1,800 / mo</span>
-                                </div>
-                                <div class="flex justify-between py-1">
-                                    <span class="text-slate-600">Owner Loyalty Reward COGS (~1.5% food cost)</span><span
-                                        class="font-semibold text-slate-500">−$310 / mo</span>
-                                </div>
+                                <div class="flex justify-between py-1 border-b border-[#e8e8e8]"><span class="text-[#7e808c]">Smart Discount Pairing Upsells</span><span class="font-semibold text-[#fc8019]">+$1,530 / mo</span></div>
+                                <div class="flex justify-between py-1 border-b border-[#e8e8e8]"><span class="text-[#7e808c]">Loyalty Repeat Visits (+7% to 30% retention)</span><span class="font-semibold text-[#fc8019]">+$2,150 / mo</span></div>
+                                <div class="flex justify-between py-1 border-b border-[#e8e8e8]"><span class="text-[#7e808c]">12-Min Faster Table Turnovers</span><span class="font-semibold text-[#fc8019]">+$1,200 / mo</span></div>
+                                <div class="flex justify-between py-1 border-b border-[#e8e8e8]"><span class="text-[#7e808c]">Waitstaff Efficiency & Labor Saved</span><span class="font-semibold text-[#fc8019]">+$1,800 / mo</span></div>
+                                <div class="flex justify-between py-1"><span class="text-[#7e808c]">Owner Loyalty Reward COGS (~1.5% food cost)</span><span class="font-semibold text-[#7e808c]">−$310 / mo</span></div>
                             </div>
-                            <div class="mt-2.5 pt-2 border-t-2 border-orange-200 flex justify-between items-center">
-                                <span class="text-xs font-semibold text-slate-900">Net Monthly Profit Lift:</span><span
-                                    class="text-base font-semibold text-orange-600">+$6,370 / mo</span>
+                            <div class="mt-2.5 pt-2.5 border-t border-[#e8e8e8] flex justify-between items-center">
+                                <span class="text-xs font-bold text-[#3d4152]">Net Monthly Profit Lift:</span>
+                                <span class="text-base font-bold text-[#60b246]">+$6,370 / mo</span>
                             </div>
                         </div>
                     </div>
@@ -424,64 +450,50 @@
         </div>
     </main>
 
-    <footer class="py-2.5 px-4 text-center border-t border-orange-100 bg-white">
-        <p class="text-xs font-medium text-slate-500">
-            Staff Operations Portal • Prototype demo developed by <span class="text-orange-600 font-semibold">Search &amp; Service</span></p>
+    <footer class="py-2 px-4 text-center border-t border-[#e8e8e8] bg-white">
+        <p class="text-xs font-medium text-[#7e808c]">
+            SwiftMeal POS Operations • Developed by <span class="text-[#fc8019] font-semibold">Search &amp; Service</span>
+        </p>
     </footer>
 
-    <!-- Live Incoming Phone Activity Toasts -->
     <div id="staffToastContainer" class="fixed bottom-5 right-5 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Staff QR Pairing Modal -->
-    <div id="staffPairModal"
-        class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 border-2 border-orange-300 shadow-2xl animate-pop">
-            <div class="flex items-center justify-between border-b border-orange-100 pb-3 mb-4">
+    <div id="staffPairModal" class="hidden fixed inset-0 bg-[#0f172a]/70 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[20px] p-6 border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.28)] animate-pop">
+            <div class="flex items-center justify-between border-b border-[#e8e8e8] pb-3 mb-4">
                 <div>
-                    <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 block">Live Demo Mode</span>
-                    <h3 class="text-lg font-bold text-slate-900 leading-tight">Pair Owner's Phone to Laptop</h3>
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">Live Demo Mode</span>
+                    <h3 class="text-lg font-bold text-[#3d4152] leading-tight">Pair Owner's Phone to Laptop</h3>
                 </div>
-                <button onclick="closeStaffPairModal()"
-                    class="w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-600 text-orange-700 hover:text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer">✕</button>
+                <button onclick="closeStaffPairModal()" class="w-8 h-8 rounded-full bg-[#f1f5f9] hover:bg-[#ff3d6e] text-[#64748b] hover:text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer">✕</button>
             </div>
-
-            <p class="text-xs text-slate-600 leading-relaxed mb-4">
-                Have the restaurant owner scan this QR code with their phone camera. It opens <b class="text-orange-600">/demo</b> paired directly to this laptop so every tap updates your KDS, Waiter, and Admin portals live.
+            <p class="text-xs text-[#7e808c] leading-relaxed mb-4">
+                Have the restaurant owner scan this QR code with their phone camera. It opens <b class="text-[#fc8019]">/demo</b> paired directly to this laptop so every tap updates your Kitchen KOT, Waiter, and Admin portals live.
             </p>
-
-            <div class="flex flex-col items-center justify-center bg-orange-50/70 border-2 border-orange-200 rounded-2xl p-4">
-                <div id="staffQrContainer" class="bg-white p-3 rounded-2xl border border-orange-200 shadow-sm flex items-center justify-center min-w-[234px] min-h-[234px]"></div>
+            <div class="flex flex-col items-center justify-center bg-[#f7f7f7] border border-[#e8e8e8] rounded-2xl p-4">
+                <div id="staffQrContainer" class="bg-white p-3 rounded-xl border border-[#e8e8e8] shadow-sm flex items-center justify-center min-w-[234px] min-h-[234px]"></div>
                 <div class="mt-3 flex items-center gap-2">
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Room Code:</span>
-                    <span id="staffModalRoomCode" class="text-lg font-extrabold tracking-widest text-orange-600 bg-white border border-orange-300 px-3 py-0.5 rounded-xl">----</span>
-                    <button onclick="generateNewStaffRoom()" title="Generate a fresh Room Code"
-                        class="text-[11px] font-semibold bg-white hover:bg-orange-100 text-slate-700 border border-orange-200 px-2.5 py-1 rounded-xl transition cursor-pointer">↻ New</button>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-[#7e808c]">Room Code:</span>
+                    <span id="staffModalRoomCode" class="text-lg font-bold tracking-widest text-[#fc8019] bg-white border border-[#e8e8e8] px-3 py-0.5 rounded-xl">----</span>
+                    <button onclick="generateNewStaffRoom()" title="Generate a fresh Room Code" class="text-[11px] font-semibold bg-white hover:bg-[#fff4e6] text-[#3d4152] border border-[#e8e8e8] px-2.5 py-1 rounded-lg transition cursor-pointer">↻ New</button>
                 </div>
             </div>
-
-            <div id="staffModalSyncStatus" class="mt-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl px-3 py-2 text-xs font-medium text-center">
+            <div id="staffModalSyncStatus" class="mt-3 bg-[#fff4e6] border border-[#fc8019]/25 text-[#fc8019] rounded-xl px-3 py-2 text-xs font-medium text-center">
                 Connecting to live sync relay...
             </div>
-
             <div class="mt-3">
-                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Direct Paired Customer Link</label>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-[#7e808c] mb-1">Direct Paired Customer Link</label>
                 <div class="flex items-center gap-2">
-                    <input id="staffModalDemoUrl" type="text" readonly
-                        class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-700 focus:outline-none" />
-                    <button id="staffCopyLinkBtn" onclick="copyStaffDemoLink()"
-                        class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">Copy Link</button>
+                    <input id="staffModalDemoUrl" type="text" readonly class="flex-1 sm-input px-3 py-2 text-[11px] font-mono text-[#3d4152]" />
+                    <button id="staffCopyLinkBtn" onclick="copyStaffDemoLink()" class="sm-btn-primary font-semibold text-xs px-3.5 py-2 rounded-[10px] cursor-pointer shrink-0">Copy Link</button>
                 </div>
             </div>
-
-            <div class="mt-4 pt-3 border-t border-orange-100 flex items-center justify-between gap-2">
-                <button onclick="openCustomerDemoTab()"
-                    class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-semibold text-xs py-2.5 rounded-xl transition cursor-pointer">↗ Test /demo in New Tab</button>
-                <button onclick="closeStaffPairModal()"
-                    class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2.5 rounded-xl transition cursor-pointer">Done</button>
+            <div class="mt-4 pt-3 border-t border-[#e8e8e8] flex items-center justify-between gap-2">
+                <button onclick="openCustomerDemoTab()" class="flex-1 bg-[#fff4e6] hover:bg-[#ffebd6] text-[#fc8019] border border-[#fc8019]/25 font-semibold text-xs py-2.5 rounded-[10px] transition cursor-pointer">↗ Test /demo in New Tab</button>
+                <button onclick="closeStaffPairModal()" class="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white font-semibold text-xs py-2.5 rounded-[10px] transition cursor-pointer">Done</button>
             </div>
         </div>
     </div>
-
     <script>
 
         const $ = id => document.getElementById(id);
@@ -746,11 +758,11 @@
         // Compute RFM Segment & Badge Styling for the CRM Table
         function getCustomerCrmSegment(profile) {
             const orders = Math.max(1, profile.visits || 1), spend = Number(profile.lifetimeSpend || 0), aov = spend / orders, daysAgo = Number(profile.lastVisitDaysAgo || 0);
-            if (daysAgo >= 30 && orders >= 2) return { key: 'AT_RISK', label: '⚠️ At-Risk (Slipping)', shortLabel: '⚠️ At-Risk', badgeClass: 'bg-rose-100 text-rose-800 border-rose-300', description: 'No visit in 30+ days • Prime candidate for Win-Back Bonus' };
-            if (orders >= 8 && spend >= 250) return { key: 'VIP_CHAMPION', label: '👑 VIP Champion', shortLabel: '👑 VIP Champion', badgeClass: 'bg-amber-100 text-amber-900 border-amber-300', description: 'Top-decile repeat frequency & lifetime spend' };
-            if (aov >= 50 || spend >= 380) return { key: 'HIGH_ROLLER', label: '💎 High Roller', shortLabel: '💎 High Roller', badgeClass: 'bg-purple-100 text-purple-900 border-purple-300', description: 'High average check size ($50+ AOV) • Premium Steaks & Bar' };
-            if (orders >= 3) return { key: 'LOYAL_REGULAR', label: '🔥 Loyal Regular', shortLabel: '🔥 Loyal Regular', badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300', description: 'Consistent multi-visit guest building tier momentum' };
-            return { key: 'NEW_GUEST', label: '🌱 New Guest', shortLabel: '🌱 New Guest', badgeClass: 'bg-sky-100 text-sky-900 border-sky-300', description: 'Recently enrolled • Nurture toward 2nd & 3rd visit' };
+            if (daysAgo >= 30 && orders >= 2) return { key: 'AT_RISK', label: '⚠️ At-Risk (Slipping)', shortLabel: '⚠️ At-Risk', badgeClass: 'bg-[#fee2e2] text-[#991b1b] border-[#fca5a5]', description: 'No visit in 30+ days • Prime candidate for Win-Back Bonus' };
+            if (orders >= 8 && spend >= 250) return { key: 'VIP_CHAMPION', label: '👑 VIP Champion', shortLabel: '👑 VIP Champion', badgeClass: 'bg-[#fef3c7] text-[#92400e] border-[#fcd34d]', description: 'Top-decile repeat frequency & lifetime spend' };
+            if (aov >= 50 || spend >= 380) return { key: 'HIGH_ROLLER', label: '💎 High Roller', shortLabel: '💎 High Roller', badgeClass: 'bg-[#ede9fe] text-[#5b21b6] border-[#c4b5fd]', description: 'High average check size ($50+ AOV) • Premium Steaks & Bar' };
+            if (orders >= 3) return { key: 'LOYAL_REGULAR', label: '🔥 Loyal Regular', shortLabel: '🔥 Loyal Regular', badgeClass: 'bg-[#d1fae5] text-[#065f46] border-[#6ee7b7]', description: 'Consistent multi-visit guest building tier momentum' };
+            return { key: 'NEW_GUEST', label: '🌱 New Guest', shortLabel: '🌱 New Guest', badgeClass: 'bg-[#dbeafe] text-[#1e40af] border-[#93c5fd]', description: 'Recently enrolled • Nurture toward 2nd & 3rd visit' };
         }
         function getActiveCustomer() { return loyaltyProfiles[activeLoyaltyPhone] || Object.values(loyaltyProfiles)[0]; }
         // Audit Fix #3: Resolve the customer profile bound to a specific order (prevents mid-order profile switch desync)
@@ -759,9 +771,9 @@
             return getActiveCustomer();
         }
         function getCustomerTierInfo(lifetimePts) {
-            if (lifetimePts >= 1500) return { name: 'Gold VIP', icon: '🥇', ptsPerDollar: 7.5, effectiveReturn: '7.5%', badgeClass: 'bg-amber-100 text-amber-900 border-amber-300', nextTierName: 'Max Tier Reached', nextTierTarget: 1500, perk: '7.5 pts/$1 (1.5x) + Priority Kitchen Prep' };
-            if (lifetimePts >= 500) return { name: 'Silver Regular', icon: 'Silver', ptsPerDollar: 6.0, effectiveReturn: '6.0%', badgeClass: 'bg-slate-200 text-slate-800 border-slate-300', nextTierName: 'Gold VIP', nextTierTarget: 1500, perk: '6 pts/$1 (1.2x) + Birthday Dessert' };
-            return { name: 'Bronze Member', icon: 'Bronze', ptsPerDollar: 5.0, effectiveReturn: '5.0%', badgeClass: 'bg-orange-100 text-orange-900 border-orange-300', nextTierName: 'Silver Regular', nextTierTarget: 500, perk: '5 pts/$1 (5% return) + Member Deals' };
+            if (lifetimePts >= 1500) return { name: 'Gold VIP', icon: '🥇', ptsPerDollar: 7.5, effectiveReturn: '7.5%', badgeClass: 'bg-[#fef3c7] text-[#92400e] border-[#fcd34d]', nextTierName: 'Max Tier Reached', nextTierTarget: 1500, perk: '7.5 pts/$1 (1.5x) + Priority Kitchen Prep' };
+            if (lifetimePts >= 500) return { name: 'Silver Regular', icon: '🥈', ptsPerDollar: 6.0, effectiveReturn: '6.0%', badgeClass: 'bg-[#f3f4f6] text-[#374151] border-[#d1d5db]', nextTierName: 'Gold VIP', nextTierTarget: 1500, perk: '6 pts/$1 (1.2x) + Birthday Dessert' };
+            return { name: 'Bronze Member', icon: '🥉', ptsPerDollar: 5.0, effectiveReturn: '5.0%', badgeClass: 'bg-[#fde68a] text-[#78350f] border-[#f59e0b]', nextTierName: 'Silver Regular', nextTierTarget: 500, perk: '5 pts/$1 (5% return) + Member Deals' };
         }
         function calculatePointsForAmount(dollarAmount, custOverride = null) {
             const cust = custOverride || getActiveCustomer();
@@ -857,12 +869,12 @@
         ];
         // Audit Fix #6: Enriched Floor Tables with Interactive Inspector Metadata
         const getInitialFloorTables = () => [
-            { number: '01', status: 'Dining ($68)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Marcus Vance (Party of 2)', server: 'Alex', billAmount: 68.00, notes: 'Ordered BBQ Baby Back Ribs & Craft Beer' },
-            { number: '02', status: 'Available', badgeClass: 'bg-white border-slate-200 text-slate-400', guestName: 'Open Table (4-Top Booth)', server: 'Alex', billAmount: 0.00, notes: 'Sanitized & ready for next walk-in' },
-            { number: '03', status: 'Paying ($94)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Elena & David R.', server: 'Alex', billAmount: 94.00, notes: 'Reviewing itemized check via QR' },
-            { number: '04', status: 'Browsing Menu', badgeClass: 'bg-orange-600 border-orange-700 text-white', guestName: 'Live Demo Table #04', server: 'Alex', billAmount: 0.00, notes: 'Synced live with Customer Mobile App' },
-            { number: '05', status: 'Available', badgeClass: 'bg-white border-slate-200 text-slate-400', guestName: 'Open Table (2-Top Window)', server: 'Maya', billAmount: 0.00, notes: 'Reserved for 7:30 PM VIP' },
-            { number: '06', status: 'Dining ($52)', badgeClass: 'bg-orange-50 border-orange-200 text-slate-700', guestName: 'Alex Rivera', server: 'Maya', billAmount: 52.00, notes: 'Main course served 14 mins ago' }
+            { number: '01', status: 'Dining ($68)', badgeClass: 'bg-[#fef2f2] border-[#fca5a5] text-[#991b1b]', guestName: 'Marcus Vance (Party of 2)', server: 'Alex', billAmount: 68.00, notes: 'Ordered BBQ Baby Back Ribs & Craft Beer' },
+            { number: '02', status: 'Available', badgeClass: 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', guestName: 'Open Table (4-Top Booth)', server: 'Alex', billAmount: 0.00, notes: 'Sanitized & ready for next walk-in' },
+            { number: '03', status: 'Paying ($94)', badgeClass: 'bg-[#fef3c7] border-[#fcd34d] text-[#92400e]', guestName: 'Elena & David R.', server: 'Alex', billAmount: 94.00, notes: 'Reviewing itemized check via QR' },
+            { number: '04', status: 'Browsing Menu', badgeClass: 'bg-[#fff4e6] border-[#fc8019] text-[#fc8019]', guestName: 'Live Demo Table #04', server: 'Alex', billAmount: 0.00, notes: 'Synced with Customer Phone App (/demo)' },
+            { number: '05', status: 'Reserved', badgeClass: 'bg-[#fef3c7] border-[#fcd34d] text-[#92400e]', guestName: 'Open Table (2-Top Window)', server: 'Maya', billAmount: 0.00, notes: 'Reserved for 7:30 PM VIP' },
+            { number: '06', status: 'Dining ($52)', badgeClass: 'bg-[#fef2f2] border-[#fca5a5] text-[#991b1b]', guestName: 'Alex Rivera', server: 'Maya', billAmount: 52.00, notes: 'Main course served 14 mins ago' }
         ];
         let floorTables = getInitialFloorTables();
         let selectedAdminTableNumber = '04';
@@ -948,7 +960,7 @@
             const allKeys = ['kds', 'waiter', 'admin'];
             const grid = $('screensGrid');
             if (!grid) return;
-            const isRestoring = focusedWindowId === windowKey;
+            const isRestoring = focusedWindowId === windowKey || !windowKey;
             focusedWindowId = isRestoring ? null : windowKey;
             grid.className = isRestoring ? 'grid grid-cols-1 lg:grid-cols-3 gap-5 items-start' : 'flex justify-center items-start w-full';
             allKeys.forEach(k => {
@@ -962,6 +974,24 @@
                 el.querySelectorAll('.focus-icon-expand').forEach(i => i.classList.toggle('hidden', isTarget));
                 el.querySelectorAll('.focus-icon-collapse').forEach(i => i.classList.toggle('hidden', !isTarget));
             });
+            ['all', 'kds', 'waiter', 'admin'].forEach(k => {
+                const btn = $(`staffViewBtn-${k}`);
+                if (!btn) return;
+                const active = (focusedWindowId === null && k === 'all') || focusedWindowId === k;
+                btn.className = active
+                    ? 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer bg-[#fc8019] text-white shadow-[0_2px_8px_rgba(252,128,25,0.4)]'
+                    : 'px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer text-[#94a3b8] hover:text-white';
+            });
+        }
+        function selectStaffView(targetKey) {
+            if (!targetKey) {
+                if (focusedWindowId) toggleFocusWindow(focusedWindowId);
+                return;
+            }
+            if (focusedWindowId !== targetKey) {
+                if (focusedWindowId) focusedWindowId = null;
+                toggleFocusWindow(targetKey);
+            }
         }
         // 7. CUSTOMER HEADER LOYALTY PILL & REWARDS VIEW RENDERING
         function renderHeaderLoyaltyPill() {
@@ -1502,7 +1532,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             updateMobileSelectionBadges();
             renderMobileDishCards();
             const updatedOrder = activeOrders.find(o => o.id === currentCustomerOrderId);
-            updateFloorTableStatus('04', existingOrder ? `Add-On Batch #${nextBatchNum}` : 'Order in Kitchen', 'bg-orange-600 border-orange-700 text-white', {
+            updateFloorTableStatus('04', existingOrder ? `Add-On Batch #${nextBatchNum}` : 'Order in Kitchen', 'bg-[#fc8019] border-[#e56b0a] text-white', {
                 guestName: cust ? cust.name : 'Guest', billAmount: updatedOrder ? updatedOrder.total : orderSubtotal,
                 notes: `Order #${currentCustomerOrderId} in kitchen (${updatedOrder ? updatedOrder.items.length : itemsArray.length} line items)`
             });
@@ -1656,7 +1686,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `🔔 Sent "${requestType}" to Waiter's Portal!`;
                 toggleModal('customerWaiterBanner', true);
             }
-            updateFloorTableStatus(tableNum, `Call: ${requestType}`, 'bg-orange-600 border-orange-700 text-white');
+            updateFloorTableStatus(tableNum, `Call: ${requestType}`, 'bg-[#fc8019] border-[#e56b0a] text-white');
             saveStateToStorage();
             syncBroadcastState({
                 kind: 'service_call',
@@ -1670,9 +1700,14 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
         // 11. KITCHEN DISPLAY SYSTEM (KDS) PORTAL LOGIC (WITH AUDIT FIX #5 & #8)
         function setKdsFilter(filterKey) {
             kdsFilter = filterKey;
+            const colors = { all: 'text-white', placed: 'text-[#f59e0b]', cooking: 'text-[#3b82f6]', ready: 'text-[#10b981]' };
             ['all', 'placed', 'cooking', 'ready'].forEach(k => {
                 const btn = $(`kdsTab-${k}`);
-                if (btn) { btn.className = k === filterKey ? 'px-2 py-1 rounded-lg text-[10px] font-semibold bg-orange-600 text-white cursor-pointer' : 'px-2 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-600 border border-orange-200 cursor-pointer'; }
+                if (btn) {
+                    btn.className = k === filterKey
+                        ? 'px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#fc8019] text-white cursor-pointer shadow-sm'
+                        : `px-2.5 py-1 rounded-lg text-[10px] font-medium bg-[#0f172a] ${colors[k]} border border-[#334155] hover:border-[#64748b] cursor-pointer`;
+                }
             });
             renderKdsPortal();
         }
@@ -1681,20 +1716,14 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!order) return;
             order.status = nextStatus;
             if (nextStatus === 'cooking') {
-                updateFloorTableStatus(order.table, 'Cooking in KDS', 'bg-orange-500 border-orange-600 text-white', {
-                    notes: `Order #${order.id} actively cooking on the line`
-                });
+                updateFloorTableStatus(order.table, 'Cooking in KDS', 'bg-[#eff6ff] border-[#93c5fd] text-[#1e40af]', { notes: `Order #${order.id} actively cooking on the line` });
             } else if (nextStatus === 'ready') {
                 order.items.forEach(i => { i.done = true; });
                 playWaiterReadySound();
-                updateFloorTableStatus(order.table, 'Ready for Pickup', 'bg-orange-600 border-orange-700 text-white', {
-                    notes: `Order #${order.id} plated at Kitchen Pass`
-                });
+                updateFloorTableStatus(order.table, 'Ready for Pickup', 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', { notes: `Order #${order.id} plated at Kitchen Pass` });
             } else if (nextStatus === 'dispatched') {
                 if (!waiterSelectedOrder) waiterSelectedOrder = order;
-                updateFloorTableStatus(order.table, 'Dispatched to Floor', 'bg-orange-600 border-orange-700 text-white', {
-                    notes: `Waiter Alex running Order #${order.id} to Table #${order.table}`
-                });
+                updateFloorTableStatus(order.table, 'Dispatched to Floor', 'bg-[#fff4e6] border-[#fc8019] text-[#fc8019]', { notes: `Waiter Alex running Order #${order.id} to Table #${order.table}` });
             }
             saveStateToStorage();
             const kdsBannerMap = {
@@ -1718,7 +1747,6 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             renderKdsPortal();
             if (currentCustomerTab === 'timeline') renderCustomerTimeline();
         }
-        // Audit Fix #2 Edge Case: Refund unplaced reward points if a dish is 86'd while in a guest's tray
         function toggleDish86Status(dishId) {
             const dish = menuItems.find(m => m.id === dishId);
             if (!dish) return;
@@ -1744,7 +1772,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
         function renderKds86Grid() {
             const grid86 = $('kds86ButtonsGrid');
             if (!grid86) return;
-            grid86.innerHTML = menuItems.map(dish => `<button onclick="toggleDish86Status(${dish.id})" class="px-3 py-1.5 rounded-full border-2 text-left text-xs flex items-center gap-2 transition cursor-pointer ${dish.soldOut ? 'bg-orange-600 text-white border-orange-700 font-semibold shadow-sm' : 'bg-orange-50 text-slate-800 border-orange-200 hover:border-orange-400 font-medium'}"><span>${dish.name}</span><span class="text-[9px] font-medium px-2 py-0.5 rounded-full uppercase ${dish.soldOut ? 'bg-white text-orange-600' : 'bg-white text-orange-700 border border-orange-200'}">${dish.soldOut ? 'Unavailable' : 'Available'}</span></button>`).join('');
+            grid86.innerHTML = menuItems.map(dish => `<button onclick="toggleDish86Status(${dish.id})" class="px-3 py-1.5 rounded-full border text-left text-xs flex items-center gap-2 transition cursor-pointer ${dish.soldOut ? 'bg-[#fee2e2] text-[#991b1b] border-[#fca5a5] font-semibold' : 'bg-[#f7f7f7] text-[#3d4152] border-[#e8e8e8] hover:border-[#fc8019] font-medium'}"><span>${dish.name}</span><span class="text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase ${dish.soldOut ? 'bg-[#ef4444] text-white' : 'bg-[#d1fae5] text-[#065f46]'}">${dish.soldOut ? 'Sold Out' : 'Available'}</span></button>`).join('');
         }
         function renderKdsPortal() {
             const activeKdsOrders = activeOrders.filter(o => o.status !== 'delivered' && !o.paid);
@@ -1761,28 +1789,35 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             const container = $('kdsTicketsContainer');
             if (!container) return;
             if (!filteredOrders.length) {
-                container.innerHTML = `<div class="border-2 border-dashed border-orange-200 rounded-2xl p-8 text-center bg-orange-50/50"><p class="text-xs font-semibold text-slate-700">No Active Tickets in This View</p><p class="text-[11px] text-slate-500 mt-1">When the guest places an order on their phone (/demo), live tickets appear here instantly.</p></div>`;
+                container.innerHTML = `<div class="border-2 border-dashed border-[#334155] rounded-2xl p-8 text-center bg-[#1e293b]/70"><p class="text-xs font-semibold text-white">No Active KOT Tickets</p><p class="text-[11px] text-[#94a3b8] mt-1">When the guest places an order on /demo, live KOT cards appear here instantly.</p></div>`;
                 return;
             }
             container.innerHTML = filteredOrders.map(order => {
                 const mins = Math.floor(order.elapsedSeconds / 60), secs = String(order.elapsedSeconds % 60).padStart(2, '0');
                 const estSecsLimit = order.estWaitSeconds || ((order.estWaitMinutes || 12) * 60), estMins = Math.max(1, Math.ceil(estSecsLimit / 60)), isOverdue = order.elapsedSeconds > estSecsLimit;
+                const borderColorMap = {
+                    placed: isOverdue ? 'border-[#ef4444]' : 'border-[#f59e0b]',
+                    cooking: isOverdue ? 'border-[#ef4444]' : 'border-[#3b82f6]',
+                    ready: isOverdue ? 'border-[#ef4444]' : 'border-[#10b981]',
+                    dispatched: isOverdue ? 'border-[#ef4444]' : 'border-[#fc8019]'
+                };
                 const badgeMap = {
-                    placed: [isOverdue ? 'bg-white text-red-700' : 'bg-orange-100 text-orange-800 border border-orange-300', 'New Ticket'],
-                    cooking: [isOverdue ? 'bg-white text-red-700' : 'bg-orange-600 text-white', (order.batchCount || 1) > 1 ? `Cooking (Batch #${order.batchCount})` : 'Cooking Started'],
-                    ready: [isOverdue ? 'bg-white text-red-700' : 'bg-slate-900 text-orange-400', 'Ready to Deliver'],
-                    dispatched: [isOverdue ? 'bg-white text-red-700' : 'bg-orange-700 text-white', 'Dispatched to Waiter']
+                    placed: ['bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/40', 'NEW TICKET'],
+                    cooking: ['bg-[#3b82f6]/20 text-[#60a5fa] border border-[#3b82f6]/40', (order.batchCount || 1) > 1 ? `PREPARING (BATCH #${order.batchCount})` : 'PREPARING'],
+                    ready: ['bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/40', 'READY'],
+                    dispatched: ['bg-[#fc8019]/20 text-[#fc8019] border border-[#fc8019]/40', 'DISPATCHED']
                 };
                 const [badgeCls, badgeTxt] = badgeMap[order.status] || badgeMap.placed;
-                const statusBadge = `<span class="${badgeCls} text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase">${badgeTxt}</span>`;
+                const statusBadge = `<span class="${badgeCls} text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">${badgeTxt}</span>`;
                 const actionMap = {
-                    placed: `<button onclick="updateOrderStatusFromKds(${order.id}, 'cooking')" class="w-full py-3 px-3 rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm ${isOverdue ? 'bg-white hover:bg-red-50 text-red-700' : 'bg-orange-600 hover:bg-orange-700 text-white'}">🔥 Cooking Started</button>`,
-                    cooking: `<button onclick="updateOrderStatusFromKds(${order.id}, 'ready')" class="w-full py-3 px-3 rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm ${isOverdue ? 'bg-white hover:bg-red-50 text-red-700' : 'bg-orange-600 hover:bg-orange-700 text-white'}">🔔 Ready to Deliver</button>`,
-                    ready: `<button onclick="updateOrderStatusFromKds(${order.id}, 'dispatched')" class="w-full py-3 px-3 rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm ${isOverdue ? 'bg-white hover:bg-red-50 text-red-700' : 'bg-slate-900 hover:bg-slate-800 text-white'}">🚀 Dispatched</button>`,
-                    dispatched: `<div class="w-full py-2 px-3 rounded-xl text-[11px] font-semibold text-center ${isOverdue ? 'bg-red-800 text-white border border-red-300' : 'bg-orange-100 text-orange-800 border border-orange-300'}">✓ Dispatched to Waiter Portal</div>`
+                    placed: `<button onclick="updateOrderStatusFromKds(${order.id}, 'cooking')" class="w-full py-2.5 px-3 rounded-[10px] text-xs font-semibold transition cursor-pointer bg-[#3b82f6] hover:bg-[#2563eb] text-white shadow-sm">🔥 Start Preparing</button>`,
+                    cooking: `<button onclick="updateOrderStatusFromKds(${order.id}, 'ready')" class="w-full py-2.5 px-3 rounded-[10px] text-xs font-semibold transition cursor-pointer bg-[#10b981] hover:bg-[#059669] text-white shadow-sm">✅ Mark as Ready</button>`,
+                    ready: `<button onclick="updateOrderStatusFromKds(${order.id}, 'dispatched')" class="w-full py-2.5 px-3 rounded-[10px] text-xs font-semibold transition cursor-pointer bg-[#fc8019] hover:bg-[#e56b0a] text-white shadow-[0_3px_10px_rgba(252,128,25,0.35)]">🚀 Dispatch to Waiter</button>`,
+                    dispatched: `<div class="w-full py-2 px-3 rounded-[10px] text-[11px] font-semibold text-center bg-[#334155] text-[#cbd5e1]">✓ Dispatched to Waiter Portal</div>`
                 };
                 const sequentialActionButton = actionMap[order.status] || '';
-                return `<div class="rounded-2xl p-4 border-2 shadow-sm transition ${isOverdue ? 'bg-red-600 border-red-800 text-white' : 'bg-white border-orange-300 text-slate-800'}">${isOverdue ? `<div class="bg-white text-red-700 px-3 py-1.5 rounded-xl text-[11px] font-medium uppercase tracking-wider flex items-center justify-between mb-3 shadow-sm"><span>🚨 SIREN ALERT: EXCEEDED EST. WAIT (${estMins}m)</span><span>OVERDUE</span></div>` : ''}<div class="flex items-center justify-between border-b ${isOverdue ? 'border-red-400' : 'border-orange-100'} pb-3 mb-2.5"><div><div class="flex items-center gap-2"><span class="text-sm font-semibold ${isOverdue ? 'text-white' : 'text-slate-900'}">Table #${order.table}</span><span class="text-xs font-medium ${isOverdue ? 'text-red-100' : 'text-orange-600'}">• Order #${order.id}</span></div><p class="text-[10px] ${isOverdue ? 'text-red-100' : 'text-slate-400'} font-semibold mt-1">Fired at ${order.placedAt} • Guest: ${order.customerName || 'Diner'}</p></div><div class="text-right">${statusBadge}<div class="flex items-center justify-end gap-2 mt-1"><span id="kdsTimer-${order.id}" class="text-[11px] font-mono font-semibold ${isOverdue ? 'text-white bg-red-800 px-2 py-0.5 rounded' : 'text-slate-600'}">⏱ ${mins}:${secs} / ${estMins}:00</span>${!isOverdue ? `<button onclick="fastForwardOrderTimer(${order.id})" title="Simulate Timer Exceeding Estimated Wait Time" class="text-[9px] font-semibold bg-orange-100 hover:bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded cursor-pointer">Test Siren</button>` : ''}</div></div></div><ul class="space-y-1.5 mb-3">${order.items.map((item, idx) => `<li onclick="toggleKdsItemCheck(${order.id}, ${idx})" class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border cursor-pointer transition ${isOverdue ? (item.done ? 'bg-red-800/70 border-red-400 line-through text-red-200' : 'bg-red-700 border-red-300 text-white hover:bg-red-800') : (item.done ? 'bg-orange-50 border-orange-200 line-through text-slate-400' : (item.isAddonBatch ? 'bg-amber-50 border-orange-500 text-slate-900 ring-1 ring-orange-400' : 'bg-white border-slate-200 text-slate-800 hover:border-orange-400'))}"><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="text-xs font-semibold">${item.qty}x ${item.name}</span>${item.isAddonBatch && !item.done ? `<span class="bg-orange-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded uppercase">+ NEW ADD-ON (Batch #${item.batchNum})</span>` : ''}</div>${item.optionLabel || item.kitchenNote ? `<span class="block text-[9px] ${isOverdue ? 'text-red-100' : 'text-slate-500'}">${[item.optionLabel, ...(item.addons || []).map(a => a.name), item.kitchenNote ? `Note: ${item.kitchenNote}` : ''].filter(Boolean).join(' · ')}</span>` : ''}</div><span class="text-[10px] font-semibold shrink-0 ${isOverdue ? 'text-red-100' : (item.done ? 'text-orange-600' : 'text-slate-400')}">${item.done ? '✓ Prepped' : 'Tap when prepped'}</span></li>`).join('')}</ul><div class="pt-2 border-t ${isOverdue ? 'border-red-400' : 'border-slate-100'}">${sequentialActionButton}</div></div>`;
+                const cardBorder = borderColorMap[order.status] || 'border-[#334155]';
+                return `<div class="rounded-2xl p-4 border-2 ${cardBorder} bg-[#1e293b] text-white shadow-lg transition">${isOverdue ? `<div class="bg-[#ef4444] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-between mb-3"><span>⚠️ URGENT: EXCEEDED EST. WAIT (${estMins}m)</span><span>OVERDUE</span></div>` : ''}<div class="flex items-center justify-between border-b border-[#334155] pb-2.5 mb-2.5"><div><div class="flex items-center gap-2"><span class="text-sm font-bold text-white">Table #${order.table}</span><span class="text-xs font-semibold text-[#fc8019]">• #${order.id}</span></div><p class="text-[10px] text-[#94a3b8] font-medium mt-0.5">${order.placedAt} • Guest: ${order.customerName || 'Diner'}</p></div><div class="text-right">${statusBadge}<div class="flex items-center justify-end gap-2 mt-1.5"><span id="kdsTimer-${order.id}" class="text-[11px] font-mono font-semibold ${isOverdue ? 'text-[#fca5a5] bg-[#7f1d1d] px-2 py-0.5 rounded' : 'text-[#cbd5e1]'}">⏱ ${mins}:${secs} / ${estMins}:00</span>${!isOverdue ? `<button onclick="fastForwardOrderTimer(${order.id})" title="Simulate Timer Exceeding Estimated Wait Time" class="text-[9px] font-semibold bg-[#334155] hover:bg-[#475569] text-[#cbd5e1] px-1.5 py-0.5 rounded cursor-pointer">Test Urgent</button>` : ''}</div></div></div><ul class="space-y-1.5 mb-3">${order.items.map((item, idx) => `<li onclick="toggleKdsItemCheck(${order.id}, ${idx})" class="flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition ${item.done ? 'bg-[#0f172a]/70 border-[#334155] line-through text-[#64748b]' : (item.isAddonBatch ? 'bg-[#fc8019]/15 border-[#fc8019] text-white' : 'bg-[#0f172a] border-[#334155] text-white hover:border-[#fc8019]') }"><div class="flex items-center gap-2.5 min-w-0"><span class="w-6 h-6 rounded-full ${item.done ? 'bg-[#334155] text-[#94a3b8]' : 'bg-[#fc8019] text-white'} font-bold text-xs flex items-center justify-center shrink-0">${item.qty}</span><div class="min-w-0"><div class="flex items-center gap-1.5 flex-wrap"><span class="text-xs font-semibold">${item.name}</span>${item.isAddonBatch && !item.done ? `<span class="bg-[#fc8019] text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">+ ADD-ON</span>` : ''}</div>${item.optionLabel || item.kitchenNote ? `<span class="block text-[9px] text-[#94a3b8]">${[item.optionLabel, ...(item.addons || []).map(a => a.name), item.kitchenNote ? `Note: ${item.kitchenNote}` : ''].filter(Boolean).join(' · ')}</span>` : ''}</div></div><span class="text-[10px] font-semibold shrink-0 ${item.done ? 'text-[#10b981]' : 'text-[#64748b]'}">${item.done ? '✓ Ready' : 'Tap'}</span></li>`).join('')}</ul><div class="pt-2 border-t border-[#334155]">${sequentialActionButton}</div></div>`;
             }).join('');
         }
         // 12. WAITER'S PORTAL LOGIC (WITH VIP GUEST RECOGNITION)
@@ -1796,7 +1831,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                     : `🏃 ${callObj.type} is on the way to Table #${callObj.table}!`;
                 toggleModal('customerWaiterBanner', true);
             }
-            updateFloorTableStatus(callObj.table, 'Server Assisting', 'bg-orange-50 border-orange-300 text-orange-900');
+            updateFloorTableStatus(callObj.table, 'Server Assisting', 'bg-[#fff4e6] border-[#fc8019]/50 text-[#fc8019]');
             saveStateToStorage();
             const comingMsg = callObj.type.toLowerCase().includes('waiter')
                 ? `🏃 Waiter Alex is on the way to Table #${callObj.table}!`
@@ -1813,7 +1848,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (!order) return;
             order.status = 'dispatched';
             waiterSelectedOrder = order;
-            updateFloorTableStatus(order.table, 'Dispatched to Floor', 'bg-orange-600 border-orange-700 text-white', {
+            updateFloorTableStatus(order.table, 'Dispatched to Floor', 'bg-[#fc8019] border-[#e56b0a] text-white', {
                 notes: `Waiter Alex running Order #${order.id} to Table #${order.table}`
             });
             saveStateToStorage();
@@ -1836,7 +1871,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
                 if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `✅ Order #${order.id} Delivered! Enjoy your meal or tap "Request Bill" below.`;
                 toggleModal('customerWaiterBanner', true);
             }
-            updateFloorTableStatus(order.table, `Served ($${order.total.toFixed(0)})`, 'bg-orange-100 border-orange-300 text-orange-900', {
+            updateFloorTableStatus(order.table, `Served ($${order.total.toFixed(0)})`, 'bg-[#ede9fe] border-[#c4b5fd] text-[#5b21b6]', {
                 billAmount: order.total,
                 notes: `Order #${order.id} delivered • Enjoying meal`
             });
@@ -1851,24 +1886,24 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             const guestBanner = $('waiterGuestLoyaltyBanner'), cust = getActiveCustomer();
             if (guestBanner && cust) {
                 const tier = getCustomerTierInfo(cust.lifetimePoints), seg = getCustomerCrmSegment(cust);
-                const dietarySpan = cust.dietaryNotes && cust.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold bg-white text-orange-800 border border-orange-300 px-1.5 py-0.5 rounded">📋 ${cust.dietaryNotes}${cust.serverNotes ? ` — ${cust.serverNotes}` : ''}</span>` : '';
-                guestBanner.innerHTML = `<div class="flex items-start gap-4 min-w-0"><span class="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center text-sm shrink-0 mt-1">${tier.icon}</span><div class="min-w-0"><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-700 block">Table #04 Recognized Guest • ${seg.shortLabel}</span><h4 class="text-xs font-medium text-slate-900 truncate">${cust.name} • ${tier.name}</h4><p class="text-[10px] text-slate-600 font-semibold">Visit #${cust.visits + 1} • ${cust.points} Pts • Fav: <b class="text-orange-700">${cust.favoriteDish || 'Ribeye'}</b></p>${dietarySpan}</div></div><button onclick="openAdminCrmProfileModal('${cust.phone}')" class="text-[9px] font-semibold bg-white hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-300 px-2 py-1 rounded-lg shrink-0 transition cursor-pointer">CRM 360°</button>`;
+                const dietarySpan = cust.dietaryNotes && cust.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] px-1.5 py-0.5 rounded">📋 ${cust.dietaryNotes}${cust.serverNotes ? ` — ${cust.serverNotes}` : ''}</span>` : '';
+                guestBanner.innerHTML = `<div class="flex items-start gap-3 min-w-0"><span class="w-8 h-8 rounded-full bg-[#fc8019] text-white flex items-center justify-center text-sm shrink-0 mt-0.5">${tier.icon}</span><div class="min-w-0"><span class="text-[9px] font-semibold uppercase tracking-wider text-[#7b61ff] block">Table #04 Guest • ${seg.shortLabel}</span><h4 class="text-xs font-bold text-[#3d4152] truncate">${cust.name} • ${tier.name}</h4><p class="text-[10px] text-[#7e808c] font-medium">Visit #${cust.visits + 1} • ${cust.points} Pts • Fav: <b class="text-[#fc8019]">${cust.favoriteDish || 'Ribeye'}</b></p>${dietarySpan}</div></div><button onclick="openAdminCrmProfileModal('${cust.phone}')" class="text-[9px] font-semibold bg-[#f7f7f7] hover:bg-[#fc8019] text-[#3d4152] hover:text-white border border-[#e8e8e8] px-2.5 py-1.5 rounded-lg shrink-0 transition cursor-pointer">CRM 360°</button>`;
             }
             if (!$('waiterCallCountBadge')) return;
             $('waiterCallCountBadge').textContent = waiterCalls.length;
             $('waiterCallsList').innerHTML = !waiterCalls.length
-                ? `<p class="text-[11px] text-slate-400 italic py-2 text-center">No pending customer calls. When the guest taps "Call Waiter" or "Bottle of Water" on their phone, alerts pop up here!</p>`
-                : waiterCalls.map(call => `<div class="bg-white rounded-xl p-4 border border-orange-300 flex items-center justify-between gap-2 "><div><span class="bg-orange-600 text-white text-[9px] font-semibold px-2 py-0.5 rounded uppercase">Table #${call.table} • ${call.guestName || 'Guest'}</span><p class="text-xs font-semibold text-slate-900 mt-1">${call.type}</p><span class="text-[10px] text-slate-400 font-semibold">${call.time}</span></div><button onclick="waiterRespondJustComing(${call.id})" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[11px] px-3 py-2 rounded-xl shadow-sm transition cursor-pointer shrink-0">🏃 Just Coming</button></div>`).join('');
+                ? `<p class="text-[11px] text-[#93959f] italic py-2 text-center">No pending calls. Guest service requests from /demo pop up here.</p>`
+                : waiterCalls.map(call => `<div class="bg-[#fafafa] rounded-xl p-3 border border-[#e8e8e8] flex items-center justify-between gap-2"><div><span class="bg-[#ff3d6e] text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase">Table #${call.table} • ${call.guestName || 'Guest'}</span><p class="text-xs font-semibold text-[#3d4152] mt-1">${call.type}</p><span class="text-[10px] text-[#7e808c] font-medium">${call.time}</span></div><button onclick="waiterRespondJustComing(${call.id})" class="sm-btn-primary font-semibold text-[11px] px-3 py-2 rounded-[10px] cursor-pointer shrink-0">🏃 Just Coming</button></div>`).join('');
             const readyOrders = activeOrders.filter(o => o.status === 'ready' && !o.paid);
             $('waiterReadyCountBadge').textContent = readyOrders.length;
             $('waiterReadyOrdersList').innerHTML = !readyOrders.length
-                ? `<p class="text-[11px] text-slate-400 italic py-2 text-center">No orders waiting at Kitchen Expo. Mark an order "Ready to Deliver" in KDS to alert Waiter!</p>`
-                : readyOrders.map(order => `<div class="bg-white rounded-xl p-4 border border-orange-300 flex items-center justify-between gap-2 "><div><div class="flex items-center gap-2"><span class="text-xs font-semibold text-slate-900">Order #${order.id}</span><span class="bg-orange-100 text-orange-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">Table #${order.table}</span></div><p class="text-[11px] text-slate-600 mt-1">${order.items.reduce((s, i) => s + i.qty, 0)} items • Ready at Kitchen Pass</p></div><button onclick="waiterSelectReadyOrder(${order.id})" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[11px] px-3 py-2 rounded-xl transition cursor-pointer shrink-0">Select Order</button></div>`).join('');
+                ? `<p class="text-[11px] text-[#93959f] italic py-2 text-center">No orders waiting at Kitchen Expo. Mark an order Ready in KOT to alert Waiter.</p>`
+                : readyOrders.map(order => `<div class="bg-[#ecfdf5] rounded-xl p-3 border border-[#6ee7b7] flex items-center justify-between gap-2"><div><div class="flex items-center gap-2"><span class="text-xs font-bold text-[#3d4152]">Order #${order.id}</span><span class="bg-white text-[#065f46] border border-[#6ee7b7] text-[10px] font-semibold px-2 py-0.5 rounded-full">Table #${order.table}</span></div><p class="text-[11px] text-[#065f46] mt-1">${order.items.reduce((s, i) => s + i.qty, 0)} items • Ready at Kitchen Pass</p></div><button onclick="waiterSelectReadyOrder(${order.id})" class="bg-[#60b246] hover:bg-[#4e9938] text-white font-semibold text-[11px] px-3 py-2 rounded-[10px] transition cursor-pointer shrink-0 shadow-sm">Serve ✓</button></div>`).join('');
             const validSelected = (waiterSelectedOrder && waiterSelectedOrder.status === 'dispatched' && !waiterSelectedOrder.paid) ? waiterSelectedOrder : null;
             const activeDeliveryOrder = validSelected || activeOrders.find(o => o.status === 'dispatched' && !o.paid);
             $('waiterSelectedOrderBox').innerHTML = !activeDeliveryOrder
-                ? `<div class="bg-orange-50/60 border border-dashed border-orange-200 rounded-xl p-4 text-center"><p class="text-xs font-medium text-slate-500">No Order Currently Selected</p><p class="text-[10px] text-slate-400 mt-1">Select a Ready Order above to view its Table Number, items, and confirm delivery.</p></div>`
-                : `<div class="bg-orange-50 rounded-xl p-4 border border-orange-300 "><div class="flex items-center justify-between border-b border-orange-200 pb-2 mb-2"><div><span class="text-[10px] font-semibold uppercase text-orange-700 block">Active Delivery Ticket</span><h4 class="text-sm font-semibold text-slate-900">Table #${activeDeliveryOrder.table} • Order #${activeDeliveryOrder.id}</h4></div><span class="bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">$${activeDeliveryOrder.total.toFixed(2)}</span></div><p class="text-[10px] font-semibold uppercase text-slate-500 mb-1">Order Details for Table #${activeDeliveryOrder.table}:</p><ul class="space-y-1 text-xs font-semibold text-slate-800 mb-3">${activeDeliveryOrder.items.map(i => `<li class="flex justify-between bg-white px-3 py-1 rounded-lg border border-orange-100"><span>${i.qty}x ${i.name}</span><span class="text-orange-600 font-medium">${i.isRewardRedemption ? 'FREE' : `$${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('')}</ul><button onclick="waiterConfirmOrderDelivered(${activeDeliveryOrder.id})" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs py-3 rounded-xl shadow-sm transition cursor-pointer">✓ Confirm Order Delivered to Table #${activeDeliveryOrder.table}</button></div>`;
+                ? `<div class="bg-[#f7f7f7] border border-dashed border-[#e8e8e8] rounded-xl p-4 text-center"><p class="text-xs font-semibold text-[#7e808c]">No Active Delivery Ticket</p><p class="text-[10px] text-[#93959f] mt-1">Select a Ready Order above to view its Table Number and confirm delivery.</p></div>`
+                : `<div class="bg-[#fff4e6]/70 rounded-xl p-3.5 border border-[#fc8019]/30"><div class="flex items-center justify-between border-b border-[#e8e8e8] pb-2 mb-2"><div><span class="text-[10px] font-semibold uppercase text-[#fc8019] block">Active Delivery Ticket</span><h4 class="text-sm font-bold text-[#3d4152]">Table #${activeDeliveryOrder.table} • Order #${activeDeliveryOrder.id}</h4></div><span class="bg-[#fc8019] text-white text-xs font-bold px-3 py-1 rounded-lg">$${activeDeliveryOrder.total.toFixed(2)}</span></div><ul class="space-y-1 text-xs font-medium text-[#3d4152] mb-3">${activeDeliveryOrder.items.map(i => `<li class="flex justify-between bg-white px-3 py-1.5 rounded-lg border border-[#e8e8e8]"><span>${i.qty}x ${i.name}</span><span class="text-[#fc8019] font-semibold">${i.isRewardRedemption ? 'FREE' : `$${(i.price * i.qty).toFixed(2)}`}</span></li>`).join('')}</ul><button onclick="waiterConfirmOrderDelivered(${activeDeliveryOrder.id})" class="w-full bg-[#60b246] hover:bg-[#4e9938] text-white font-semibold text-xs py-3 rounded-[10px] shadow-sm transition cursor-pointer">✓ Confirm Order Delivered to Table #${activeDeliveryOrder.table}</button></div>`;
         }
         // 13. DYNAMIC SLANG REVIEW ENGINE & SMART "GET BILL" ROUTING
         function getOrderedDishNames() {
@@ -2375,7 +2410,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             updateFloatingBillBannerState();
             toggleModal('returnToTimelineBanner', false);
             lastSettledReceipt = { orderId: order.id, customerName: cust ? cust.name : 'Guest', paymentMethod: selectedPaymentMethod, netSubtotal, tax, tipPct: selectedTipPercent, tipAmount, grandTotal, pointsEarned, newPointBalance: cust ? cust.points : pointsEarned, splitPayments: order.splitPayments };
-            updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-green-50 border-green-300 text-green-800', {
+            updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', {
                 guestName: `Settled by ${cust ? cust.name : 'Guest'}`, billAmount: 0.00,
                 notes: `Paid $${grandTotal.toFixed(2)} via ${selectedPaymentMethod} • Table ready`
             });
@@ -2408,7 +2443,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             const t = floorTables.find(tbl => tbl.number === tableNum);
             if (!t) return;
             if (actionType === 'seat') {
-                updateFloorTableStatus(tableNum, 'Browsing Menu', 'bg-orange-50 border-orange-300 text-orange-800', { guestName: `Walk-In Party (Table #${tableNum})`, billAmount: 0.00, notes: 'Seated just now by Host • Scanning QR menu' });
+                updateFloorTableStatus(tableNum, 'Browsing Menu', 'bg-[#fff4e6] border-[#fc8019] text-[#fc8019]', { guestName: `Walk-In Party (Table #${tableNum})`, billAmount: 0.00, notes: 'Seated just now by Host • Scanning QR menu' });
             } else if (actionType === 'settle') {
                 if (tableNum === '04' && currentCustomerOrderId) {
                     const openOrder = activeOrders.find(o => o.id === currentCustomerOrderId && !o.paid);
@@ -2446,7 +2481,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                         customerOrderDelivered = false;
                         appliedBillDiscountPoints = 0;
                         recordExtraValue(4.00, `Table #04 Tab Settled at Host Stand ($${remSub.toFixed(2)})`);
-                        updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-green-50 border-green-300 text-green-800', {
+                        updateFloorTableStatus('04', 'Available (Cleaned)', 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', {
                             guestName: `Settled by ${ordCust ? ordCust.name : 'Guest'}`,
                             billAmount: 0.00,
                             notes: `Settled $${remSub.toFixed(2)} at Host Stand • +${pts} pts awarded`
@@ -2465,9 +2500,9 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 const paidAmt = Number(t.billAmount || 0);
                 if (paidAmt > 0) {
                     recordExtraValue(4.00, `Table #${tableNum} Quick Tab Settlement ($${paidAmt.toFixed(2)})`);
-                    updateFloorTableStatus(tableNum, 'Available', 'bg-white border-slate-200 text-slate-400', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: `Last check ($${paidAmt.toFixed(2)}) settled & table bussed` });
+                    updateFloorTableStatus(tableNum, 'Available', 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: `Last check ($${paidAmt.toFixed(2)}) settled & table bussed` });
                 } else {
-                    updateFloorTableStatus(tableNum, 'Available', 'bg-white border-slate-200 text-slate-400', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: 'Walk-in cleared & table sanitized' });
+                    updateFloorTableStatus(tableNum, 'Available', 'bg-[#ecfdf5] border-[#6ee7b7] text-[#065f46]', { guestName: `Open Table #${tableNum}`, billAmount: 0.00, notes: 'Walk-in cleared & table sanitized' });
                 }
             } else if (actionType === 'call') {
                 customerRequestService('Manager / Server Check-In', tableNum);
@@ -2503,39 +2538,71 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 table4Obj.guestName = activeCust ? `${activeCust.name} (VIP Sync)` : 'Guest at Table #04';
                 table4Obj.billAmount = openT4Order ? openT4Order.total : 0.00;
             }
+
+            // SwiftMeal Order Pipeline Strip
+            const pipelineEl = $('adminOrderPipeline');
+            if (pipelineEl) {
+                const pendingCnt = activeOrders.filter(o => o.status === 'placed' && !o.paid).length;
+                const cookingCnt = activeOrders.filter(o => o.status === 'cooking' && !o.paid).length;
+                const readyCnt = activeOrders.filter(o => (o.status === 'ready' || o.status === 'dispatched') && !o.paid).length;
+                const servedCnt = activeOrders.filter(o => o.status === 'delivered' || o.paid).length;
+                pipelineEl.innerHTML = `<div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">⚡ Live Order Pipeline</span><span class="text-[10px] font-semibold text-[#7e808c]">Real-Time Status</span></div><div class="grid grid-cols-4 gap-2 text-center"><div class="rounded-xl p-2 bg-[#fffbeb] border border-[#fcd34d]"><span class="block text-sm font-bold text-[#92400e]">${pendingCnt}</span><span class="text-[9px] font-semibold text-[#92400e]">Pending</span></div><div class="rounded-xl p-2 bg-[#eff6ff] border border-[#93c5fd]"><span class="block text-sm font-bold text-[#1e40af]">${cookingCnt}</span><span class="text-[9px] font-semibold text-[#1e40af]">Preparing</span></div><div class="rounded-xl p-2 bg-[#ecfdf5] border border-[#6ee7b7]"><span class="block text-sm font-bold text-[#065f46]">${readyCnt}</span><span class="text-[9px] font-semibold text-[#065f46]">Ready</span></div><div class="rounded-xl p-2 bg-[#f5f3ff] border border-[#c4b5fd]"><span class="block text-sm font-bold text-[#5b21b6]">${servedCnt}</span><span class="text-[9px] font-semibold text-[#5b21b6]">Served</span></div></div>`;
+            }
+
+            // SwiftMeal Sales Prediction & Weekly Sparkline Widget
+            const predEl = $('adminSalesPredictionWidget');
+            if (predEl) {
+                const projToday = Math.round(totalSalesVolume * 1.45), tomorrowProj = Math.round(totalSalesVolume * 1.62);
+                const days = [{ d: 'Mon', v: 310 }, { d: 'Tue', v: 295 }, { d: 'Wed', v: 350 }, { d: 'Thu', v: 380 }, { d: 'Fri', v: 460 }, { d: 'Sat', v: 520 }, { d: 'Today', v: Math.round(totalSalesVolume), today: true }];
+                const maxV = Math.max(...days.map(x => x.v), 100);
+                predEl.innerHTML = `<div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🔮 Sales Prediction & Weekly Trend</span><span class="text-[9px] font-semibold bg-[#d1fae5] text-[#065f46] px-2 py-0.5 rounded-full">high confidence</span></div><div class="grid grid-cols-3 gap-2 mb-3 text-center"><div class="bg-[#fff4e6] rounded-xl p-2"><span class="text-[9px] font-semibold text-[#7e808c] block">Projected Today</span><span class="text-xs font-bold text-[#fc8019]">$${projToday}</span></div><div class="bg-[#eff6ff] rounded-xl p-2"><span class="text-[9px] font-semibold text-[#7e808c] block">Tomorrow Forecast</span><span class="text-xs font-bold text-[#1e40af]">$${tomorrowProj}</span></div><div class="bg-[#ecfdf5] rounded-xl p-2"><span class="text-[9px] font-semibold text-[#7e808c] block">Weekly Growth</span><span class="text-xs font-bold text-[#065f46]">▲ +12.4%</span></div></div><div class="flex items-end justify-between gap-1.5 h-16 pt-2 px-1">${days.map(x => {
+                    const h = Math.max(18, Math.round((x.v / maxV) * 100));
+                    return `<div class="flex-1 flex flex-col items-center justify-end h-full"><div class="w-full rounded-t-md transition-all ${x.today ? 'bg-[#fc8019] shadow-[0_2px_6px_rgba(252,128,25,0.4)]' : 'bg-[#e8e8e8]'}" style="height:${h}%"></div><span class="text-[8px] font-semibold mt-1 ${x.today ? 'text-[#fc8019]' : 'text-[#93959f]'}">${x.d}</span></div>`;
+                }).join('')}</div>`;
+            }
+
+            // SwiftMeal Top Sellers Ranked List
+            const topBox = $('adminTopSellersBox');
+            if (topBox) {
+                const counts = {};
+                Object.values(loyaltyProfiles).forEach(p => { Object.entries(p.dishCounts || {}).forEach(([k, v]) => { counts[k] = (counts[k] || 0) + v; }); });
+                activeOrders.forEach(o => (o.items || []).forEach(i => { const k = i.name.replace(' (25% Off Deal)', '').replace(' (🎁 Reward)', ''); counts[k] = (counts[k] || 0) + (i.qty || 1); }));
+                const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+                const rankColors = ['#fc8019', '#10b981', '#7b61ff', '#5d8cff'];
+                topBox.innerHTML = `<div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">🏆 Top Selling Dishes</span><span class="text-[10px] font-semibold text-[#7e808c]">Session + CRM</span></div><div class="space-y-1.5">${ranked.map(([name, cnt], idx) => `<div class="flex items-center justify-between py-1 border-b border-[#e8e8e8] last:border-0 text-xs"><div class="flex items-center gap-2 min-w-0"><span class="w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center shrink-0" style="background:${rankColors[idx] || '#fc8019'}">${idx + 1}</span><span class="font-medium text-[#3d4152] truncate">${name}</span></div><span class="text-[10px] font-semibold bg-[#f7f7f7] text-[#3d4152] px-2 py-0.5 rounded-full border border-[#e8e8e8] shrink-0">${cnt} sold</span></div>`).join('')}</div>`;
+            }
+
             $('adminFloorGrid').innerHTML = floorTables.map(t => {
                 const isSelected = t.number === selectedAdminTableNumber;
-                return `<button type="button" onclick="selectAdminFloorTable('${t.number}')" class="rounded-xl p-4 border text-center transition cursor-pointer ${t.badgeClass} ${isSelected ? 'ring-2 ring-orange-500 shadow-sm scale-[1.02]' : 'hover:border-orange-400'}"><p class="text-[10px] font-semibold uppercase flex items-center justify-center gap-2"><span>Table #${t.number}</span>${isSelected ? '<span>●</span>' : ''}</p><p class="text-[11px] font-medium mt-1 truncate">${t.status}</p></button>`;
+                return `<button type="button" onclick="selectAdminFloorTable('${t.number}')" class="rounded-xl p-3 border-2 text-center transition cursor-pointer ${t.badgeClass} ${isSelected ? 'ring-2 ring-[#fc8019] shadow-sm scale-[1.02]' : 'hover:opacity-90'}"><p class="text-[10px] font-bold uppercase flex items-center justify-center gap-1"><span>T${t.number}</span>${isSelected ? '<span>●</span>' : ''}</p><p class="text-[10px] font-semibold mt-0.5 truncate">${t.status}</p></button>`;
             }).join('');
-            const inspectorBox = $('adminTableInspectorBox');
-            const inspectedTable = floorTables.find(t => t.number === selectedAdminTableNumber) || floorTables[3];
+            const inspectorBox = $('adminTableInspectorBox'), inspectedTable = floorTables.find(t => t.number === selectedAdminTableNumber) || floorTables[3];
             if (inspectorBox && inspectedTable) {
-                const isAvailable = inspectedTable.status.toLowerCase().includes('available');
-                const hasUnpaidBill = Number(inspectedTable.billAmount || 0) > 0;
-                inspectorBox.innerHTML = `<div class="bg-orange-50/80 border border-orange-200 rounded-xl p-4 text-left "><div class="flex items-center justify-between gap-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">Table #${inspectedTable.number} Inspector • Server: ${inspectedTable.server || 'Alex'}</span><h4 class="text-xs font-medium text-slate-900">${inspectedTable.guestName || 'Guest'}</h4></div><span class="text-xs font-medium text-orange-600 bg-white border border-orange-200 px-2 py-0.5 rounded-lg">$${Number(inspectedTable.billAmount || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-500 font-medium mt-1">${inspectedTable.notes || inspectedTable.status}</p><div class="flex items-center gap-2 mt-2 pt-2 border-t border-orange-200/70">${isAvailable ? `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'seat')" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🪑 Seat Walk-In</button>` : `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'settle')" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">${hasUnpaidBill ? '💳 Settle & Clear' : '🧹 Clear Walk-In'}</button>`}<button onclick="adminQuickTableAction('${inspectedTable.number}', 'call')" class="flex-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-300 text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🔔 Ping Server</button></div></div>`;
+                const isAvailable = inspectedTable.status.toLowerCase().includes('available'), hasUnpaidBill = Number(inspectedTable.billAmount || 0) > 0;
+                inspectorBox.innerHTML = `<div class="bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl p-3 text-left"><div class="flex items-center justify-between gap-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-[#fc8019] block">Table #${inspectedTable.number} • Server: ${inspectedTable.server || 'Alex'}</span><h4 class="text-xs font-bold text-[#3d4152]">${inspectedTable.guestName || 'Guest'}</h4></div><span class="text-xs font-bold text-[#fc8019] bg-white border border-[#e8e8e8] px-2 py-0.5 rounded-lg">$${Number(inspectedTable.billAmount || 0).toFixed(2)}</span></div><p class="text-[10px] text-[#7e808c] font-medium mt-1">${inspectedTable.notes || inspectedTable.status}</p><div class="flex items-center gap-2 mt-2 pt-2 border-t border-[#e8e8e8]">${isAvailable ? `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'seat')" class="flex-1 bg-[#fc8019] hover:bg-[#e56b0a] text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🪑 Seat Walk-In</button>` : `<button onclick="adminQuickTableAction('${inspectedTable.number}', 'settle')" class="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">${hasUnpaidBill ? '💳 Settle & Clear' : '🧹 Clear Walk-In'}</button>`}<button onclick="adminQuickTableAction('${inspectedTable.number}', 'call')" class="flex-1 bg-white hover:bg-[#fff4e6] text-[#fc8019] border border-[#e8e8e8] text-[10px] font-semibold py-1.5 px-2 rounded-lg transition cursor-pointer">🔔 Ping Server</button></div></div>`;
             }
             const crmBox = $('adminLoyaltySummaryBox');
             if (crmBox) {
                 const allMembers = Object.values(loyaltyProfiles), totalPtsLiability = allMembers.reduce((s, m) => s + m.points, 0), totalCrmSpend = allMembers.reduce((s, m) => s + (m.lifetimeSpend || 0), 0);
-                crmBox.innerHTML = `<div class="flex justify-between text-slate-600"><span>Recognized at Table #04:</span><span class="font-semibold text-slate-900">${activeCust ? activeCust.name : 'Guest'} (${activeCust ? activeCust.points : 0}p)</span></div><div class="flex justify-between text-slate-600"><span>Total Enrolled CRM Profiles:</span><span class="font-semibold text-orange-600">${allMembers.length} Guests ($${totalCrmSpend.toFixed(2)} LTV • ${totalPtsLiability}p)</span></div>`;
+                crmBox.innerHTML = `<div class="flex justify-between text-[#7e808c]"><span>Table #04 Guest:</span><span class="font-semibold text-[#3d4152]">${activeCust ? activeCust.name : 'Guest'} (${activeCust ? activeCust.points : 0}p)</span></div><div class="flex justify-between text-[#7e808c]"><span>Enrolled CRM Profiles:</span><span class="font-semibold text-[#fc8019]">${allMembers.length} Guests ($${totalCrmSpend.toFixed(2)} LTV • ${totalPtsLiability}p)</span></div>`;
             }
             if ($('adminNavCrmCountBadge')) { $('adminNavCrmCountBadge').textContent = Object.keys(loyaltyProfiles).length; }
             if (currentAdminTab === 'crm') { renderAdminCrmView(); }
             $('adminReviewCountBadge').textContent = customerReviewsList.length;
-            $('adminReviewsFeed').innerHTML = customerReviewsList.map(r => `<div class="bg-white rounded-xl p-4 border border-orange-200"><div class="flex items-center justify-between"><span class="text-xs font-semibold text-orange-600">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span><span class="text-[9px] font-semibold px-2 py-0.5 rounded-full ${r.stars <= 3 ? 'bg-slate-900 text-white' : 'bg-orange-100 text-orange-800'}">${r.source}</span></div><p class="text-[11px] text-slate-700 font-semibold mt-1 line-clamp-2">"${r.text}"</p></div>`).join('');
+            $('adminReviewsFeed').innerHTML = customerReviewsList.map(r => `<div class="bg-[#fafafa] rounded-xl p-3 border border-[#e8e8e8]"><div class="flex items-center justify-between"><span class="text-xs font-semibold text-[#ffb800]">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span><span class="text-[9px] font-semibold px-2 py-0.5 rounded-full ${r.stars <= 3 ? 'bg-[#0f172a] text-white' : 'bg-[#d1fae5] text-[#065f46]'}">${r.source}</span></div><p class="text-[11px] text-[#3d4152] font-medium mt-1 line-clamp-2">"${r.text}"</p></div>`).join('');
             const unavailableDishes = menuItems.filter(d => d.soldOut);
             $('adminUnavailableCountBadge').textContent = unavailableDishes.length;
             $('adminUnavailableDishesList').innerHTML = !unavailableDishes.length
-                ? `<p class="text-[11px] text-slate-400 italic py-1">All menu dishes are currently available. Mark dishes unavailable in KDS "AVAILABILITY STATUS" to see them here.</p>`
-                : unavailableDishes.map(d => `<span class="px-3 py-1 rounded-full bg-orange-600 text-white text-[11px] font-semibold flex items-center gap-2 shadow-sm"><span>🚫</span><span>${d.name}</span></span>`).join('');
+                ? `<p class="text-[11px] text-[#93959f] italic py-1">All 88 dishes are in stock. Mark items Sold Out in Kitchen KOT to alert Waiter & Admin.</p>`
+                : unavailableDishes.map(d => `<span class="px-2.5 py-1 rounded-full bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] text-[10px] font-semibold flex items-center gap-1.5"><span>⚠️</span><span>${d.name}</span></span>`).join('');
         }
         // =========================================================================
         // 15B. ADMIN CUSTOMER CRM TAB (9-COLUMN TABLE + GUEST 360° PROFILE DRAWER)
         // =========================================================================
         function switchAdminTab(tabKey) {
             currentAdminTab = tabKey === 'crm' ? 'crm' : 'overview';
-            const AC = 'py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition cursor-pointer bg-orange-600 text-white shadow-sm flex items-center justify-center gap-2';
-            const IC = 'py-1.5 px-3 rounded-lg text-xs font-medium text-center transition cursor-pointer text-slate-600 hover:text-orange-600 flex items-center justify-center gap-2';
+            const AC = 'py-1.5 px-3 rounded-[10px] text-xs font-semibold text-center transition cursor-pointer bg-[#fc8019] text-white shadow-[0_3px_10px_rgba(252,128,25,0.3)] flex items-center justify-center gap-2';
+            const IC = 'py-1.5 px-3 rounded-[10px] text-xs font-medium text-center transition cursor-pointer text-[#7e808c] hover:text-[#fc8019] flex items-center justify-center gap-2';
             const ovBtn = $('adminNav-overview'), crmBtn = $('adminNav-crm');
             if (ovBtn && crmBtn) { ovBtn.className = currentAdminTab === 'overview' ? AC : IC; crmBtn.className = currentAdminTab === 'crm' ? AC : IC; }
             toggleModal('adminOverviewView', currentAdminTab === 'overview');
@@ -2561,47 +2628,28 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             const totalLtv = allProfiles.reduce((s, p) => s + (p.lifetimeSpend || 0), 0);
             const totalOrdersAll = allProfiles.reduce((s, p) => s + Math.max(1, p.visits || 1), 0);
             const globalAov = totalOrdersAll > 0 ? totalLtv / totalOrdersAll : 0;
-            const vipCount = allProfiles.filter(p => {
-                const k = getCustomerCrmSegment(p).key;
-                return k === 'VIP_CHAMPION' || k === 'HIGH_ROLLER';
-            }).length;
+            const vipCount = allProfiles.filter(p => { const k = getCustomerCrmSegment(p).key; return k === 'VIP_CHAMPION' || k === 'HIGH_ROLLER'; }).length;
             const atRiskCount = allProfiles.filter(p => getCustomerCrmSegment(p).key === 'AT_RISK').length;
             const kpiStrip = $('adminCrmKpiStrip');
             if (kpiStrip) {
-                kpiStrip.innerHTML = `<div class="bg-white border border-orange-200 rounded-xl p-2 text-center">
-<span class="text-[9px] font-semibold uppercase text-slate-400 block">Total CRM Guests</span><span class="text-sm font-medium text-slate-900">${allProfiles.length}</span></div><div class="bg-white border border-orange-200 rounded-xl p-2 text-center">
-<span class="text-[9px] font-semibold uppercase text-slate-400 block">Combined LTV</span><span class="text-sm font-medium text-orange-600">$${totalLtv.toFixed(2)}</span></div><div class="bg-white border border-orange-200 rounded-xl p-2 text-center">
-<span class="text-[9px] font-semibold uppercase text-slate-400 block">Avg Check (AOV)</span><span class="text-sm font-medium text-slate-900">$${globalAov.toFixed(2)}</span></div><div class="bg-white border border-orange-200 rounded-xl p-2 text-center">
-<span class="text-[9px] font-semibold uppercase text-slate-400 block">VIP / At-Risk</span><span class="text-sm font-medium text-amber-700">${vipCount} VIP · <b class="text-rose-600">${atRiskCount} Risk</b></span></div>`;
+                kpiStrip.innerHTML = `<div class="bg-white border border-[#e8e8e8] border-t-[3px] border-t-[#5d8cff] rounded-xl p-2 text-center"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Total Guests</span><span class="text-sm font-bold text-[#3d4152]">${allProfiles.length}</span></div><div class="bg-white border border-[#e8e8e8] border-t-[3px] border-t-[#fc8019] rounded-xl p-2 text-center"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Combined LTV</span><span class="text-sm font-bold text-[#fc8019]">$${totalLtv.toFixed(2)}</span></div><div class="bg-white border border-[#e8e8e8] border-t-[3px] border-t-[#60b246] rounded-xl p-2 text-center"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Avg Check</span><span class="text-sm font-bold text-[#3d4152]">$${globalAov.toFixed(2)}</span></div><div class="bg-white border border-[#e8e8e8] border-t-[3px] border-t-[#7b61ff] rounded-xl p-2 text-center"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">VIP / At-Risk</span><span class="text-sm font-bold text-[#92400e]">${vipCount} VIP · <b class="text-[#ff3d6e]">${atRiskCount} Risk</b></span></div>`;
             }
             const segmentOptions = [{ key: 'ALL', label: `All Guests (${allProfiles.length})` }, { key: 'VIP_CHAMPION', label: '👑 VIP Champions' }, { key: 'HIGH_ROLLER', label: '💎 High Rollers' }, { key: 'LOYAL_REGULAR', label: '🔥 Loyal Regulars' }, { key: 'AT_RISK', label: '⚠️ At-Risk' }, { key: 'NEW_GUEST', label: '🌱 New Guests' }];
             const filterBar = $('crmSegmentFilterBar');
             if (filterBar) {
                 filterBar.innerHTML = segmentOptions.map(opt => {
                     const active = crmSegmentFilter === opt.key;
-                    return `<button onclick="setCrmSegmentFilter('${opt.key}')" class="whitespace-nowrap px-3 py-1 rounded-full text-[10px] font-semibold border transition cursor-pointer ${active ? 'bg-orange-600 text-white border-orange-600 shadow-sm' : 'bg-white text-slate-700 border-orange-200 hover:bg-orange-100'}">${opt.label}</button>`;
+                    return `<button onclick="setCrmSegmentFilter('${opt.key}')" class="whitespace-nowrap px-3 py-1 rounded-full text-[10px] font-semibold border transition cursor-pointer ${active ? 'bg-[#fc8019] text-white border-[#fc8019] shadow-sm' : 'bg-white text-[#3d4152] border-[#e8e8e8] hover:border-[#fc8019]'}">${opt.label}</button>`;
                 }).join('');
             }
-            // Enrich & filter rows
             let rows = allProfiles.map(p => {
                 const totalOrders = Math.max(1, p.visits || 1), lifetimeSpend = Number(p.lifetimeSpend || 0), avgOrderValue = lifetimeSpend / totalOrders, seg = getCustomerCrmSegment(p), tier = getCustomerTierInfo(p.lifetimePoints || 0), favDishObj = menuItems.find(m => m.id === p.favoriteDishId || m.name === p.favoriteDish) || menuItems[0], isSeatedTable4 = p.phone === activeLoyaltyPhone;
-                return {
-                    profile: p,
-                    totalOrders,
-                    lifetimeSpend,
-                    avgOrderValue,
-                    seg,
-                    tier,
-                    favDishObj,
-                    isSeatedTable4
-                };
+                return { profile: p, totalOrders, lifetimeSpend, avgOrderValue, seg, tier, favDishObj, isSeatedTable4 };
             }).filter(r => {
                 if (crmSegmentFilter !== 'ALL' && r.seg.key !== crmSegmentFilter) return false;
                 if (!crmSearchQuery) return true;
-                const hay = `${r.profile.name} ${r.profile.displayPhone} ${r.profile.phone} ${r.profile.favoriteDish} ${r.profile.dietaryNotes} ${r.seg.label}`.toLowerCase();
-                return hay.includes(crmSearchQuery);
+                return `${r.profile.name} ${r.profile.displayPhone} ${r.profile.phone} ${r.profile.favoriteDish} ${r.profile.dietaryNotes} ${r.seg.label}`.toLowerCase().includes(crmSearchQuery);
             });
-            // Sort rows
             rows.sort((a, b) => {
                 if (crmSortBy === 'spend_desc') return b.lifetimeSpend - a.lifetimeSpend;
                 if (crmSortBy === 'aov_desc') return b.avgOrderValue - a.avgOrderValue;
@@ -2612,24 +2660,21 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             });
             if ($('crmShowingCountLabel')) { $('crmShowingCountLabel').textContent = `Showing ${rows.length} of ${allProfiles.length} Guests`; }
             if (!rows.length) {
-                tbody.innerHTML = `<tr>
-<td colspan="9" class="py-8 text-center text-slate-400"><p class="text-xs font-semibold text-slate-600">No guests match your current filter</p><button onclick="setCrmSegmentFilter('ALL'); handleCrmSearch(''); if($('crmSearchInput')) $('crmSearchInput').value='';" class="mt-2 bg-orange-600 text-white text-[10px] font-semibold px-3 py-1.5 rounded-lg cursor-pointer">Reset CRM Filters</button></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-[#93959f]"><p class="text-xs font-semibold text-[#3d4152]">No guests match your current filter</p><button onclick="setCrmSegmentFilter('ALL'); handleCrmSearch(''); if($('crmSearchInput')) $('crmSearchInput').value='';" class="mt-2 sm-btn-primary text-[10px] font-semibold px-3 py-1.5 rounded-lg cursor-pointer">Reset CRM Filters</button></td></tr>`;
                 return;
             }
             tbody.innerHTML = rows.map(r => {
-                const p = r.profile;
-                const initials = p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                const isAllergy = (p.dietaryNotes || '').toLowerCase().includes('allergy');
-                return `<tr class="hover:bg-orange-50/70 transition ${r.isSeatedTable4 ? 'bg-orange-50/40' : ''}">
-<td class="py-3 px-3 align-middle"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full ${r.isSeatedTable4 ? 'bg-orange-600 text-white ring-2 ring-orange-300' : 'bg-slate-900 text-orange-400'} font-medium text-[11px] flex items-center justify-center shrink-0">${initials}</div><div class="min-w-0"><div class="flex items-center gap-2"><span class="font-semibold text-slate-900 truncate">${p.name}</span>${r.isSeatedTable4 ? `<span class="bg-orange-600 text-white text-[8px] font-medium uppercase px-1.5 py-0.5 rounded-full">Table #04</span>` : ''}</div><span class="block text-[10px] text-slate-500 font-semibold">${p.displayPhone}</span>${p.dietaryNotes && p.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-medium px-1.5 py-0.2 rounded ${isAllergy ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-orange-100/80 text-orange-800'}">${p.dietaryNotes}</span>` : ''}</div></div></td>
-<td class="py-3 px-3 align-middle"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${r.seg.badgeClass}">${r.seg.label}</span><span class="block text-[9px] text-slate-400 font-semibold mt-1">${r.tier.icon} ${r.tier.name}</span></td>
-<td class="py-3 px-3 align-middle text-center"><span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-lg bg-orange-50 border border-orange-200 font-medium text-slate-900 text-xs">${r.totalOrders}</span><span class="block text-[9px] text-slate-400 font-medium mt-1">Dine-In</span></td>
-<td class="py-3 px-3 align-middle text-right"><span class="font-medium text-slate-900 text-xs">$${r.lifetimeSpend.toFixed(2)}</span><span class="block text-[9px] text-green-700 font-medium">Net LTV</span></td>
-<td class="py-3 px-3 align-middle text-right"><span class="font-semibold ${r.avgOrderValue >= 35 ? 'text-orange-600' : 'text-slate-800'} text-xs">$${r.avgOrderValue.toFixed(2)}</span><span class="block text-[9px] text-slate-400 font-semibold">${r.avgOrderValue >= 35 ? '▲ Above Target' : 'Standard Check'}</span></td>
-<td class="py-3 px-3 align-middle"><span class="font-semibold text-[11px] ${p.lastVisitDaysAgo >= 30 ? 'text-rose-600' : 'text-slate-800'} whitespace-nowrap">${r.isSeatedTable4 ? '🟢 Seated #04' : p.lastVisitDate}</span><span class="block text-[9px] text-slate-400 font-semibold">Joined ${p.joinedDate || '2026'}</span></td>
-<td class="py-3 px-3 align-middle"><div class="flex items-center gap-2"><img src="${r.favDishObj.img}" alt="${p.favoriteDish}" onerror="this.src='https://placehold.co/80x80/FFF7ED/EA580C?text=Dish'" class="w-7 h-7 rounded-lg object-cover border border-orange-200 shrink-0" /><div class="min-w-0"><span class="font-medium text-slate-800 text-[11px] block truncate max-w-[130px]" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-orange-600 font-semibold">Ordered ${p.favoriteDishCount || 1}x</span></div></div></td>
-<td class="py-3 px-3 align-middle text-right"><span class="font-medium text-orange-600 text-xs">${p.points} Pts</span><span class="block text-[9px] text-slate-500 font-medium">$${(p.points / 100).toFixed(2)} credit</span><span class="block text-[8px] text-slate-400">${p.lifetimePoints} lifetime</span></td>
-<td class="py-3 px-3 align-middle text-center"><div class="flex items-center justify-center gap-2"><button onclick="openAdminCrmProfileModal('${p.phone}')" class="bg-slate-900 hover:bg-orange-600 text-white font-semibold text-[10px] px-3 py-1.5 rounded-xl transition cursor-pointer whitespace-nowrap shadow-sm">👁️ Profile & History</button>${!r.isSeatedTable4 ? `<button onclick="switchLoyaltyProfile('${p.phone}')" title="Switch Table #04 Phone App to this Guest" class="bg-orange-50 hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-200 font-semibold text-[10px] px-2 py-1.5 rounded-xl transition cursor-pointer">🪑 #04</button>` : ''}</div></td></tr>`;
+                const p = r.profile, initials = p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(), isAllergy = (p.dietaryNotes || '').toLowerCase().includes('allergy');
+                return `<tr class="hover:bg-[#fff4e6]/50 transition ${r.isSeatedTable4 ? 'bg-[#fff4e6]/30' : ''}">
+<td class="py-3 px-3 align-middle"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full ${r.isSeatedTable4 ? 'bg-[#fc8019] text-white' : 'bg-[#0f172a] text-[#fc8019]'} font-semibold text-[11px] flex items-center justify-center shrink-0">${initials}</div><div class="min-w-0"><div class="flex items-center gap-2"><span class="font-semibold text-[#3d4152] truncate">${p.name}</span>${r.isSeatedTable4 ? `<span class="bg-[#fc8019] text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full">Table #04</span>` : ''}</div><span class="block text-[10px] text-[#7e808c] font-medium">${p.displayPhone}</span>${p.dietaryNotes && p.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${isAllergy ? 'bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5]' : 'bg-[#fff4e6] text-[#fc8019]'}">${p.dietaryNotes}</span>` : ''}</div></div></td>
+<td class="py-3 px-3 align-middle"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${r.seg.badgeClass}">${r.seg.label}</span><span class="inline-block mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full border ${r.tier.badgeClass}">${r.tier.icon} ${r.tier.name}</span></td>
+<td class="py-3 px-3 align-middle text-center"><span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-lg bg-[#f7f7f7] border border-[#e8e8e8] font-bold text-[#3d4152] text-xs">${r.totalOrders}</span><span class="block text-[9px] text-[#93959f] font-medium mt-0.5">Dine-In</span></td>
+<td class="py-3 px-3 align-middle text-right"><span class="font-bold text-[#3d4152] text-xs">$${r.lifetimeSpend.toFixed(2)}</span><span class="block text-[9px] text-[#60b246] font-semibold">Net LTV</span></td>
+<td class="py-3 px-3 align-middle text-right"><span class="font-semibold ${r.avgOrderValue >= 35 ? 'text-[#fc8019]' : 'text-[#3d4152]'} text-xs">$${r.avgOrderValue.toFixed(2)}</span><span class="block text-[9px] text-[#93959f] font-medium">${r.avgOrderValue >= 35 ? '▲ Above Avg' : 'Standard'}</span></td>
+<td class="py-3 px-3 align-middle"><span class="font-semibold text-[11px] ${p.lastVisitDaysAgo >= 30 ? 'text-[#ff3d6e]' : 'text-[#3d4152]'} whitespace-nowrap">${r.isSeatedTable4 ? '🟢 Seated #04' : p.lastVisitDate}</span><span class="block text-[9px] text-[#93959f] font-medium">Joined ${p.joinedDate || '2026'}</span></td>
+<td class="py-3 px-3 align-middle"><div class="flex items-center gap-2"><img src="${r.favDishObj.img}" alt="${p.favoriteDish}" onerror="this.src='https://placehold.co/80x80/FFF4E6/FC8019?text=Dish'" class="w-7 h-7 rounded-lg object-cover border border-[#e8e8e8] shrink-0" /><div class="min-w-0"><span class="font-semibold text-[#3d4152] text-[11px] block truncate max-w-[130px]" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-[#fc8019] font-semibold">Ordered ${p.favoriteDishCount || 1}x</span></div></div></td>
+<td class="py-3 px-3 align-middle text-right"><span class="font-bold text-[#fc8019] text-xs">${p.points} Pts</span><span class="block text-[9px] text-[#7e808c] font-medium">$${(p.points / 100).toFixed(2)} credit</span><span class="block text-[8px] text-[#93959f]">${p.lifetimePoints} lifetime</span></td>
+<td class="py-3 px-3 align-middle text-center"><div class="flex items-center justify-center gap-1.5"><button onclick="openAdminCrmProfileModal('${p.phone}')" class="bg-[#0f172a] hover:bg-[#fc8019] text-white font-semibold text-[10px] px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap">👁️ Profile</button>${!r.isSeatedTable4 ? `<button onclick="switchLoyaltyProfile('${p.phone}')" title="Switch Table #04 Phone App to this Guest" class="bg-[#fff4e6] hover:bg-[#fc8019] text-[#fc8019] hover:text-white border border-[#fc8019]/30 font-semibold text-[10px] px-2 py-1.5 rounded-lg transition cursor-pointer">🪑 #04</button>` : ''}</div></td></tr>`;
             }).join('');
         }
         function openAdminCrmProfileModal(phoneKey) {
@@ -2679,21 +2724,25 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             const p = loyaltyProfiles[activeCrmProfilePhone];
             if (!p) return;
             const totalOrders = Math.max(1, p.visits || 1), lifetimeSpend = Number(p.lifetimeSpend || 0), aov = lifetimeSpend / totalOrders, seg = getCustomerCrmSegment(p), tier = getCustomerTierInfo(p.lifetimePoints || 0), favDishObj = menuItems.find(m => m.id === p.favoriteDishId || m.name === p.favoriteDish) || menuItems[0], isSeated = p.phone === activeLoyaltyPhone;
-            container.innerHTML = `<div class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between shrink-0">
-<div class="flex items-center gap-4 min-w-0"><div class="w-11 h-11 rounded-2xl bg-orange-600 text-white font-medium text-base flex items-center justify-center shrink-0 border border-orange-400">${tier.icon}</div><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h3 class="text-base font-medium tracking-tight truncate">${p.name}</h3><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${seg.badgeClass}">${seg.label}</span></div><p class="text-[11px] text-slate-300 font-semibold mt-1">📱 ${p.displayPhone} • ${tier.name} (${tier.ptsPerDollar} pts/$1) • Joined ${p.joinedDate || 'Jan 2026'}</p></div></div><button onclick="closeAdminCrmProfileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-orange-600 text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer shrink-0">✕</button></div><div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-4 bg-orange-50/40">
-<div id="crmModalActionNotice" class="hidden bg-green-100 border border-green-400 text-green-900 rounded-xl px-3 py-2 text-xs font-semibold text-center"></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-<div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Total Orders</span><span class="text-base font-medium text-slate-900">${totalOrders} Visits</span><span class="text-[10px] text-slate-500 block">Last: ${p.lastVisitDate}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Lifetime Spend</span><span class="text-base font-medium text-orange-600">$${lifetimeSpend.toFixed(2)}</span><span class="text-[10px] text-green-700 font-medium block">AOV: $${aov.toFixed(2)}</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4"><span class="text-[9px] font-semibold uppercase text-slate-400 block">Loyalty Wallet</span><span class="text-base font-medium text-slate-900">${p.points} Pts</span><span class="text-[10px] text-orange-600 font-medium block">$${(p.points / 100).toFixed(2)} Redeemable</span></div><div class="bg-white border border-orange-200 rounded-2xl p-4 flex items-center gap-2"><img src="${favDishObj.img}" alt="${p.favoriteDish}" class="w-10 h-10 rounded-xl object-cover border border-orange-200 shrink-0" /><div class="min-w-0"><span class="text-[9px] font-semibold uppercase text-orange-600 block">Favorite Dish</span><span class="text-xs font-medium text-slate-900 truncate block" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-slate-500 font-medium">Ordered ${p.favoriteDishCount || 1}x</span></div></div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5 shadow-sm">
-<div class="flex items-center justify-between mb-2"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">Waiter & Kitchen Sync</span><h4 class="text-xs font-semibold text-slate-900">Dietary Tags & VIP Server Notes</h4></div><button onclick="saveAdminCrmGuestNotes('${p.phone}')" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-[10px] px-3 py-1.5 rounded-xl transition cursor-pointer shadow-sm">💾 Save & Sync to Waiter</button></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-<div><label class="block text-[10px] font-medium text-slate-500 mb-1">Dietary / Allergy Badge</label><input id="crmModalDietaryInput" type="text" value="${(p.dietaryNotes || '').replace(/"/g, '&quot;')}" placeholder="e.g. Peanut Allergy, Gluten-Free..." class="w-full bg-orange-50/60 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-orange-500" /></div><div><label class="block text-[10px] font-medium text-slate-500 mb-1">Table & Hospitality Notes</label><input id="crmModalServerNotesInput" type="text" value="${(p.serverNotes || '').replace(/"/g, '&quot;')}" placeholder="Seating preference, favorite drink..." class="w-full bg-orange-50/60 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-orange-500" /></div></div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5 shadow-sm">
-<span class="text-[9px] font-semibold uppercase tracking-wider text-orange-600 block">CRM Retention Actions</span><h4 class="text-xs font-semibold text-slate-900 mb-2">Issue Courtesy Points or Win-Back Campaign</h4><div class="flex flex-wrap gap-2">
-<button onclick="adminAdjustGuestPoints('${p.phone}', 100, 'Manager Courtesy Bonus (+100 Pts)')" class="bg-orange-50 hover:bg-orange-600 text-orange-800 hover:text-white border border-orange-300 font-semibold text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">🎁 +100 Courtesy Pts ($1.00)</button><button onclick="adminAdjustGuestPoints('${p.phone}', 200, 'VIP Win-Back SMS Campaign (+200 Pts)')" class="bg-amber-50 hover:bg-amber-600 text-amber-900 hover:text-white border border-amber-300 font-semibold text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">📲 Send +200 Pts Win-Back Offer</button><button onclick="adminAdjustGuestPoints('${p.phone}', -100, 'Manual Points Adjustment (-100 Pts)')" class="bg-slate-100 hover:bg-slate-700 text-slate-700 hover:text-white border border-slate-300 font-medium text-[11px] px-3 py-1.5 rounded-xl transition cursor-pointer">−100 Pts Adjust</button></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-<div class="bg-white border border-orange-200 rounded-2xl p-4.5"><h4 class="text-xs font-semibold text-slate-900 mb-2">🧾 Itemized Order History (${(p.orderHistory || []).length})</h4><div class="space-y-2 max-h-44 overflow-y-auto orange-scroll pr-1">
-${!(p.orderHistory || []).length ? `<p class="text-[11px] text-slate-400 italic">No settled checks yet. Place & settle an order at Table #04 to log it here!</p>` : (p.orderHistory || []).map(ord => `<div class="bg-orange-50/60 border border-orange-100 rounded-xl p-2 text-[11px]"><div class="flex justify-between font-semibold text-slate-900"><span>Order #${ord.orderId}</span><span class="text-orange-600">$${Number(ord.total || 0).toFixed(2)}</span></div><p class="text-[10px] text-slate-600 font-medium mt-1">${ord.items}</p><div class="flex justify-between text-[9px] text-slate-400 font-medium mt-1"><span>${ord.date}</span><span class="text-green-700">${ord.pointsDelta} pts</span></div></div>`).join('')}
-</div></div><div class="bg-white border border-orange-200 rounded-2xl p-4.5"><h4 class="text-xs font-semibold text-slate-900 mb-2">✨ Loyalty Points Activity Ledger</h4><div class="space-y-1.5 max-h-44 overflow-y-auto orange-scroll pr-1">
-${(p.history || []).map(h => `<div class="flex items-center justify-between py-1.5 border-b border-orange-50 text-[11px]"><div class="min-w-0 pr-2"><p class="font-medium text-slate-800 truncate">${h.text}</p><span class="text-[9px] text-slate-400 font-semibold">${h.date}</span></div><span class="font-medium shrink-0 ${String(h.delta).startsWith('-') ? 'text-rose-600' : 'text-green-600'}">${h.delta} pts</span></div>`).join('')}
-</div></div></div></div><div class="bg-white border-t border-orange-200 px-6 py-3 flex items-center justify-between gap-2 shrink-0">
-${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-center gap-2"><span>🟢</span><span>Currently Active Guest at Table #04 (Synced to Phone)</span></span>` : `<button onclick="switchLoyaltyProfile('${p.phone}'); closeAdminCrmProfileModal();" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm">🪑 Seat ${p.name.split(' ')[0]} at Table #04 (Sync to Phone App)</button>`}
-<button onclick="closeAdminCrmProfileModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer">Close Profile</button></div>`;
+            container.innerHTML = `<div class="bg-[#0f172a] text-white px-6 py-4 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-3.5 min-w-0"><div class="w-11 h-11 rounded-xl bg-[#fc8019] text-white font-bold text-base flex items-center justify-center shrink-0">${tier.icon}</div><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><h3 class="text-base font-bold tracking-tight truncate">${p.name}</h3><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${seg.badgeClass}">${seg.label}</span></div><p class="text-[11px] text-[#94a3b8] font-medium mt-0.5">📱 ${p.displayPhone} • ${tier.name} (${tier.ptsPerDollar} pts/$1) • Joined ${p.joinedDate || 'Jan 2026'}</p></div></div><button onclick="closeAdminCrmProfileModal()" class="w-8 h-8 rounded-full bg-[#1e293b] hover:bg-[#ff3d6e] text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer shrink-0">✕</button></div>
+<div class="flex-1 overflow-y-auto orange-scroll p-4 space-y-3.5 bg-[#f7f7f7]">
+<div id="crmModalActionNotice" class="hidden bg-[#d1fae5] border border-[#6ee7b7] text-[#065f46] rounded-xl px-3 py-2 text-xs font-semibold text-center"></div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+<div class="sm-card p-3"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Total Orders</span><span class="text-base font-bold text-[#3d4152]">${totalOrders} Visits</span><span class="text-[10px] text-[#7e808c] block">Last: ${p.lastVisitDate}</span></div>
+<div class="sm-card p-3"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Lifetime Spend</span><span class="text-base font-bold text-[#fc8019]">$${lifetimeSpend.toFixed(2)}</span><span class="text-[10px] text-[#60b246] font-semibold block">AOV: $${aov.toFixed(2)}</span></div>
+<div class="sm-card p-3"><span class="text-[9px] font-semibold uppercase text-[#7e808c] block">Loyalty Wallet</span><span class="text-base font-bold text-[#3d4152]">${p.points} Pts</span><span class="text-[10px] text-[#fc8019] font-semibold block">$${(p.points / 100).toFixed(2)} Redeemable</span></div>
+<div class="sm-card p-3 flex items-center gap-2"><img src="${favDishObj.img}" alt="${p.favoriteDish}" class="w-9 h-9 rounded-lg object-cover border border-[#e8e8e8] shrink-0" /><div class="min-w-0"><span class="text-[9px] font-semibold uppercase text-[#fc8019] block">Favorite</span><span class="text-xs font-semibold text-[#3d4152] truncate block" title="${p.favoriteDish}">${p.favoriteDish}</span><span class="text-[9px] text-[#7e808c] font-medium">${p.favoriteDishCount || 1}x ordered</span></div></div></div>
+<div class="sm-card p-4">
+<div class="flex items-center justify-between mb-2.5"><div><span class="text-[9px] font-semibold uppercase tracking-wider text-[#fc8019] block">Waiter & Kitchen Sync</span><h4 class="text-xs font-bold text-[#3d4152]">Dietary Tags & VIP Server Notes</h4></div><button onclick="saveAdminCrmGuestNotes('${p.phone}')" class="sm-btn-primary font-semibold text-[10px] px-3 py-1.5 rounded-lg cursor-pointer">💾 Save & Sync</button></div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block text-[10px] font-semibold text-[#7e808c] mb-1">Dietary / Allergy Badge</label><input id="crmModalDietaryInput" type="text" value="${(p.dietaryNotes || '').replace(/"/g, '&quot;')}" placeholder="e.g. Peanut Allergy..." class="w-full sm-input px-3 py-1.5 text-xs font-medium text-[#3d4152]" /></div><div><label class="block text-[10px] font-semibold text-[#7e808c] mb-1">Table & Hospitality Notes</label><input id="crmModalServerNotesInput" type="text" value="${(p.serverNotes || '').replace(/"/g, '&quot;')}" placeholder="Seating preference..." class="w-full sm-input px-3 py-1.5 text-xs font-medium text-[#3d4152]" /></div></div></div>
+<div class="sm-card p-4">
+<span class="text-[9px] font-semibold uppercase tracking-wider text-[#fc8019] block">CRM Retention Actions</span><h4 class="text-xs font-bold text-[#3d4152] mb-2">Issue Courtesy Points or Win-Back Campaign</h4>
+<div class="flex flex-wrap gap-2"><button onclick="adminAdjustGuestPoints('${p.phone}', 100, 'Manager Courtesy Bonus (+100 Pts)')" class="bg-[#fff4e6] hover:bg-[#fc8019] text-[#fc8019] hover:text-white border border-[#fc8019]/30 font-semibold text-[11px] px-3 py-1.5 rounded-lg transition cursor-pointer">🎁 +100 Courtesy Pts ($1.00)</button><button onclick="adminAdjustGuestPoints('${p.phone}', 200, 'VIP Win-Back SMS Campaign (+200 Pts)')" class="bg-[#fef3c7] hover:bg-[#ffb800] text-[#92400e] hover:text-[#3d2e00] border border-[#fcd34d] font-semibold text-[11px] px-3 py-1.5 rounded-lg transition cursor-pointer">📲 +200 Pts Win-Back Offer</button><button onclick="adminAdjustGuestPoints('${p.phone}', -100, 'Manual Points Adjustment (-100 Pts)')" class="bg-[#f1f5f9] hover:bg-[#3d4152] text-[#64748b] hover:text-white border border-[#e8e8e8] font-medium text-[11px] px-3 py-1.5 rounded-lg transition cursor-pointer">−100 Pts Adjust</button></div></div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+<div class="sm-card p-3.5"><h4 class="text-xs font-bold text-[#3d4152] mb-2">🧾 Itemized Order History (${(p.orderHistory || []).length})</h4><div class="space-y-2 max-h-44 overflow-y-auto orange-scroll pr-1">${!(p.orderHistory || []).length ? `<p class="text-[11px] text-[#93959f] italic">No settled checks yet.</p>` : (p.orderHistory || []).map(ord => `<div class="bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl p-2.5 text-[11px]"><div class="flex justify-between font-bold text-[#3d4152]"><span>Order #${ord.orderId}</span><span class="text-[#fc8019]">$${Number(ord.total || 0).toFixed(2)}</span></div><p class="text-[10px] text-[#7e808c] font-medium mt-0.5">${ord.items}</p><div class="flex justify-between text-[9px] text-[#93959f] font-medium mt-1"><span>${ord.date}</span><span class="text-[#60b246] font-semibold">${ord.pointsDelta} pts</span></div></div>`).join('')}</div></div>
+<div class="sm-card p-3.5"><h4 class="text-xs font-bold text-[#3d4152] mb-2">✨ Loyalty Points Ledger</h4><div class="space-y-1.5 max-h-44 overflow-y-auto orange-scroll pr-1">${(p.history || []).map(h => `<div class="flex items-center justify-between py-1.5 border-b border-[#e8e8e8] text-[11px]"><div class="min-w-0 pr-2"><p class="font-medium text-[#3d4152] truncate">${h.text}</p><span class="text-[9px] text-[#93959f] font-medium">${h.date}</span></div><span class="font-semibold shrink-0 ${String(h.delta).startsWith('-') ? 'text-[#ff3d6e]' : 'text-[#60b246]'}">${h.delta} pts</span></div>`).join('')}</div></div></div></div>
+<div class="bg-white border-t border-[#e8e8e8] px-6 py-3 flex items-center justify-between gap-2 shrink-0">${isSeated ? `<span class="text-xs font-semibold text-[#60b246] flex items-center gap-2"><span>🟢</span><span>Active Guest at Table #04</span></span>` : `<button onclick="switchLoyaltyProfile('${p.phone}'); closeAdminCrmProfileModal();" class="sm-btn-primary font-semibold text-xs px-4 py-2 rounded-[10px] cursor-pointer">🪑 Seat ${p.name.split(' ')[0]} at Table #04</button>`}<button onclick="closeAdminCrmProfileModal()" class="bg-[#f1f5f9] hover:bg-[#e2e8e8] text-[#3d4152] font-semibold text-xs px-4 py-2 rounded-[10px] transition cursor-pointer">Close Profile</button></div>`;
         }
         // 16. HELPERS, SURGICAL TIMER UPDATES & RESET DEMO (WITH AUDIT FIX #2)
         function renderAllPortals() {
@@ -2768,10 +2817,6 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
             });
             if (crossedOverdueThreshold) { renderKdsPortal(); }
         }, 1000);
-        // Initialize on load (Restore saved state, render portal, and start real-time sync)
-        loadStateFromStorage();
-        renderAllPortals();
-        initCrossDeviceSync();
     
 
         // =========================================================================
@@ -3073,8 +3118,8 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
                 }
                 if (modalStatus) {
                     modalStatus.className = peerUp
-                        ? 'mt-3 bg-green-50 border border-green-300 text-green-800 rounded-xl px-3 py-2 text-xs font-semibold text-center'
-                        : 'mt-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl px-3 py-2 text-xs font-medium text-center';
+                        ? 'mt-3 bg-[#d1fae5] border border-[#6ee7b7] text-[#065f46] rounded-xl px-3 py-2 text-xs font-semibold text-center'
+                        : 'mt-3 bg-[#fff4e6] border border-[#fc8019]/25 text-[#fc8019] rounded-xl px-3 py-2 text-xs font-medium text-center';
                     modalStatus.textContent = peerUp
                         ? `✅ Owner's Phone is Connected Live to Room ${syncRoomCode}!`
                         : (syncBrokerConnected
@@ -3307,7 +3352,7 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
             const stack = $('staffToastContainer');
             if (!stack) return;
             const toast = document.createElement('div');
-            toast.className = 'pointer-events-auto bg-slate-900 text-white border-l-4 border-orange-500 rounded-2xl px-4 py-3 shadow-xl max-w-xs animate-pop flex items-start justify-between gap-3';
+            toast.className = 'pointer-events-auto bg-[#1e293b] text-white border-l-4 border-[#fc8019] rounded-xl px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.28)] max-w-xs animate-pop flex items-start justify-between gap-3';
             toast.innerHTML = `<div class="min-w-0"><p class="text-xs font-semibold text-orange-400 leading-tight">${title}</p>${detail ? `<p class="text-[11px] text-slate-200 mt-1 leading-snug">${detail}</p>` : ''}</div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-xs font-semibold shrink-0 cursor-pointer">✕</button>`;
             stack.prepend(toast);
             while (stack.children.length > 4) stack.lastElementChild.remove();
@@ -3347,6 +3392,10 @@ ${isSeated ? `<span class="text-xs font-semibold text-green-700 flex items-cente
             toggleModal('customerWaiterBanner', true);
         }
 
+        // Initialize on load (Restore saved state, render portal, and start real-time sync)
+        loadStateFromStorage();
+        renderAllPortals();
+        initCrossDeviceSync();
     </script>
 </body>
 

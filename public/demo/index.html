@@ -172,11 +172,11 @@
             <div class="min-w-0 flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] text-white flex items-center justify-center text-lg shadow-[0_3px_10px_rgba(252,128,25,0.3)] shrink-0 font-bold">S</div>
                 <div class="min-w-0">
-                    <div class="flex items-center gap-1.5">
-                        <h2 class="text-sm font-bold text-[#3d4152] tracking-tight leading-none truncate">SearchandService</h2>
-                        <span class="text-[9px] font-semibold uppercase tracking-wide bg-[#fff4e6] text-[#fc8019] px-1.5 py-0.5 rounded-md">Table #04</span>
-                    </div>
-                    <p class="text-[10px] font-medium text-[#7e808c] leading-none mt-1">Digital Menu • Dine-In</p>
+                    <h2 class="text-[13px] sm:text-sm font-bold text-[#3d4152] tracking-tight leading-none truncate">SearchandService</h2>
+                    <p class="text-[10px] font-medium text-[#7e808c] leading-none mt-1 flex items-center gap-1.5">
+                        <span class="text-[9px] font-semibold uppercase tracking-wide bg-[#fff4e6] text-[#fc8019] px-1.5 py-0.5 rounded">Table #04</span>
+                        <span>• Dine-In</span>
+                    </p>
                 </div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -487,8 +487,8 @@
             </div>
         </div>
 
-        <div id="totalBillPageModal" class="hidden absolute inset-0 bg-[#f7f7f7] z-50 flex flex-col justify-between p-4 overflow-y-auto no-scrollbar">
-            <div>
+        <div id="totalBillPageModal" class="hidden absolute inset-0 bg-[#f7f7f7] z-50 flex flex-col p-4 overflow-y-auto no-scrollbar">
+            <div class="shrink-0">
                 <div class="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-[#e8e8e8] shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
                     <div>
                         <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">Table #04 • Final Check</span>
@@ -501,7 +501,7 @@
                 </div>
                 <div id="billModalDynamicBody" class="mt-3 space-y-3"></div>
             </div>
-            <div id="billModalFooterBtns" class="mt-4 pt-3 border-t border-[#e8e8e8] space-y-2"></div>
+            <div id="billModalFooterBtns" class="mt-auto pt-4 border-t border-[#e8e8e8] space-y-2 shrink-0"></div>
         </div>
 
         <div id="dishCustomizeModal" class="hidden absolute inset-0 z-[70] bg-[#0f172a]/70 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -688,8 +688,8 @@
             [805, 'Chicken Pot Pie', 8, 18, '4.8', 17.49, '1547592166-23ac45744acd', "Chicken Pot Pie had a flaky golden puff-pastry top and rich, creamy filling loaded with chicken!", "The Chicken Pot Pie crust was pale and the filling was mostly peas."],
 
             // 9. Side Dishes
-            [901, 'French Fries', 9, 7, '4.8', 4.49, '1576107232684-1279f3908594', "Even the French Fries slapped—golden, crispy outside, fluffy inside, and salted just right!", "The French Fries came out limp and needed fresh fryer oil."],
-            [902, 'Sweet Potato Fries', 9, 8, '4.9', 5.49, '1576107232684-1279f3908594', "Those Sweet Potato Fries were caramelized, crispy, and next-level good!", "Sweet Potato Fries were soggy and lukewarm."],
+            [901, 'French Fries', 9, 7, '4.8', 4.49, '1541592106381-b31e9677c0e5', "Even the French Fries slapped—golden, crispy outside, fluffy inside, and salted just right!", "The French Fries came out limp and needed fresh fryer oil."],
+            [902, 'Sweet Potato Fries', 9, 8, '4.9', 5.49, '1541592106381-b31e9677c0e5', "Those Sweet Potato Fries were caramelized, crispy, and next-level good!", "Sweet Potato Fries were soggy and lukewarm."],
             [903, 'Mashed Potatoes and Gravy', 9, 6, '4.8', 4.49, '1518013431117-eb1465fa5752', "Mashed Potatoes and Gravy were whipped smooth and buttery with savory pan gravy!", "Mashed Potatoes had cold lumps and the gravy had a skin on top."],
             [904, 'Baked Potato', 9, 8, '4.7', 4.49, '1518013431117-eb1465fa5752', "The Baked Potato was fluffy like a cloud and loaded up proper with butter and sour cream!", "The Baked Potato skin was tough and the center wasn't fully soft."],
             [905, 'Mac and Cheese', 9, 8, '4.9', 5.49, '1543339308-43e59d6b73a6', "The side Mac and Cheese could easily be a main course—super cheesy and creamy!", "Side Mac and Cheese tasted lukewarm and needed more cheddar."],
@@ -2204,6 +2204,8 @@ ${dish.soldOut ? `<span class="text-[10px] font-semibold text-[#93959f] bg-[#f1f
             }
             renderTotalBillModalContent();
             toggleModal('totalBillPageModal', true);
+            const billModalEl = $('totalBillPageModal');
+            if (billModalEl) billModalEl.scrollTop = 0;
         }
         const closeTotalBillPageModal = () => toggleModal('totalBillPageModal', false);
         function setBillSplitMode(mode) {
@@ -2229,16 +2231,19 @@ ${dish.soldOut ? `<span class="text-[10px] font-semibold text-[#93959f] bg-[#f1f
                     }
                 }
             }
+            renderCustomerServiceView();
             renderTotalBillModalContent();
         }
         function setBillEqualWays(ways) {
             billEqualWays = [2, 3, 4].includes(ways) ? ways : 2;
             lastPartialSplitReceipt = null;
+            renderCustomerServiceView();
             renderTotalBillModalContent();
         }
         function setBillSelectedSeat(seatNum) {
             billSelectedSeat = Math.max(1, Math.min(4, Number(seatNum) || 1));
             lastPartialSplitReceipt = null;
+            renderCustomerServiceView();
             renderTotalBillModalContent();
         }
         function cycleOrderItemSeat(itemIdx) {
@@ -2265,6 +2270,7 @@ ${dish.soldOut ? `<span class="text-[10px] font-semibold text-[#93959f] bg-[#f1f
                 billClaimedItemQtys[itemIdx] = currentClaimed > 0 ? 0 : 1;
             } else { billClaimedItemQtys[itemIdx] = Math.max(0, Math.min(availQty, currentClaimed + delta)); }
             lastPartialSplitReceipt = null;
+            renderCustomerServiceView();
             renderTotalBillModalContent();
         }
         function selectBillSplitPayer(phoneKey) {
@@ -2322,7 +2328,8 @@ ${dish.soldOut ? `<span class="text-[10px] font-semibold text-[#93959f] bg-[#f1f
             }
             let promoDiscountDollar = 0;
             const promoObj = appliedPromoCode ? PROMO_COUPONS.find(c => c.code === appliedPromoCode) : null;
-            if (promoObj && shareSubtotal >= promoObj.minSub) {
+            const promoEligible = Boolean(promoObj && shareSubtotal >= promoObj.minSub);
+            if (promoEligible) {
                 promoDiscountDollar = promoObj.type === 'pct'
                     ? Math.min(promoObj.maxDiscount, Number(((shareSubtotal * promoObj.val) / 100).toFixed(2)))
                     : Math.min(shareSubtotal, promoObj.val);
@@ -2336,7 +2343,7 @@ ${dish.soldOut ? `<span class="text-[10px] font-semibold text-[#93959f] bg-[#f1f
             const grandTotal = Number((netSubtotal + tax + tipAmount).toFixed(2));
             const bonusPtsThisShare = isFinalShare ? (order.bonusPoints || 0) : 0;
             const pointsToEarn = calculatePointsForAmount(netSubtotal, payerCust) + bonusPtsThisShare;
-            return { payerCust, totalOrderSub, alreadyPaidSub, remainingOrderSub, shareSubtotal, shareLabel, isFinalShare, canPayShare, promoDiscountDollar, maxDiscountPts, discountDollar, netSubtotal, tax, tipAmount, grandTotal, pointsToEarn, bonusPtsThisShare };
+            return { payerCust, totalOrderSub, alreadyPaidSub, remainingOrderSub, shareSubtotal, shareLabel, isFinalShare, canPayShare, promoObj, promoEligible, promoDiscountDollar, maxDiscountPts, discountDollar, netSubtotal, tax, tipAmount, grandTotal, pointsToEarn, bonusPtsThisShare };
         }
         function renderTotalBillModalContent() {
             const bodyEl = $('billModalDynamicBody'), footerEl = $('billModalFooterBtns');
@@ -2396,9 +2403,9 @@ ${billSplitMode === 'full' ? `<ul class="space-y-1.5 text-xs text-[#3d4152] font
                 const unpaidQty = Math.max(0, i.qty - (i.paidQty || 0));
                 return `<li class="flex justify-between items-center py-1 border-b border-[#e8e8e8] ${unpaidQty === 0 ? 'line-through text-[#93959f]' : ''}"><span class="truncate pr-2">${i.qty}x ${i.name} ${unpaidQty < i.qty && unpaidQty > 0 ? `(${unpaidQty} unpaid)` : ''}</span><span class="font-semibold text-[#3d4152] shrink-0">${i.isRewardRedemption ? '<span class="text-[#60b246]">FREE</span>' : `$${(i.price * (unpaidQty || i.qty)).toFixed(2)}`}</span></li>`;
             }).join('')}</ul>` : ''}
-<div class="bg-[#fff4e6] border border-dashed border-[#fc8019]/60 rounded-xl p-3 mb-3"><div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-semibold uppercase text-[#fc8019]">🎟️ Promo Coupons &amp; Discounts</span>${appliedPromoCode ? `<span class="text-[9px] font-semibold bg-[#60b246] text-white px-2 py-0.5 rounded-full">Applied: ${appliedPromoCode}</span>` : ''}</div><div class="grid grid-cols-3 gap-1.5">${PROMO_COUPONS.map(c => {
-                const isSel = appliedPromoCode === c.code, eligible = calc.shareSubtotal >= c.minSub;
-                return `<button type="button" onclick="applyPromoCoupon('${c.code}')" ${!eligible ? 'disabled' : ''} class="py-1.5 px-1 rounded-lg border text-center transition ${isSel ? 'bg-[#fc8019] text-white border-[#fc8019] cursor-pointer' : eligible ? 'bg-white text-[#3d4152] border-[#fc8019]/30 hover:border-[#fc8019] cursor-pointer' : 'bg-[#f1f5f9] text-[#93959f] border-[#e8e8e8] cursor-not-allowed'}"><span class="block font-mono text-[10px] font-bold">${c.code}</span><span class="block text-[8px] opacity-85">${c.label}</span></button>`;
+<div class="bg-[#fff4e6] border border-dashed border-[#fc8019]/60 rounded-xl p-3 mb-3"><div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-semibold uppercase text-[#fc8019]">🎟️ Promo Coupons &amp; Discounts</span>${calc.promoDiscountDollar > 0 ? `<span class="text-[9px] font-semibold bg-[#60b246] text-white px-2 py-0.5 rounded-full">Applied: ${appliedPromoCode}</span>` : (appliedPromoCode && calc.promoObj ? `<span class="text-[9px] font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] px-2 py-0.5 rounded-full">Min $${calc.promoObj.minSub.toFixed(0)}+ needed</span>` : '')}</div><div class="grid grid-cols-3 gap-1.5">${PROMO_COUPONS.map(c => {
+                const eligible = calc.shareSubtotal >= c.minSub, isSel = appliedPromoCode === c.code;
+                return `<button type="button" onclick="applyPromoCoupon('${c.code}')" ${!eligible && !isSel ? 'disabled' : ''} class="py-1.5 px-1 rounded-lg border text-center transition ${isSel ? (eligible ? 'bg-[#fc8019] text-white border-[#fc8019] cursor-pointer' : 'bg-[#fef3c7] text-[#92400e] border-[#fcd34d] cursor-pointer') : eligible ? 'bg-white text-[#3d4152] border-[#fc8019]/30 hover:border-[#fc8019] cursor-pointer' : 'bg-[#f1f5f9] text-[#93959f] border-[#e8e8e8] cursor-not-allowed'}"><span class="block font-mono text-[10px] font-bold">${c.code}</span><span class="block text-[8px] opacity-85">${c.label}</span></button>`;
             }).join('')}</div></div>
 <div class="bg-[#f7f7f7] border border-[#e8e8e8] rounded-xl p-3 mb-3"><div class="flex items-center justify-between mb-2"><span class="text-[10px] font-semibold uppercase text-[#3d4152]">🎁 Redeem ${cust ? cust.name.split(' ')[0] + "'s" : ''} Points (${cust ? cust.points : 0}p)</span><span class="text-[9px] font-medium text-[#7e808c]">100 Pts = $1.00</span></div><div class="grid grid-cols-4 gap-2">${[0, 100, 250, 500].map(pts => {
                 const affordable = pts === 0 || ((cust ? cust.points : 0) >= pts && (calc.shareSubtotal - calc.promoDiscountDollar) * 100 >= pts), active = calc.maxDiscountPts === pts;

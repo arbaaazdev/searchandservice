@@ -368,10 +368,10 @@
                                 <svg class="w-3.5 h-3.5 text-[#7e808c] shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input id="crmSearchInput" type="text" oninput="handleCrmSearch(this.value)" placeholder="Search guest, phone, dish, tag..."
+                                <input id="crmSearchInput" type="text" aria-label="Search CRM guests" oninput="handleCrmSearch(this.value)" placeholder="Search guest, phone, dish, tag..."
                                     class="w-full text-[11px] font-medium text-[#3d4152] placeholder-[#93959f] focus:outline-none bg-transparent" />
                             </div>
-                            <select id="crmSortSelect" onchange="handleCrmSortChange(this.value)"
+                            <select id="crmSortSelect" aria-label="Sort CRM guests" onchange="handleCrmSortChange(this.value)"
                                 class="sm-input px-3 py-1.5 text-[11px] font-semibold text-[#3d4152] cursor-pointer">
                                 <option value="spend_desc">Sort: Lifetime Spend ↓</option>
                                 <option value="aov_desc">Sort: Avg Order Value ↓</option>
@@ -458,37 +458,37 @@
 
     <div id="staffToastContainer" class="fixed bottom-5 right-5 z-[90] flex flex-col gap-2 pointer-events-none"></div>
 
-    <div id="staffPairModal" class="hidden fixed inset-0 bg-[#0f172a]/70 backdrop-blur-[2px] z-[80] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-[20px] p-6 border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.28)] animate-pop">
-            <div class="flex items-center justify-between border-b border-[#e8e8e8] pb-3 mb-4">
+    <div id="staffPairModal" class="hidden fixed inset-0 bg-[#0f172a]/70 backdrop-blur-[2px] z-[80] overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-[20px] p-5 border border-[#e8e8e8] shadow-[0_8px_32px_rgba(0,0,0,0.28)] animate-pop">
+            <div class="flex items-center justify-between border-b border-[#e8e8e8] pb-3 mb-3">
                 <div>
                     <span class="text-[10px] font-semibold uppercase tracking-wider text-[#fc8019] block">Live Demo Mode</span>
                     <h3 class="text-lg font-bold text-[#3d4152] leading-tight">Pair Owner's Phone to Laptop</h3>
                 </div>
                 <button onclick="closeStaffPairModal()" class="w-8 h-8 rounded-full bg-[#f1f5f9] hover:bg-[#ff3d6e] text-[#64748b] hover:text-white font-semibold text-xs flex items-center justify-center transition cursor-pointer">✕</button>
             </div>
-            <p class="text-xs text-[#7e808c] leading-relaxed mb-4">
+            <p class="text-xs text-[#7e808c] leading-relaxed mb-3">
                 Have the restaurant owner scan this QR code with their phone camera. It opens <b class="text-[#fc8019]">/demo</b> paired directly to this laptop so every tap updates your Kitchen KOT, Waiter, and Admin portals live.
             </p>
-            <div class="flex flex-col items-center justify-center bg-[#f7f7f7] border border-[#e8e8e8] rounded-2xl p-4">
-                <div id="staffQrContainer" class="bg-white p-3 rounded-xl border border-[#e8e8e8] shadow-sm flex items-center justify-center min-w-[234px] min-h-[234px]"></div>
-                <div class="mt-3 flex items-center gap-2">
+            <div class="flex flex-col items-center justify-center bg-[#f7f7f7] border border-[#e8e8e8] rounded-2xl p-3">
+                <div id="staffQrContainer" class="bg-white p-2.5 rounded-xl border border-[#e8e8e8] shadow-sm flex items-center justify-center min-w-[200px] min-h-[200px]"></div>
+                <div class="mt-2.5 flex items-center gap-2">
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-[#7e808c]">Room Code:</span>
                     <span id="staffModalRoomCode" class="text-lg font-bold tracking-widest text-[#fc8019] bg-white border border-[#e8e8e8] px-3 py-0.5 rounded-xl">----</span>
                     <button onclick="generateNewStaffRoom()" title="Generate a fresh Room Code" class="text-[11px] font-semibold bg-white hover:bg-[#fff4e6] text-[#3d4152] border border-[#e8e8e8] px-2.5 py-1 rounded-lg transition cursor-pointer">↻ New</button>
                 </div>
             </div>
-            <div id="staffModalSyncStatus" class="mt-3 bg-[#fff4e6] border border-[#fc8019]/25 text-[#fc8019] rounded-xl px-3 py-2 text-xs font-medium text-center">
+            <div id="staffModalSyncStatus" class="mt-2.5 bg-[#fff4e6] border border-[#fc8019]/25 text-[#fc8019] rounded-xl px-3 py-2 text-xs font-medium text-center">
                 Connecting to live sync relay...
             </div>
-            <div class="mt-3">
-                <label class="block text-[10px] font-semibold uppercase tracking-wider text-[#7e808c] mb-1">Direct Paired Customer Link</label>
+            <div class="mt-2.5">
+                <label for="staffModalDemoUrl" class="block text-[10px] font-semibold uppercase tracking-wider text-[#7e808c] mb-1">Direct Paired Customer Link</label>
                 <div class="flex items-center gap-2">
                     <input id="staffModalDemoUrl" type="text" readonly class="flex-1 sm-input px-3 py-2 text-[11px] font-mono text-[#3d4152]" />
                     <button id="staffCopyLinkBtn" onclick="copyStaffDemoLink()" class="sm-btn-primary font-semibold text-xs px-3.5 py-2 rounded-[10px] cursor-pointer shrink-0">Copy Link</button>
                 </div>
             </div>
-            <div class="mt-4 pt-3 border-t border-[#e8e8e8] flex items-center justify-between gap-2">
+            <div class="mt-3 pt-3 border-t border-[#e8e8e8] flex items-center justify-between gap-2">
                 <button onclick="openCustomerDemoTab()" class="flex-1 bg-[#fff4e6] hover:bg-[#ffebd6] text-[#fc8019] border border-[#fc8019]/25 font-semibold text-xs py-2.5 rounded-[10px] transition cursor-pointer">↗ Test /demo in New Tab</button>
                 <button onclick="closeStaffPairModal()" class="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white font-semibold text-xs py-2.5 rounded-[10px] transition cursor-pointer">Done</button>
             </div>
@@ -593,8 +593,8 @@
             [805, 'Chicken Pot Pie', 8, 18, '4.8', 17.49, '1547592166-23ac45744acd', "Chicken Pot Pie had a flaky golden puff-pastry top and rich, creamy filling loaded with chicken!", "The Chicken Pot Pie crust was pale and the filling was mostly peas."],
 
             // 9. Side Dishes
-            [901, 'French Fries', 9, 7, '4.8', 4.49, '1576107232684-1279f3908594', "Even the French Fries slapped—golden, crispy outside, fluffy inside, and salted just right!", "The French Fries came out limp and needed fresh fryer oil."],
-            [902, 'Sweet Potato Fries', 9, 8, '4.9', 5.49, '1576107232684-1279f3908594', "Those Sweet Potato Fries were caramelized, crispy, and next-level good!", "Sweet Potato Fries were soggy and lukewarm."],
+            [901, 'French Fries', 9, 7, '4.8', 4.49, '1541592106381-b31e9677c0e5', "Even the French Fries slapped—golden, crispy outside, fluffy inside, and salted just right!", "The French Fries came out limp and needed fresh fryer oil."],
+            [902, 'Sweet Potato Fries', 9, 8, '4.9', 5.49, '1541592106381-b31e9677c0e5', "Those Sweet Potato Fries were caramelized, crispy, and next-level good!", "Sweet Potato Fries were soggy and lukewarm."],
             [903, 'Mashed Potatoes and Gravy', 9, 6, '4.8', 4.49, '1518013431117-eb1465fa5752', "Mashed Potatoes and Gravy were whipped smooth and buttery with savory pan gravy!", "Mashed Potatoes had cold lumps and the gravy had a skin on top."],
             [904, 'Baked Potato', 9, 8, '4.7', 4.49, '1518013431117-eb1465fa5752', "The Baked Potato was fluffy like a cloud and loaded up proper with butter and sour cream!", "The Baked Potato skin was tough and the center wasn't fully soft."],
             [905, 'Mac and Cheese', 9, 8, '4.9', 5.49, '1543339308-43e59d6b73a6', "The side Mac and Cheese could easily be a main course—super cheesy and creamy!", "Side Mac and Cheese tasted lukewarm and needed more cheddar."],
@@ -1580,7 +1580,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             updateFloatingBillBannerState();
             if (tabName === 'timeline') { renderCustomerTimeline(); } else if (tabName === 'service') { renderCustomerServiceView(); } else if (tabName === 'rewards') { renderCustomerLoyaltyView(); } else if (tabName === 'menu') {
                 const activeOrder = activeOrders.find(o => o.id === currentCustomerOrderId && !o.paid);
-                if (activeOrder) $('miniBannerOrderId').textContent = activeOrder.id;
+                if (activeOrder && $('miniBannerOrderId')) $('miniBannerOrderId').textContent = activeOrder.id;
                 toggleModal('returnToTimelineBanner', Boolean(activeOrder));
             }
         }
@@ -1595,6 +1595,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             }
             if (emptyState) emptyState.classList.add('hidden');
             if (orderCard) orderCard.classList.remove('hidden');
+            if (!$('timelineOrderNumber') || !$('timelineOrderTotal') || !$('orderTimelineSteps') || !$('timelineItemsList')) return;
             $('timelineOrderNumber').textContent = order.id;
             $('timelineOrderTotal').textContent = `$${order.total.toFixed(2)}`;
             const orderCust = getOrderCustomer(order);
@@ -1866,7 +1867,7 @@ ${dish.soldOut ? `<span class="block w-fit text-[10px] font-semibold text-slate-
             if (waiterSelectedOrder && waiterSelectedOrder.id === orderId) { waiterSelectedOrder = null; }
             if (order.table === '04') {
                 customerOrderDelivered = true;
-                switchCustomerScreen('menu');
+                if ($('customerMenuView')) switchCustomerScreen('menu');
                 updateFloatingBillBannerState();
                 if ($('customerWaiterBannerText')) $('customerWaiterBannerText').textContent = `✅ Order #${order.id} Delivered! Enjoy your meal or tap "Request Bill" below.`;
                 toggleModal('customerWaiterBanner', true);
@@ -2666,7 +2667,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
             tbody.innerHTML = rows.map(r => {
                 const p = r.profile, initials = p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(), isAllergy = (p.dietaryNotes || '').toLowerCase().includes('allergy');
                 return `<tr class="hover:bg-[#fff4e6]/50 transition ${r.isSeatedTable4 ? 'bg-[#fff4e6]/30' : ''}">
-<td class="py-3 px-3 align-middle"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full ${r.isSeatedTable4 ? 'bg-[#fc8019] text-white' : 'bg-[#0f172a] text-[#fc8019]'} font-semibold text-[11px] flex items-center justify-center shrink-0">${initials}</div><div class="min-w-0"><div class="flex items-center gap-2"><span class="font-semibold text-[#3d4152] truncate">${p.name}</span>${r.isSeatedTable4 ? `<span class="bg-[#fc8019] text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full">Table #04</span>` : ''}</div><span class="block text-[10px] text-[#7e808c] font-medium">${p.displayPhone}</span>${p.dietaryNotes && p.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${isAllergy ? 'bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5]' : 'bg-[#fff4e6] text-[#fc8019]'}">${p.dietaryNotes}</span>` : ''}</div></div></td>
+<td class="py-3 px-3 align-middle min-w-[215px]"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full ${r.isSeatedTable4 ? 'bg-[#fc8019] text-white' : 'bg-[#0f172a] text-[#fc8019]'} font-semibold text-[11px] flex items-center justify-center shrink-0">${initials}</div><div class="min-w-0"><div class="flex items-center gap-2"><span class="font-semibold text-[#3d4152] whitespace-nowrap">${p.name}</span>${r.isSeatedTable4 ? `<span class="bg-[#fc8019] text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">Table #04</span>` : ''}</div><span class="block text-[10px] text-[#7e808c] font-medium">${p.displayPhone}</span>${p.dietaryNotes && p.dietaryNotes !== 'None specified' ? `<span class="inline-block mt-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${isAllergy ? 'bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5]' : 'bg-[#fff4e6] text-[#fc8019]'}">${p.dietaryNotes}</span>` : ''}</div></div></td>
 <td class="py-3 px-3 align-middle"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${r.seg.badgeClass}">${r.seg.label}</span><span class="inline-block mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full border ${r.tier.badgeClass}">${r.tier.icon} ${r.tier.name}</span></td>
 <td class="py-3 px-3 align-middle text-center"><span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-lg bg-[#f7f7f7] border border-[#e8e8e8] font-bold text-[#3d4152] text-xs">${r.totalOrders}</span><span class="block text-[9px] text-[#93959f] font-medium mt-0.5">Dine-In</span></td>
 <td class="py-3 px-3 align-middle text-right"><span class="font-bold text-[#3d4152] text-xs">$${r.lifetimeSpend.toFixed(2)}</span><span class="block text-[9px] text-[#60b246] font-semibold">Net LTV</span></td>

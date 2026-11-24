@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SwiftMeal POS — Staff & Operations Portal</title>
+    <title>Staff &amp; Operations Portal — KDS, Waiter &amp; Admin | Search &amp; Service</title>
 
-    <link id="siteFavicon" rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
+    <link id="siteFavicon" rel="icon" type="image/svg+xml" href="/searchandservice_agency_favicon.svg" />
+    <link rel="alternate icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230F1117'/><text x='50' y='72' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='64' fill='%23fc8019'>S</text></svg>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -135,8 +135,8 @@
         <div class="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2 shrink-0">
                 <div class="flex items-center gap-2 bg-[#1e293b] border border-[#334155] px-2.5 py-1.5 rounded-[10px]">
-                    <span class="w-6 h-6 rounded-md bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] flex items-center justify-center text-xs">🍽️</span>
-                    <span class="text-xs font-bold tracking-tight text-white">SwiftMeal <span class="text-[#fc8019]">POS</span></span>
+                    <span class="w-6 h-6 rounded-md bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] flex items-center justify-center text-xs font-bold text-white">S</span>
+                    <span class="text-xs font-bold tracking-tight text-white">SearchandService <span class="text-[#fc8019]">RMS</span></span>
                 </div>
                 <button onclick="resetFullDemo(false)" title="Reset Table #04 Session on Laptop & Phone"
                     class="bg-[#1e293b] hover:bg-[#334155] text-slate-200 border border-[#334155] font-semibold text-[11px] px-3 py-1.5 rounded-[10px] transition cursor-pointer shrink-0">↺ Reset Session</button>
@@ -452,7 +452,7 @@
 
     <footer class="py-2 px-4 text-center border-t border-[#e8e8e8] bg-white">
         <p class="text-xs font-medium text-[#7e808c]">
-            SwiftMeal POS Operations • Developed by <span class="text-[#fc8019] font-semibold">Search &amp; Service</span>
+            Staff Operations Portal • Developed by <span class="text-[#fc8019] font-semibold">Search &amp; Service</span>
         </p>
     </footer>
 
@@ -2539,7 +2539,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 table4Obj.billAmount = openT4Order ? openT4Order.total : 0.00;
             }
 
-            // SwiftMeal Order Pipeline Strip
+            // Order Pipeline Strip
             const pipelineEl = $('adminOrderPipeline');
             if (pipelineEl) {
                 const pendingCnt = activeOrders.filter(o => o.status === 'placed' && !o.paid).length;
@@ -2549,7 +2549,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 pipelineEl.innerHTML = `<div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-[#3d4152]">⚡ Live Order Pipeline</span><span class="text-[10px] font-semibold text-[#7e808c]">Real-Time Status</span></div><div class="grid grid-cols-4 gap-2 text-center"><div class="rounded-xl p-2 bg-[#fffbeb] border border-[#fcd34d]"><span class="block text-sm font-bold text-[#92400e]">${pendingCnt}</span><span class="text-[9px] font-semibold text-[#92400e]">Pending</span></div><div class="rounded-xl p-2 bg-[#eff6ff] border border-[#93c5fd]"><span class="block text-sm font-bold text-[#1e40af]">${cookingCnt}</span><span class="text-[9px] font-semibold text-[#1e40af]">Preparing</span></div><div class="rounded-xl p-2 bg-[#ecfdf5] border border-[#6ee7b7]"><span class="block text-sm font-bold text-[#065f46]">${readyCnt}</span><span class="text-[9px] font-semibold text-[#065f46]">Ready</span></div><div class="rounded-xl p-2 bg-[#f5f3ff] border border-[#c4b5fd]"><span class="block text-sm font-bold text-[#5b21b6]">${servedCnt}</span><span class="text-[9px] font-semibold text-[#5b21b6]">Served</span></div></div>`;
             }
 
-            // SwiftMeal Sales Prediction & Weekly Sparkline Widget
+            // Sales Prediction & Weekly Sparkline Widget
             const predEl = $('adminSalesPredictionWidget');
             if (predEl) {
                 const projToday = Math.round(totalSalesVolume * 1.45), tomorrowProj = Math.round(totalSalesVolume * 1.62);
@@ -2561,7 +2561,7 @@ ${calc.discountDollar > 0 ? `<div class="flex justify-between text-green-700 fon
                 }).join('')}</div>`;
             }
 
-            // SwiftMeal Top Sellers Ranked List
+            // Top Sellers Ranked List
             const topBox = $('adminTopSellersBox');
             if (topBox) {
                 const counts = {};

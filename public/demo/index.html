@@ -5,10 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#fc8019" />
-    <title>SwiftMeal POS — Table #04 Digital Menu</title>
+    <title>Table #04 • Dine-In Digital Menu | Search &amp; Service</title>
 
-    <link id="siteFavicon" rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
+    <link id="siteFavicon" rel="icon" type="image/svg+xml" href="/searchandservice_agency_favicon.svg" />
+    <link rel="alternate icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230F1117'/><text x='50' y='72' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='64' fill='%23fc8019'>S</text></svg>" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -170,13 +170,13 @@
     <div id="window-customer" class="customer-app-shell">
         <div class="px-4 pt-3.5 pb-2.5 bg-white border-b border-[#e8e8e8] flex items-center justify-between gap-2 shrink-0">
             <div class="min-w-0 flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] text-white flex items-center justify-center text-lg shadow-[0_3px_10px_rgba(252,128,25,0.3)] shrink-0">🍽️</div>
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#fc8019] to-[#ff3d6e] text-white flex items-center justify-center text-lg shadow-[0_3px_10px_rgba(252,128,25,0.3)] shrink-0 font-bold">S</div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
-                        <h2 class="text-sm font-bold text-[#3d4152] tracking-tight leading-none truncate">SwiftMeal</h2>
+                        <h2 class="text-sm font-bold text-[#3d4152] tracking-tight leading-none truncate">SearchandService</h2>
                         <span class="text-[9px] font-semibold uppercase tracking-wide bg-[#fff4e6] text-[#fc8019] px-1.5 py-0.5 rounded-md">Table #04</span>
                     </div>
-                    <p class="text-[10px] font-medium text-[#7e808c] leading-none mt-1">Spice Garden • Dine-In</p>
+                    <p class="text-[10px] font-medium text-[#7e808c] leading-none mt-1">Digital Menu • Dine-In</p>
                 </div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -2396,7 +2396,7 @@ ${billSplitMode === 'full' ? `<ul class="space-y-1.5 text-xs text-[#3d4152] font
                 const unpaidQty = Math.max(0, i.qty - (i.paidQty || 0));
                 return `<li class="flex justify-between items-center py-1 border-b border-[#e8e8e8] ${unpaidQty === 0 ? 'line-through text-[#93959f]' : ''}"><span class="truncate pr-2">${i.qty}x ${i.name} ${unpaidQty < i.qty && unpaidQty > 0 ? `(${unpaidQty} unpaid)` : ''}</span><span class="font-semibold text-[#3d4152] shrink-0">${i.isRewardRedemption ? '<span class="text-[#60b246]">FREE</span>' : `$${(i.price * (unpaidQty || i.qty)).toFixed(2)}`}</span></li>`;
             }).join('')}</ul>` : ''}
-<div class="bg-[#fff4e6] border border-dashed border-[#fc8019]/60 rounded-xl p-3 mb-3"><div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-semibold uppercase text-[#fc8019]">🎟️ SwiftMeal Promo Coupons</span>${appliedPromoCode ? `<span class="text-[9px] font-semibold bg-[#60b246] text-white px-2 py-0.5 rounded-full">Applied: ${appliedPromoCode}</span>` : ''}</div><div class="grid grid-cols-3 gap-1.5">${PROMO_COUPONS.map(c => {
+<div class="bg-[#fff4e6] border border-dashed border-[#fc8019]/60 rounded-xl p-3 mb-3"><div class="flex items-center justify-between mb-1.5"><span class="text-[10px] font-semibold uppercase text-[#fc8019]">🎟️ Promo Coupons &amp; Discounts</span>${appliedPromoCode ? `<span class="text-[9px] font-semibold bg-[#60b246] text-white px-2 py-0.5 rounded-full">Applied: ${appliedPromoCode}</span>` : ''}</div><div class="grid grid-cols-3 gap-1.5">${PROMO_COUPONS.map(c => {
                 const isSel = appliedPromoCode === c.code, eligible = calc.shareSubtotal >= c.minSub;
                 return `<button type="button" onclick="applyPromoCoupon('${c.code}')" ${!eligible ? 'disabled' : ''} class="py-1.5 px-1 rounded-lg border text-center transition ${isSel ? 'bg-[#fc8019] text-white border-[#fc8019] cursor-pointer' : eligible ? 'bg-white text-[#3d4152] border-[#fc8019]/30 hover:border-[#fc8019] cursor-pointer' : 'bg-[#f1f5f9] text-[#93959f] border-[#e8e8e8] cursor-not-allowed'}"><span class="block font-mono text-[10px] font-bold">${c.code}</span><span class="block text-[8px] opacity-85">${c.label}</span></button>`;
             }).join('')}</div></div>
